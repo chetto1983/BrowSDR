@@ -37,7 +37,8 @@
 		"format": "prettier . --write",
 		"format:check": "prettier . --check",
 		"check:structure": "node scripts/check-structure.mjs",
-		"check": "npm run lint && npm run format:check && npm run check:structure && npm run typecheck && npm run test:dsp"
+		"check": "npm run lint && npm run format:check && npm run check:structure && npm run typecheck && npm run test:dsp",
+		"cli": "vite-node --config scripts/cli/vite.config.mjs src/cli/main.ts --"
 	},
 	"dependencies": {
 		"@jlynx_/acars-decoder": "^0.1.3",

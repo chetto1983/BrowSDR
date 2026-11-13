@@ -1,7 +1,7 @@
 import { RtlTcpDevice } from '@/devices/rtltcp/device';
 import { DspEngine } from './engine';
 import { DecodedEvents, formatEvent } from './events';
-import { planDecode, relayEndpoints } from './plan';
+import { bandChange, planDecode, relayEndpoints } from './plan';
 import type { CliIo, DecodePlan, DecodeRun, DecoderName, RelayStatus } from './types';
 
 export async function fetchRelayStatus(relay: string): Promise<RelayStatus> {
@@ -24,6 +24,15 @@ async function openSource(relay: string, plan: DecodePlan): Promise<RtlTcpDevice
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+/** A failed status read is not a reason to stop; a changed band is. */
+async function watchBand(relay: string, plan: DecodePlan, ownClientId: number): Promise<string> {
+	try {
+		return bandChange(plan, await fetchRelayStatus(relay), ownClientId) ?? '';
+	} catch {
+		return '';
+	}
+}
+
 /** Decodes for `seconds`, printing one record per line (NDJSON with --json) and a final summary. */
 export async function runDecode(decoder: DecoderName, run: DecodeRun, io: CliIo): Promise<number> {
 	const plan = planDecode(decoder, run, await fetchRelayStatus(run.relay));
@@ -36,6 +45,8 @@ export async function runDecode(decoder: DecoderName, run: DecodeRun, io: CliIo)
 		for (const record of events.accept(message)) io.out(run.json ? JSON.stringify(record) : formatEvent(record));
 	});
 	const device = await openSource(run.relay, plan);
+	// The relay numbers clients in join order, so the newest one right after joining is this run.
+	const ownClientId = Math.max(...(await fetchRelayStatus(run.relay)).clients.map((client) => client.id));
 	let samples = 0;
 	await device.startRx((view) => {
 		samples += view.byteLength / 2;
@@ -46,6 +57,7 @@ export async function runDecode(decoder: DecoderName, run: DecodeRun, io: CliIo)
 	for (let second = 1; second <= run.seconds && !error; second++) {
 		await wait(1000);
 		error = device.getRxStreamStats().sourceError ?? engine.failure ?? '';
+		if (!error && second % 5 === 0) error = await watchBand(run.relay, plan, ownClientId);
 		if (second % 10 === 0)
 			io.err(
 				`t=${second}s  ${(samples / second / 1e6).toFixed(3)} MS/s  dsp ${((engine.busyMs / (performance.now() - started)) * 100).toFixed(0)}%  records ${events.count}`,

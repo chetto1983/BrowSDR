@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { planDecode, relayEndpoints } from '../../src/cli/plan';
+import { bandChange, planDecode, relayEndpoints } from '../../src/cli/plan';
 
 const idle = { connected: false, state: { frequency_hz: 0, sample_rate: 0, gain_index: 0 }, clients: [] };
 const busyAt = (frequencyHz, sampleRate) => ({
@@ -53,5 +53,26 @@ describe('decode planning', () => {
 
 	it('passes rtl_433 protocol selections through', () => {
 		expect(planDecode('rtl433', { protocols: '88,89' }, idle).params.rtl433Protocols).toBe('88,89');
+	});
+});
+
+describe('band watch during a run', () => {
+	const listener = planDecode('rtl433', {}, busyAt(433_700_000, 1_024_000));
+
+	it('accepts an unchanged band', () => {
+		expect(bandChange(listener, busyAt(433_700_000, 1_024_000))).toBeNull();
+	});
+
+	it('reports a controller that retuned underneath a listener', () => {
+		expect(bandChange(listener, busyAt(431_700_000, 1_024_000))).toMatch(/431\.700 MHz/);
+		expect(bandChange(listener, busyAt(433_700_000, 2_400_000))).toMatch(/2\.400 MS\/s/);
+	});
+
+	it('reports a controller that lost control to another client', () => {
+		const controller = planDecode('rtl433', {}, idle);
+		const takenOver = { ...busyAt(433_700_000, 1_024_000), clients: [{ id: 2, kind: 'ws', remote: 'b', controller: true }] };
+		expect(bandChange(controller, takenOver, 1)).toMatch(/control/);
+		const stillMine = { ...busyAt(433_700_000, 1_024_000), clients: [{ id: 1, kind: 'ws', remote: 'me', controller: true }] };
+		expect(bandChange(controller, stillMine, 1)).toBeNull();
 	});
 });

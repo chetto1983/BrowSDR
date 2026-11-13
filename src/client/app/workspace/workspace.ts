@@ -33,6 +33,7 @@ import { UiButton, UiNotice } from '@/ui';
 import { remoteConnectionIssue } from '@/platform/browser-capabilities';
 import type { CapabilityIssue } from '@/platform/types';
 import { connectIqReplay } from '@/app/replay/workspace';
+import { connectRtlTcp } from '@/app/network/rtl-tcp';
 import type { IqRecording } from '@/radio/iq-replay/types';
 
 export async function syncReceiverAvailability(app: AppInstance, running: boolean): Promise<void> {
@@ -109,6 +110,9 @@ export function createWorkspace(Receiver: ReceiverComponent) {
 			},
 			connectIqReplay(this: WorkspaceInstance, source: AppInstance, recording: IqRecording) {
 				return connectIqReplay(this, source, recording);
+			},
+			connectRtlTcp(this: WorkspaceInstance, source: AppInstance, address: string) {
+				return connectRtlTcp(this, source, address);
 			},
 			removeReceiver(this: WorkspaceInstance, id: string) {
 				return removeReceiver.call(this, runtime, id);

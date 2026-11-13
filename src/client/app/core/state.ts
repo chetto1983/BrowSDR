@@ -10,6 +10,7 @@ import type { POCSAGStatus } from '@/worker/decoders/types';
 import type { RdsStatus } from '@/worker/decoders/types';
 import type { GSCStatus } from '@/worker/decoders/types';
 import type { FlexStatus } from '@/worker/decoders/types';
+import { savedRtlTcpUrl } from '@/app/network/rtl-tcp';
 import type { PagerProtocol } from '@/worker/decoders/charsets';
 import type { RdsLogEntry, Rtl433LogEntry, PagerLogEntry, RdsStations } from '@/app/decoders/types';
 import type { WhisperLogEntry } from '@/app/decoders/whisper.types';
@@ -113,6 +114,7 @@ export function createAppData() {
 		devicePicker: {
 			show: false,
 			devices: [] as PairedDevices,
+			rtlTcpUrl: savedRtlTcpUrl(),
 		},
 		sidebarOpen: false,
 		showAbout: false,

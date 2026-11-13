@@ -53,6 +53,7 @@ import IqCapturePanel from './recording/panel';
 import IqReplayLoader from './replay/loader';
 import IqReplayPanel from './replay/panel';
 import { replayMethods } from './replay/connection';
+import { rtlTcpMethods } from './network/rtl-tcp';
 import * as uiComponents from '@/ui';
 import { coreCapabilityIssues } from '@/platform/browser-capabilities';
 
@@ -96,6 +97,7 @@ const Receiver = {
 		...uiHelperMethods,
 		...connectionMethods,
 		...replayMethods,
+		...rtlTcpMethods,
 		...canvasMethods,
 		...audioMethods,
 		...vfoMethods,

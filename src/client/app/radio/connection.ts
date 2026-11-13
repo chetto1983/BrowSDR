@@ -75,7 +75,8 @@ export const connectionMethods = {
 		this.devicePicker.devices = sdrDevices;
 		// Keep development receivers reachable without opening a USB prompt first.
 		// A slow getDevices() can expire activation; retain the explicit pairing button then.
-		if (!import.meta.env.DEV && !sdrDevices.length && navigator.userActivation?.isActive !== false) {
+		// A remembered rtl_tcp address keeps the picker, since that source needs no USB pairing.
+		if (!import.meta.env.DEV && !sdrDevices.length && !this.devicePicker.rtlTcpUrl && navigator.userActivation?.isActive !== false) {
 			return this.pairNewDevice();
 		}
 		this.devicePicker.show = true;
@@ -449,7 +450,7 @@ function restoreStartupTuning(receiver: AppInstance, requested: { centerFreq: nu
  * Start a new connection inside the receiver's tunable range, moving the VFOs with the
  * center so they stay in band. Supported saved frequencies are kept.
  */
-function fitTuningToDevice(receiver: AppInstance, range: [number, number] | undefined): string {
+export function fitTuningToDevice(receiver: AppInstance, range: [number, number] | undefined): string {
 	if (!range) return '';
 	const shift = normalizeFrequencyShiftMhz(receiver.radio.frequencyShift);
 	const tuned = receiver.radio.centerFreq - shift;
@@ -480,6 +481,7 @@ function startReceiverStatsPolling(this: AppInstance, tuning: { centerFreq: numb
 				if (this.remoteMode === 'client') return;
 				const stats = await this.backend.getDspStats();
 				if (!this.running) return;
+				if (stats?.sourceError) return disconnectFailedSource(this, stats.sourceError);
 				this.dspStats = stats;
 				if (this.dspStats && this.dspStats.squelchOpen) {
 					const now = Date.now();
@@ -507,6 +509,20 @@ function startReceiverStatsPolling(this: AppInstance, tuning: { centerFreq: numb
 			}
 		})().catch((error: unknown) => console.error(error));
 	}, 500);
+}
+
+const failingSources = new WeakSet<AppInstance>();
+
+/** A source that failed without a USB disconnect event is released like an unplugged device. */
+async function disconnectFailedSource(receiver: AppInstance, error: string): Promise<void> {
+	if (failingSources.has(receiver)) return;
+	failingSources.add(receiver);
+	try {
+		await receiver.disconnect();
+		receiver.showMsg('Receiver disconnected: ' + error);
+	} finally {
+		failingSources.delete(receiver);
+	}
 }
 
 function updateReceiverActivity(this: AppInstance, now: number) {

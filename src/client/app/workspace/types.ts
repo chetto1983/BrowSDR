@@ -37,6 +37,7 @@ export interface WorkspaceInstance extends WorkspaceData {
 	isDeviceConnected(device: USBDevice): boolean;
 	connectDevice(source: AppInstance, device: USBDevice | 'mock'): Promise<void>;
 	connectIqReplay(source: AppInstance, recording: IqRecording): Promise<void>;
+	connectRtlTcp(source: AppInstance, address: string): Promise<void>;
 	removeReceiver(id: string): Promise<void>;
 	broadcastReceivers(clientId?: string): void;
 	attachHostReceiver(app: AppInstance): Promise<void>;

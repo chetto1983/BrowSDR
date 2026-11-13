@@ -19,6 +19,49 @@
 	background: rgba(255, 255, 255, 0.06);
 }
 
+.device-picker-network {
+	cursor: default;
+}
+
+.device-picker-network:hover {
+	background: none;
+}
+
+.device-picker-network-row {
+	display: flex;
+	align-items: stretch;
+	gap: 8px;
+	margin-top: 10px;
+}
+
+.device-picker-network-row input {
+	flex: 1 1 auto;
+	min-width: 0;
+	background: #111;
+	border: 1px solid var(--border);
+	border-radius: 4px;
+	color: var(--text-main);
+	padding: 6px 10px;
+	font-family: 'Roboto Mono', monospace;
+	font-size: 12px;
+	outline: none;
+	transition: border-color 0.15s;
+}
+
+.device-picker-network-row input:focus {
+	border-color: var(--accent);
+}
+
+.device-picker-network-row input::placeholder {
+	color: var(--text-muted);
+}
+
+.device-picker-network-row .btn {
+	flex: 0 0 auto;
+	width: auto;
+	padding: 6px 16px;
+}
+
 .device-picker-name {
 	font-weight: 600;
 	font-size: 13px;

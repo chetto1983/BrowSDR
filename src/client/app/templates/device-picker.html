@@ -18,6 +18,14 @@
 				<span class="device-picker-name">IQ File Replay</span>
 				<span class="device-picker-meta">Load a recorded signal and replay it at its original sample rate</span>
 			</UiButton>
+			<form class="device-picker-item device-picker-network" @submit.prevent="connectRtlTcp(devicePicker.rtlTcpUrl)">
+				<div class="device-picker-name">Network RTL-SDR (rtl_tcp)</div>
+				<div class="device-picker-meta">rtl_tcp exposed through a WebSocket bridge such as websockify</div>
+				<div class="device-picker-network-row">
+					<UiInput v-model.trim="devicePicker.rtlTcpUrl" placeholder="ws://raspberrypi.local:8765" aria-label="rtl_tcp WebSocket address" spellcheck="false" />
+					<UiButton type="submit" variant="primary" :disabled="!devicePicker.rtlTcpUrl">Connect</UiButton>
+				</div>
+			</form>
 		</div>
 
 		<template #footer>

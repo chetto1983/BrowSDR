@@ -123,6 +123,8 @@ export interface ReceiverMethods {
 	_connectMock(): Promise<void>;
 	connectIqReplay(recording: IqRecording): Promise<void>;
 	_connectIqReplay(recording: IqRecording): Promise<void>;
+	connectRtlTcp(address: string): Promise<void>;
+	_connectRtlTcp(address: string): Promise<void>;
 	restartIqReplay(): Promise<void>;
 	replaceIqReplay(recording: IqRecording): Promise<void>;
 	disconnect(): Promise<void>;

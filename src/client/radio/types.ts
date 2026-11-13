@@ -83,6 +83,8 @@ export interface RxStreamStats {
 	usbReceivedSamples?: number;
 	usbElapsedMs?: number;
 	usbLastTransferBytes?: number;
+	/** Set by a source that can fail without a USB disconnect event, such as a network receiver. */
+	sourceError?: string;
 }
 
 export interface DeviceCapabilities {

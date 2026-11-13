@@ -1,0 +1,2 @@
+# Go sources and Raspberry Pi system files must keep LF endings, even on a Windows checkout.
+relay/** text eol=lf

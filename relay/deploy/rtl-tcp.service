@@ -1,0 +1,12 @@
+[Unit]
+Description=rtl_tcp IQ server for the RTL-SDR Blog V4 (localhost only)
+After=network.target
+
+[Service]
+User=pi
+ExecStart=/usr/bin/rtl_tcp -a 127.0.0.1 -p 1234 -s 2048000
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

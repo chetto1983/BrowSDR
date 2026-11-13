@@ -1,0 +1,136 @@
+[
+	{
+		"id": "radiopi-fm-100.6",
+		"type": "individual",
+		"category": "radio",
+		"name": "FM 100.6",
+		"freq": 100.6,
+		"mode": "wfm",
+		"bandwidth": 150000,
+		"snapInterval": 100000,
+		"deEmphasis": "50us",
+		"stereo": true,
+		"rds": true
+	},
+	{
+		"id": "radiopi-air-120.663",
+		"type": "individual",
+		"category": "aviation",
+		"name": "Air 120.663 (portante continua, ATIS?)",
+		"freq": 120.6633,
+		"mode": "am",
+		"bandwidth": 10000,
+		"snapInterval": 1000,
+		"deEmphasis": "none",
+		"lowPass": false
+	},
+	{
+		"id": "radiopi-air-132.920",
+		"type": "individual",
+		"category": "aviation",
+		"name": "Air 132.920 (intermittente)",
+		"freq": 132.92,
+		"mode": "am",
+		"bandwidth": 10000,
+		"snapInterval": 1000,
+		"deEmphasis": "none",
+		"lowPass": false
+	},
+	{
+		"id": "radiopi-aprs-144.800",
+		"type": "individual",
+		"category": "amateur",
+		"name": "APRS 144.800 (non ancora ricevuto)",
+		"freq": 144.8,
+		"mode": "nfm",
+		"bandwidth": 12500,
+		"snapInterval": 2500,
+		"deEmphasis": "none",
+		"aprs": true
+	},
+	{
+		"id": "radiopi-pmr446-ch1",
+		"type": "individual",
+		"category": "other",
+		"name": "PMR446 canale 1",
+		"freq": 446.00625,
+		"mode": "nfm",
+		"bandwidth": 12500,
+		"snapInterval": 6250,
+		"deEmphasis": "none"
+	},
+	{
+		"id": "radiopi-adsb-1090",
+		"type": "group",
+		"category": "aviation",
+		"name": "ADS-B 1090 (decoder)",
+		"centerFreq": 1090,
+		"sampleRate": 2400000,
+		"activeVfoIndex": 0,
+		"vfos": [{ "freq": 1090, "mode": "nfm", "bandwidth": 12500, "snapInterval": 2500, "deEmphasis": "none", "adsb": true, "volume": 0 }]
+	},
+	{
+		"id": "radiopi-tpms-433.92",
+		"type": "group",
+		"category": "utility",
+		"name": "rtl_433 433.92 (TPMS, sensori)",
+		"centerFreq": 433.7,
+		"sampleRate": 1024000,
+		"activeVfoIndex": 0,
+		"vfos": [
+			{
+				"freq": 433.92,
+				"mode": "nfm",
+				"bandwidth": 12500,
+				"snapInterval": 2500,
+				"deEmphasis": "none",
+				"rtl433": true,
+				"rtl433SampleRate": 250000,
+				"volume": 0
+			}
+		]
+	},
+	{
+		"id": "radiopi-rs41-403",
+		"type": "group",
+		"category": "weather",
+		"name": "Radiosonde RS41 403.000 (decoder)",
+		"centerFreq": 402.8,
+		"sampleRate": 1024000,
+		"activeVfoIndex": 0,
+		"vfos": [
+			{ "freq": 403, "mode": "nfm", "bandwidth": 12500, "snapInterval": 2500, "deEmphasis": "none", "radiosonde": true, "volume": 0 }
+		]
+	},
+	{
+		"id": "radiopi-tetra-390",
+		"type": "group",
+		"category": "emergency",
+		"name": "TETRA 390.3–391.0 (cifrato, solo spettro)",
+		"centerFreq": 390.65,
+		"sampleRate": 2400000,
+		"activeVfoIndex": 0,
+		"vfos": [{ "freq": 391.0024, "mode": "nfm", "bandwidth": 25000, "snapInterval": 6250, "deEmphasis": "none", "volume": 0 }]
+	},
+	{
+		"id": "radiopi-srd-868",
+		"type": "group",
+		"category": "utility",
+		"name": "rtl_433 868.3 (SRD, burst a 868.1)",
+		"centerFreq": 868.08,
+		"sampleRate": 1024000,
+		"activeVfoIndex": 0,
+		"vfos": [
+			{
+				"freq": 868.3,
+				"mode": "nfm",
+				"bandwidth": 12500,
+				"snapInterval": 2500,
+				"deEmphasis": "none",
+				"rtl433": true,
+				"rtl433SampleRate": 250000,
+				"volume": 0
+			}
+		]
+	}
+]

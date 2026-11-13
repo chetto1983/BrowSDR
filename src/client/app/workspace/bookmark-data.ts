@@ -44,6 +44,23 @@ export function parseBookmarks(json: string): Bookmark[] {
 	});
 }
 
+/**
+ * Adds the station's shipped bookmarks the browser has never been given. `seededIds` remembers
+ * every id handed out before, so a bookmark the user deleted stays deleted and one they edited
+ * keeps their edits.
+ */
+export function seedStationBookmarks(
+	saved: Bookmark[],
+	station: Bookmark[],
+	seededIds: string[],
+): { bookmarks: Bookmark[]; seededIds: string[] } {
+	const seeded = new Set(seededIds);
+	const present = new Set(saved.map((bookmark) => bookmark.id));
+	const added = station.filter((bookmark) => bookmark.id && !seeded.has(bookmark.id) && !present.has(bookmark.id));
+	for (const bookmark of station) if (bookmark.id) seeded.add(bookmark.id);
+	return { bookmarks: [...saved, ...added], seededIds: [...seeded] };
+}
+
 function validateGroupFields(value: Record<string, unknown>): void {
 	for (const key of ['centerFreq', 'sampleRate']) {
 		if (value[key] !== undefined && (typeof value[key] !== 'number' || !Number.isFinite(value[key])))

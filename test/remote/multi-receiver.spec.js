@@ -3,6 +3,7 @@ import { packReceiverChunk, unpackReceiverChunk, ReceiverTransport } from '@/rem
 import { createWorkspace, syncReceiverAvailability } from '@/app/workspace/workspace';
 import { remoteMethods } from '@/app/workspace/remote';
 import { bookmarkMethods } from '@/app/workspace/bookmarks';
+import { STATION_BOOKMARKS } from '@/app/workspace/station-bookmarks';
 import { reactive } from 'vue';
 
 vi.mock('@/remote/webrtc', () => ({
@@ -332,7 +333,12 @@ describe('per-receiver remote controls', () => {
 
 describe('shared receiver bookmarks', () => {
 	it('loads existing bookmarks once without replacing the collection referenced by receivers', () => {
-		vi.stubGlobal('localStorage', { getItem: () => JSON.stringify([{ id: 'saved', name: 'Saved' }]) });
+		// This browser already received the station bookmarks, so loading only reads what is saved.
+		const seeded = JSON.stringify(STATION_BOOKMARKS.map((bookmark) => bookmark.id));
+		vi.stubGlobal('localStorage', {
+			getItem: (key) => (key === 'browsdr.seededStationBookmarks' ? seeded : JSON.stringify([{ id: 'saved', name: 'Saved' }])),
+			setItem: () => {},
+		});
 		const workspace = reactive(makeWorkspace());
 		const shared = workspace.bookmarks;
 		bookmarkMethods.loadBookmarks.call(workspace);

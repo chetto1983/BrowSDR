@@ -51,6 +51,20 @@ export interface DecodeRun extends DecodeOptions {
 	json: boolean;
 }
 
+/** What a decoder bookmark from the station file stands for on the command line. */
+export interface BookmarkDecode {
+	decoder: DecoderName;
+	options: DecodeOptions & { freq: number };
+}
+
+export interface BookmarkSummary {
+	id: string;
+	name: string;
+	freq_mhz: number;
+	/** `decode <decoder>` for decoder groups, otherwise the demodulation mode for listening. */
+	use: string;
+}
+
 export interface CliIo {
 	out(line: string): void;
 	err(line: string): void;

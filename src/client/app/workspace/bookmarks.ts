@@ -1,7 +1,12 @@
 import type { AppInstance } from '@/app/core/receiver.types';
 import type { Bookmark } from './types';
-import { parseBookmarks } from './bookmark-data';
+import { parseBookmarks, seedStationBookmarks } from './bookmark-data';
+import { STATION_BOOKMARKS } from './station-bookmarks';
 import { makeDefaultVfo, BOOKMARK_CATEGORIES } from '@/app/core/constants';
+
+const BOOKMARKS_KEY = 'sdr-web-bookmarks';
+/** Ids of station bookmarks already handed to this browser (see seedStationBookmarks). */
+const SEEDED_KEY = 'browsdr.seededStationBookmarks';
 
 export const bookmarkMethods = {
 	categoryLabel(this: AppInstance, value: string | number) {
@@ -186,16 +191,8 @@ export const bookmarkMethods = {
 		if (name) this.showMsg(`"${name}" deleted.`);
 	},
 	saveBookmarks(this: AppInstance) {
-		// Sort in-place: individual freq bookmarks (by freq) first, then groups (by centerFreq)
-		this.bookmarks.sort((a, b) => {
-			const aIsIndividual = (a.type || 'group') === 'individual';
-			const bIsIndividual = (b.type || 'group') === 'individual';
-			if (aIsIndividual !== bIsIndividual) return aIsIndividual ? -1 : 1;
-			const aFreq = aIsIndividual ? a.freq : a.centerFreq;
-			const bFreq = bIsIndividual ? b.freq : b.centerFreq;
-			return (aFreq ?? 0) - (bFreq ?? 0);
-		});
-		localStorage.setItem('sdr-web-bookmarks', JSON.stringify(this.bookmarks));
+		sortBookmarks(this.bookmarks);
+		localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(this.bookmarks));
 	},
 	exportBookmarks(this: AppInstance) {
 		const json = JSON.stringify(this.bookmarks, null, 2);
@@ -245,13 +242,21 @@ export const bookmarkMethods = {
 	},
 	loadBookmarks(this: { bookmarks: Bookmark[]; workspace?: AppInstance['workspace'] }) {
 		if (this.workspace) return; // The workspace loads and owns the shared collection.
+		let saved: Bookmark[] = [];
 		try {
-			const json = localStorage.getItem('sdr-web-bookmarks');
-			if (json) {
-				this.bookmarks.splice(0, this.bookmarks.length, ...parseBookmarks(json));
-			}
+			const json = localStorage.getItem(BOOKMARKS_KEY);
+			if (json) saved = parseBookmarks(json);
 		} catch (_e) {
-			/* Best-effort cleanup or optional capability; retain the current state if unavailable. */
+			/* Unreadable storage: keep the current state rather than overwrite it with station defaults. */
+			return;
+		}
+		const seeded = seedStationBookmarks(saved, STATION_BOOKMARKS, readSeededIds());
+		this.bookmarks.splice(0, this.bookmarks.length, ...sortBookmarks(seeded.bookmarks));
+		try {
+			if (seeded.bookmarks.length !== saved.length) localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(this.bookmarks));
+			localStorage.setItem(SEEDED_KEY, JSON.stringify(seeded.seededIds));
+		} catch (_e) {
+			/* Storage is optional; the station bookmarks are offered again next time. */
 		}
 	},
 };
@@ -323,4 +328,25 @@ function bookmarkPacketDecoders(bm: Bookmark) {
 		acars: bm.acars ?? false,
 		aprs: bm.aprs ?? false,
 	};
+}
+
+function readSeededIds(): string[] {
+	try {
+		const ids: unknown = JSON.parse(localStorage.getItem(SEEDED_KEY) || '[]');
+		return Array.isArray(ids) ? ids.filter((id): id is string => typeof id === 'string') : [];
+	} catch (_e) {
+		return [];
+	}
+}
+
+/** Individual frequency bookmarks first (by frequency), then groups (by centre frequency). */
+function sortBookmarks(bookmarks: Bookmark[]): Bookmark[] {
+	return bookmarks.sort((a, b) => {
+		const aIsIndividual = (a.type || 'group') === 'individual';
+		const bIsIndividual = (b.type || 'group') === 'individual';
+		if (aIsIndividual !== bIsIndividual) return aIsIndividual ? -1 : 1;
+		const aFreq = aIsIndividual ? a.freq : a.centerFreq;
+		const bFreq = bIsIndividual ? b.freq : b.centerFreq;
+		return (aFreq ?? 0) - (bFreq ?? 0);
+	});
 }

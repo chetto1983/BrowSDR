@@ -1,11 +1,15 @@
 [Unit]
-Description=rtl_tcp relay: one dongle, many clients (WebSocket + rtl_tcp on the PC link)
+Description=rtl_tcp relay: one dongle, many clients (WebSocket + rtl_tcp on the PC link, BrowSDR over HTTPS)
 After=network-online.target rtl-tcp.service
 Wants=network-online.target rtl-tcp.service
 
 [Service]
 User=pi
-ExecStart=/usr/local/bin/rtl-relay -upstream 127.0.0.1:1234 -tcp 192.168.250.2:1234 -http 192.168.250.2:8765
+# rtl_tcp and plain WebSocket stay on the PC cable link; HTTPS (BrowSDR, radio, /status) answers on every network.
+ExecStart=/usr/local/bin/rtl-relay -upstream 127.0.0.1:1234 -tcp 192.168.250.2:1234 -http 192.168.250.2:8765 -https :8443 -static /usr/local/share/browsdr -certdir /var/lib/rtl-relay
+# Keeps the self-signed certificate across restarts, so phones accept it only once.
+StateDirectory=rtl-relay
+StateDirectoryMode=0700
 Restart=always
 RestartSec=3
 

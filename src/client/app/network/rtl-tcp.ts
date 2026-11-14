@@ -6,13 +6,23 @@ import { errorMessage } from '@/platform/errors';
 
 const STORAGE_KEY = 'browsdr.rtlTcpUrl';
 
-/** Last rtl_tcp bridge address, a per-browser convenience only. */
+/**
+ * The relay on the Pi serves this page over HTTPS next to the radio, so a page loaded that way
+ * finds the radio on its own origin; any other page has no relay to assume.
+ */
+export function defaultRtlTcpUrl(location: { protocol: string; host: string }): string {
+	return location.protocol === 'https:' ? `wss://${location.host}/` : '';
+}
+
+/** Last rtl_tcp bridge address (a per-browser convenience), else the relay that served the page. */
 export function savedRtlTcpUrl(): string {
+	let saved = '';
 	try {
-		return localStorage.getItem(STORAGE_KEY) ?? '';
+		saved = localStorage.getItem(STORAGE_KEY) ?? '';
 	} catch {
-		return '';
+		/* Storage may be unavailable; fall back to the default below. */
 	}
+	return saved || defaultRtlTcpUrl(globalThis.location ?? { protocol: '', host: '' });
 }
 
 function rememberRtlTcpUrl(address: string): void {

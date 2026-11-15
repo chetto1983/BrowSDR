@@ -11,6 +11,7 @@ vi.mock('@/remote/webrtc', () => ({
 }));
 
 import * as remoteBackend from '@/worker/streams/remote-clients';
+import { setRemoteHostTetraCallback } from '@/worker/decoders/tetra/remote';
 import { remoteMethods } from '@/app/workspace/remote';
 import { hdRadioMethods } from '@/app/decoders/hd-radio/feature';
 import { emptyHdStatus } from '@/worker/decoders/hd-radio/types';
@@ -37,6 +38,7 @@ function makeBackend() {
 	);
 	const backend = { _sampleRate: 2000000, _centerFreq: 106.2, sharedIqPools: [new ArrayBuffer(32)] };
 	for (const [name, method] of Object.entries(remoteBackend)) backend[name] = method.bind(backend);
+	backend.setRemoteHostTetraCallback = setRemoteHostTetraCallback.bind(backend);
 	return backend;
 }
 

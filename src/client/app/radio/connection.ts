@@ -36,6 +36,19 @@ function pagerProxies(app: AppInstance) {
 		),
 	] as const;
 }
+
+/** Packet decoder callbacks, in the order startRxStream takes them after the AIS callback. */
+function packetProxies(app: AppInstance) {
+	return [
+		Comlink.proxy(app._onBleMessage.bind(app)),
+		Comlink.proxy(app._onAcarsMessage.bind(app)),
+		Comlink.proxy(app._onRadiosondeMessage.bind(app)),
+		Comlink.proxy(app._onRtkMessage.bind(app)),
+		Comlink.proxy(app._onAprsMessage.bind(app)),
+		Comlink.proxy(app._onHdRadioMessage.bind(app)),
+		Comlink.proxy(app._onTetraMessage.bind(app)),
+	] as const;
+}
 import { getAllCatalogFilters, lookupDevice } from '@/radio/device-catalog';
 import { localUsbIssue } from '@/platform/browser-capabilities';
 
@@ -362,12 +375,7 @@ export const connectionMethods = {
 				Comlink.proxy((index: number, freq: number, msg: Parameters<AppInstance['_onAisMessage']>[2]) =>
 					this._onAisMessage(index, freq, msg),
 				),
-				Comlink.proxy(this._onBleMessage.bind(this)),
-				Comlink.proxy(this._onAcarsMessage.bind(this)),
-				Comlink.proxy(this._onRadiosondeMessage.bind(this)),
-				Comlink.proxy(this._onRtkMessage.bind(this)),
-				Comlink.proxy(this._onAprsMessage.bind(this)),
-				Comlink.proxy(this._onHdRadioMessage.bind(this)),
+				...packetProxies(this),
 			);
 		} catch (e) {
 			console.error('Error starting RX stream:', e);

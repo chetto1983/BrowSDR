@@ -204,7 +204,9 @@ function needsIq(params: VfoParams): boolean {
 		params.rtk === true ||
 		params.ble === true ||
 		params.acars === true ||
-		params.aprs === true
+		params.aprs === true ||
+		params.tetra === true ||
+		!!params.tetraear
 	);
 }
 
@@ -225,5 +227,7 @@ function disabledDecoders(params: VfoParams): VfoParams {
 		ble: false,
 		acars: false,
 		aprs: false,
+		tetra: false,
+		tetraear: 0,
 	};
 }

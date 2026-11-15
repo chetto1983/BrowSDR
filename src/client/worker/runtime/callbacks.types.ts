@@ -5,6 +5,7 @@ import type { RadiosondeMessage } from '@/worker/decoders/radiosonde/types';
 import type { RtkMessage } from '@/worker/decoders/rtk/types';
 import type { AcarsMessage } from '@/worker/decoders/acars/types';
 import type { AprsMessage } from '@/worker/decoders/aprs/types';
+import type { TetraMessage } from '@/worker/decoders/tetra/types';
 import type { AdsbMessage } from '@/worker/decoders/adsb/types';
 import type { DSDStatus } from '@/worker/decoders/dsd/types';
 import type {
@@ -48,6 +49,7 @@ export type RadiosondeCallback = DecoderCallback<RadiosondeMessage>;
 export type RtkCallback = DecoderCallback<RtkMessage>;
 export type AcarsCallback = DecoderCallback<AcarsMessage>;
 export type AprsCallback = DecoderCallback<AprsMessage>;
+export type TetraCallback = DecoderCallback<TetraMessage>;
 export type AdsbCallback = DecoderCallback<AdsbMessage>;
 export type Rtl433Callback = DecoderCallback<Rtl433Message>;
 export type HdRadioCallback = DecoderCallback<HdMessage>;

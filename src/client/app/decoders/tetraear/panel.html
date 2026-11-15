@@ -1,0 +1,75 @@
+<section v-if="receiver.tetraear.panelOpen" class="adsb-panel tetraear-panel" aria-label="TetraEar decoder">
+	<UiToolHeader variant="msgcenter" closable close-label="Close TetraEar panel" @close="receiver.tetraear.panelOpen = false">
+		TetraEar <span class="msgcenter-count">{{ frames.length }} frames</span>
+		<template #actions>
+			<UiSelect v-model.number="vfoIndex" aria-label="TetraEar VFO" :disabled="connecting || !!receiver.tetraear.session">
+				<option v-for="(vfo, i) in receiver.vfos" :key="i" :value="i">VFO {{ i + 1 }} · {{ vfo.freq.toFixed(4) }} MHz</option>
+			</UiSelect>
+			<UiButton
+				variant="transcript"
+				:disabled="!receiver.running || receiver.remoteMode === 'client'"
+				@click="connecting || receiver.tetraear.session ? stop() : start()"
+			>
+				{{ connecting || receiver.tetraear.session ? 'Disconnect' : 'Connect TetraEar' }}
+			</UiButton>
+			<UiButton variant="transcript" @click="clear">Clear frames</UiButton>
+		</template>
+	</UiToolHeader>
+	<div class="adsb-summary">
+		<label
+			>Bridge
+			<input
+				v-model="address"
+				aria-label="TetraEar bridge address"
+				type="url"
+				size="30"
+				:disabled="connecting || !!receiver.tetraear.session"
+		/></label>
+		<UiCheckbox
+			v-model="audioEnabled"
+			label="Experimental voice"
+			input-label="TetraEar voice"
+			:disabled="connecting || !!receiver.tetraear.session"
+		/>
+		<UiSelect v-model.number="slot" aria-label="TetraEar voice timeslot" :disabled="connecting || !!receiver.tetraear.session">
+			<option v-for="n in 4" :key="n" :value="n">Voice slot {{ n }}</option>
+		</UiSelect>
+		<span role="status">{{ status }}</span>
+		<span>{{ counters.valid }} CRC-valid blocks · {{ counters.rejected }} CRC failures · {{ counters.bursts }} bursts</span>
+	</div>
+	<p class="ble-notice">
+		Run <code>npm run setup:tetraear</code> once, then <code>npm run tetraear</code> on this computer. Tune a TETRA main downlink carrier
+		and start reception. BrowSDR supplies the signal; TetraEar does not tune the radio. Voice requires native speech codecs and a clear
+		traffic channel. Encrypted payloads are not decrypted.
+	</p>
+	<p v-if="receiver.remoteMode === 'client'" class="ble-notice">
+		Use a local receiver, RTL-TCP connection or IQ replay for TetraEar. WebRTC guest decoding is unavailable.
+	</p>
+	<div class="tetraear-frames">
+		<table class="adsb-table" aria-label="TetraEar frames">
+			<thead>
+				<tr>
+					<th>Slot</th>
+					<th>Type</th>
+					<th>Network</th>
+					<th>Address</th>
+					<th>Encryption</th>
+					<th>Message / call</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr v-for="(frame, i) in frames" :key="i">
+					<td>{{ frame.slot ?? '—' }}</td>
+					<td>{{ frame.kind }}</td>
+					<td>{{ frame.mcc ?? '—' }} / {{ frame.mnc ?? '—' }}</td>
+					<td>{{ frame.address ?? '—' }}</td>
+					<td>{{ frame.encrypted === null ? 'Unknown' : frame.encrypted ? 'Encrypted' : 'Clear' }}</td>
+					<td>{{ frame.text || (frame.call ? JSON.stringify(frame.call) : '—') }}</td>
+				</tr>
+				<tr v-if="!frames.length">
+					<td colspan="6">No validated frames received yet.</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+</section>

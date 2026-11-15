@@ -1,0 +1,28 @@
+.tetraear-frames {
+	flex: 1;
+	min-height: 0;
+	overflow: auto;
+}
+.tetraear-panel .adsb-table {
+	table-layout: auto;
+	min-width: 650px;
+}
+.tetraear-panel .adsb-table th {
+	width: auto;
+}
+.tetraear-panel .adsb-table td:last-child {
+	white-space: normal;
+	overflow-wrap: anywhere;
+	max-width: 480px;
+}
+.tetraear-panel input[type='url'] {
+	background: var(--bg-dark);
+	color: var(--text-main);
+	border: 1px solid var(--border);
+	border-radius: 4px;
+	padding: 5px 8px;
+	max-width: 70vw;
+}
+.tetraear-panel input:disabled {
+	opacity: 0.65;
+}

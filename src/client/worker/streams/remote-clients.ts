@@ -19,6 +19,7 @@ import type {
 	HostStats,
 } from '@/worker/runtime/callbacks.types';
 import { forwardHdRadioMessage } from '@/worker/decoders/hd-radio/routing';
+import { forwardTetra } from '@/worker/decoders/tetra/remote';
 import { hdAudioChanged } from '@/worker/decoders/hd-radio/types';
 export { setRemoteHostHdRadioCallback } from '@/worker/decoders/hd-radio/routing';
 import type { DspAudio, DspOutput } from '@/worker/runtime/dsp-messages.types';
@@ -689,6 +690,7 @@ function forwardPacketMessage(backend: Backend, clientId: string, state: RemoteC
 		forwardAcars(backend, clientId, state, index, msg);
 		return true;
 	}
+	if (forwardTetra(backend, clientId, state, index, msg)) return true;
 	if (msg.type === 'aprs') {
 		const params = state.params[index];
 		if (params?.aprs && params.freq === msg.freq) backend._remoteHostAprsCb?.(clientId, index, params.freq, msg);

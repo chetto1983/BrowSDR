@@ -4,6 +4,7 @@ import type { AisMessage } from '@/worker/decoders/ais/types';
 import type { RadiosondeMessage } from '@/worker/decoders/radiosonde/types';
 import type { AcarsMessage } from '@/worker/decoders/acars/types';
 import type { AprsMessage } from '@/worker/decoders/aprs/types';
+import type { TetraMessage } from '@/worker/decoders/tetra/types';
 import type { DataConnection } from 'peerjs';
 import type { DeviceCapabilities } from '@/radio/types';
 import type { RadioState } from '@/app/core/types';
@@ -63,6 +64,7 @@ export type RemoteCommand =
 	| { type: 'acars'; vfoIndex: number; freq: number; msg: AcarsMessage }
 	| { type: 'hd_radio'; vfoIndex: number; freq: number; msg: HdMessage }
 	| { type: 'aprs'; vfoIndex: number; freq: number; msg: AprsMessage }
+	| { type: 'tetra'; vfoIndex: number; freq: number; msg: TetraMessage }
 	| { type: 'adsb'; vfoIndex: number; freq: number; msg: AdsbMessage }
 	| { type: 'rtl433'; vfoIndex: number; freq: number; msg: Rtl433Message }
 	| { type: 'pocsag'; vfoIndex: number; freq: number; msg: POCSAGMessage }

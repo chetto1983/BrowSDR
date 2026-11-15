@@ -4,6 +4,29 @@ import type { VfoParams } from '@/worker/runtime/types';
 import { sidebandOffsetHz } from '@/worker/decoders/ssb';
 import { rtl433SampleRate } from '@/worker/decoders/rtl433';
 
+export function needsVfoInput(params: VfoParams): boolean {
+	return (
+		params.enabled ||
+		params.mode === 'hdradio' ||
+		params.pocsag ||
+		(params.rds && params.mode === 'wfm') ||
+		!!params.tetraear ||
+		[
+			params.gsc,
+			params.flex,
+			params.rtl433,
+			params.adsb,
+			params.ais,
+			params.radiosonde,
+			params.rtk,
+			params.ble,
+			params.acars,
+			params.aprs,
+			params.tetra,
+		].some((enabled) => enabled === true)
+	);
+}
+
 export function planSharedBands(sampleRate: number, centerFreq: number, params: VfoParams[], enabled: boolean): ChannelPlan {
 	const active = params
 		.map((value, index) => ({ value, index }))
@@ -21,6 +44,8 @@ export function planSharedBands(sampleRate: number, centerFreq: number, params: 
 				value.ble ||
 				value.acars ||
 				value.aprs ||
+				value.tetra ||
+				value.tetraear ||
 				value.rtl433 ||
 				(value.rds && value.mode === 'wfm'),
 		);
@@ -70,5 +95,7 @@ function channelWidth(value: VfoParams, sampleRate: number): number {
 		value.ble ? 2000000 : 0,
 		value.acars ? 48000 : 0,
 		value.aprs ? 48000 : 0,
+		value.tetra ? 72000 : 0,
+		value.tetraear ? 72000 : 0,
 	);
 }

@@ -158,6 +158,13 @@ run `npm run test:storybook` to render the catalog and check story interactions.
 
 WebUSB needs these devices to use the **WinUSB** driver. If connecting fails with **Access denied**, install WinUSB with [Zadig](https://zadig.akeo.ie/): for **LimeSDR-USB**, replace the Cypress **CYUSB3** driver; for **PlutoSDR**, replace the driver on its **IIO** interface only (enable _List All Devices_). Do not replace drivers for USB hubs or unrelated devices, and switch back when native SDR applications need the original driver. See [Chrome's Windows WebUSB requirements](https://developer.chrome.com/docs/capabilities/build-for-webusb#windows) and the notes in [`limesdr`](src/client/devices/limesdr/README.md) and [`plutosdr`](src/client/devices/plutosdr/README.md).
 
+### TetraEar
+
+**Tools → TetraEar** connects a receiving VFO to a local Python TetraEar bridge
+for TETRA frames, call metadata, SDS and experimental voice. Run
+`npm run setup:tetraear` once, then `npm run tetraear`.
+See [setup, HTTPS, supported functions and validation](docs/tetraear.md).
+
 ### IQ precision and recording size
 
 Reception retains each driver's native sample precision: HackRF and RTL-SDR use

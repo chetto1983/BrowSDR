@@ -4,6 +4,20 @@ import { makeDefaultVfo, MODE_DEFAULTS } from '@/app/core/constants';
 import { isValidDisplayFrequencyMhz, minimumDisplayFrequencyMhz } from '@/radio/frequency-shift';
 import { resetDiscoveryFollowers } from '@/app/decoders/rtk/discovery/followers';
 
+/** Packet decoders run only while their VFO is inside the received band. */
+function packetDecoders(vfo: Vfo, inBandwidth: boolean) {
+	const on = (enabled: boolean | undefined) => enabled && inBandwidth;
+	return {
+		adsb: on(vfo.adsb),
+		ais: on(vfo.ais),
+		radiosonde: on(vfo.radiosonde),
+		ble: on(vfo.ble),
+		acars: on(vfo.acars),
+		aprs: on(vfo.aprs),
+		tetra: on(vfo.tetra),
+	};
+}
+
 function rtkEnabled(vfo: Vfo, inBandwidth: boolean): boolean {
 	return !!vfo.rtk && (vfo.rtkProfile === 'scan' || inBandwidth);
 }
@@ -79,6 +93,7 @@ export const vfoMethods = {
 			const inBandwidth = this.isFreqInBandwidth(vfo.freq);
 			const params = {
 				freq: vfo.freq,
+				tetraear: this.remoteMode !== 'client' && this.tetraear?.vfo === vfo ? this.tetraear.session : 0,
 				mode: vfo.mode,
 				hdProgram: vfo.hdProgram,
 				enabled: vfo.enabled && inBandwidth,
@@ -106,9 +121,7 @@ export const vfoMethods = {
 				flex: vfo.flex,
 				// Plain clone (same reactive-proxy reason as pocsagCharset above).
 				flexCharset: vfo.flexCharset ? { ...vfo.flexCharset } : undefined,
-				adsb: vfo.adsb && inBandwidth,
-				ais: vfo.ais && inBandwidth,
-				radiosonde: vfo.radiosonde && inBandwidth,
+				...packetDecoders(vfo, inBandwidth),
 				rtk: rtkEnabled(vfo, inBandwidth),
 				rtkProfile: vfo.rtkProfile,
 				rtkClockPpm: vfo.rtkClockPpm,
@@ -116,9 +129,6 @@ export const vfoMethods = {
 				rtkFollowSource: vfo.rtkFollowSource,
 				rtkScanStart: vfo.rtkScanStart,
 				rtkScanEnd: vfo.rtkScanEnd,
-				ble: vfo.ble && inBandwidth,
-				acars: vfo.acars && inBandwidth,
-				aprs: vfo.aprs && inBandwidth,
 				rtl433: vfo.rtl433 && inBandwidth,
 				rtl433SampleRate: vfo.rtl433SampleRate,
 				rtl433Protocols: vfo.rtl433Protocols,
@@ -395,7 +405,7 @@ function removeDecoderState(receiver: AppInstance, index: number): void {
 	receiver.ble?.status.splice(index, 1);
 	receiver.rtk.frames.splice(index, 1);
 	receiver.rtk.frequencies.splice(index, 1);
-	for (const decoder of [receiver.adsb, receiver.ais, receiver.radiosonde, receiver.rtk, receiver.acars, receiver.aprs]) {
+	for (const decoder of [receiver.adsb, receiver.ais, receiver.radiosonde, receiver.rtk, receiver.acars, receiver.aprs, receiver.tetra]) {
 		decoder?.status.splice(index, 1);
 		decoder?.sources.splice(index, 1);
 	}

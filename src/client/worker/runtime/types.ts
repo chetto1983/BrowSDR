@@ -29,6 +29,8 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 */
 
 export interface VfoParams {
+	/** Explicit local TetraEar session, never restored from bookmarks. */
+	tetraear?: number;
 	rtk?: boolean;
 	rtkProfile?: RtkProfileMode;
 	rtkClockPpm?: number;
@@ -43,6 +45,7 @@ export interface VfoParams {
 	ble?: boolean;
 	acars?: boolean;
 	aprs?: boolean;
+	tetra?: boolean;
 	rtl433?: boolean;
 	rtl433SampleRate?: number;
 	rtl433Protocols?: string;

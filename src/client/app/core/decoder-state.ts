@@ -20,4 +20,6 @@ export function clearDecoderSources(receiver: AppInstance): void {
 	receiver.acars.sources = [];
 	receiver.aprs.status = [];
 	receiver.aprs.sources = [];
+	receiver.tetra.status = [];
+	receiver.tetra.sources = [];
 }

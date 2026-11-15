@@ -18,6 +18,7 @@ import type {
 	BleCallback,
 	AcarsCallback,
 	AprsCallback,
+	TetraCallback,
 	HdRadioCallback,
 	DsdCallback,
 } from '@/worker/runtime/callbacks.types';
@@ -70,6 +71,7 @@ export async function startRxStream(
 	rtkCallback: RtkCallback | null = null,
 	aprsCallback: AprsCallback | null = null,
 	hdRadioCallback: HdRadioCallback | null = null,
+	tetraCallback?: TetraCallback | null,
 ): Promise<void> {
 	if (_streamStarting) return;
 	_streamStarting = true;
@@ -120,6 +122,7 @@ export async function startRxStream(
 			rtkCallback,
 			aprsCallback,
 			hdRadioCallback,
+			tetraCallback,
 		});
 
 		// ── DSP Performance Counters ──────────────────────────────────
@@ -190,6 +193,7 @@ function initializeWorkers(
 		rtkCallback: RtkCallback | null;
 		aprsCallback?: AprsCallback | null;
 		hdRadioCallback: HdRadioCallback | null;
+		tetraCallback?: TetraCallback | null;
 	},
 ): void {
 	initializeVfoWorkers(
@@ -208,6 +212,7 @@ function initializeWorkers(
 		callbacks.rtkCallback,
 		callbacks.aprsCallback,
 		callbacks.hdRadioCallback,
+		callbacks.tetraCallback,
 	);
 }
 

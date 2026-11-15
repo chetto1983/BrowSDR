@@ -5,6 +5,7 @@ import type { RadiosondeStatus, Radiosonde } from '@/worker/decoders/radiosonde/
 import type { RtkStatus, RtkStation, RtkMessage } from '@/worker/decoders/rtk/types';
 import type { AcarsStatus, AcarsRecord } from '@/worker/decoders/acars/types';
 import type { AprsPacket, AprsStation, AprsStatus } from '@/worker/decoders/aprs/types';
+import type { TetraCell, TetraStatus } from '@/worker/decoders/tetra/types';
 import type { AdsbStatus, Aircraft } from '@/worker/decoders/adsb/types';
 import type { POCSAGStatus } from '@/worker/decoders/types';
 import type { RdsStatus } from '@/worker/decoders/types';
@@ -191,6 +192,7 @@ function createDecoderAndBookmarkState() {
 			devices: [] as BleDevice[],
 			message: '',
 		},
+		tetraear: { panelOpen: false, session: 0, vfo: null as Vfo | null },
 		acars: {
 			panelOpen: false,
 			status: [] as Array<AcarsStatus | null>,
@@ -200,6 +202,11 @@ function createDecoderAndBookmarkState() {
 			panelOpen: false,
 			status: [] as Array<AprsStatus | null>,
 			sources: [] as Array<{ freq: number; stations: AprsStation[]; packets: AprsPacket[] } | null>,
+		},
+		tetra: {
+			panelOpen: false,
+			status: [] as Array<TetraStatus | null>,
+			sources: [] as Array<{ freq: number; cells: TetraCell[] } | null>,
 		},
 		ais: { panelOpen: false, status: [] as Array<AisStatus | null>, sources: [] as Vessel[][] },
 		radiosonde: { panelOpen: false, status: [] as Array<RadiosondeStatus | null>, sources: [] as Radiosonde[][] },

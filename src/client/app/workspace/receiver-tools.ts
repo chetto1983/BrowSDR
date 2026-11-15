@@ -4,103 +4,125 @@ import { UiButton, UiIcon, UiMenu } from '@/ui';
 import type { UiMenuGroup, UiMenuItem } from '@/ui/menus/types';
 
 function toolGroups(receiver: AppInstance): UiMenuGroup[] {
+	return [{ label: 'Decoders', items: decoderTools(receiver) }, utilityGroup(receiver)];
+}
+
+function decoderTools(receiver: AppInstance): UiMenuItem[] {
 	const vfos = receiver.vfos;
 	return [
 		{
-			label: 'Decoders',
-			items: [
-				{
-					id: 'acars',
-					label: 'ACARS',
-					description: 'Aircraft messages',
-					icon: 'message',
-					active: vfos.some((vfo) => vfo.acars),
-					open: receiver.acars.panelOpen,
-				},
-				{
-					id: 'adsb',
-					label: 'ADS-B',
-					description: 'Aircraft tracking',
-					icon: 'aircraft',
-					active: vfos.some((vfo) => vfo.adsb),
-					open: receiver.adsb.panelOpen,
-				},
-				{
-					id: 'ais',
-					label: 'AIS',
-					description: 'Vessel tracking',
-					icon: 'vessel',
-					active: vfos.some((vfo) => vfo.ais),
-					open: receiver.ais.panelOpen,
-				},
-				{
-					id: 'aprs',
-					label: 'APRS',
-					description: 'Amateur stations, messages & weather',
-					icon: 'location',
-					active: vfos.some((vfo) => vfo.aprs),
-					open: receiver.aprs.panelOpen,
-				},
-				{
-					id: 'ble',
-					label: 'Bluetooth LE',
-					description: 'Bluetooth devices',
-					icon: 'bluetooth',
-					active: vfos.some((vfo) => vfo.ble),
-					open: receiver.ble.panelOpen,
-				},
-				{
-					id: 'rds',
-					label: 'FM RDS',
-					description: 'FM station information',
-					icon: 'radio',
-					active: vfos.some((vfo) => vfo.rds && vfo.mode === 'wfm'),
-					open: receiver.rds.panelOpen,
-				},
-				{
-					id: 'whisper',
-					label: 'Live Transcription',
-					description: 'Speech to text · Whisper',
-					icon: 'microphone',
-					active: receiver.whisper.active,
-					open: receiver.whisper.panelOpen,
-				},
-				{
-					id: 'pocsag',
-					label: 'Pager',
-					description: 'Pager messages (POCSAG, GSC, FLEX)',
-					icon: 'pager',
-					active: vfos.some((vfo) => vfo.pocsag || vfo.gsc || vfo.flex),
-					open: receiver.pager.panelOpen,
-				},
-				{
-					id: 'radiosonde',
-					label: 'Radiosonde',
-					description: 'Weather balloon tracking · RS41',
-					icon: 'balloon',
-					active: vfos.some((vfo) => vfo.radiosonde),
-					open: receiver.radiosonde.panelOpen,
-				},
-				{
-					id: 'rtk',
-					label: 'RTK',
-					description: 'RTK LoRa corrections',
-					icon: 'radio',
-					active: vfos.some((vfo) => vfo.rtk),
-					open: receiver.rtk.panelOpen,
-				},
-				{
-					id: 'rtl433',
-					label: 'Wireless Sensors',
-					description: 'Sensor & device data · rtl_433',
-					icon: 'sensors',
-					active: vfos.some((vfo) => vfo.rtl433),
-					open: receiver.rtl433.panelOpen,
-				},
-			],
+			id: 'acars',
+			label: 'ACARS',
+			description: 'Aircraft messages',
+			icon: 'message',
+			active: vfos.some((vfo) => vfo.acars),
+			open: receiver.acars.panelOpen,
 		},
-		utilityGroup(receiver),
+		{
+			id: 'adsb',
+			label: 'ADS-B',
+			description: 'Aircraft tracking',
+			icon: 'aircraft',
+			active: vfos.some((vfo) => vfo.adsb),
+			open: receiver.adsb.panelOpen,
+		},
+		{
+			id: 'ais',
+			label: 'AIS',
+			description: 'Vessel tracking',
+			icon: 'vessel',
+			active: vfos.some((vfo) => vfo.ais),
+			open: receiver.ais.panelOpen,
+		},
+		{
+			id: 'aprs',
+			label: 'APRS',
+			description: 'Amateur stations, messages & weather',
+			icon: 'location',
+			active: vfos.some((vfo) => vfo.aprs),
+			open: receiver.aprs.panelOpen,
+		},
+		{
+			id: 'ble',
+			label: 'Bluetooth LE',
+			description: 'Bluetooth devices',
+			icon: 'bluetooth',
+			active: vfos.some((vfo) => vfo.ble),
+			open: receiver.ble.panelOpen,
+		},
+		{
+			id: 'rds',
+			label: 'FM RDS',
+			description: 'FM station information',
+			icon: 'radio',
+			active: vfos.some((vfo) => vfo.rds && vfo.mode === 'wfm'),
+			open: receiver.rds.panelOpen,
+		},
+		{
+			id: 'whisper',
+			label: 'Live Transcription',
+			description: 'Speech to text · Whisper',
+			icon: 'microphone',
+			active: receiver.whisper.active,
+			open: receiver.whisper.panelOpen,
+		},
+		{
+			id: 'pocsag',
+			label: 'Pager',
+			description: 'Pager messages (POCSAG, GSC, FLEX)',
+			icon: 'pager',
+			active: vfos.some((vfo) => vfo.pocsag || vfo.gsc || vfo.flex),
+			open: receiver.pager.panelOpen,
+		},
+		{
+			id: 'radiosonde',
+			label: 'Radiosonde',
+			description: 'Weather balloon tracking · RS41',
+			icon: 'balloon',
+			active: vfos.some((vfo) => vfo.radiosonde),
+			open: receiver.radiosonde.panelOpen,
+		},
+		{
+			id: 'rtk',
+			label: 'RTK',
+			description: 'RTK LoRa corrections',
+			icon: 'radio',
+			active: vfos.some((vfo) => vfo.rtk),
+			open: receiver.rtk.panelOpen,
+		},
+		tetraTool(receiver),
+		tetraEarTool(receiver),
+		{
+			id: 'rtl433',
+			label: 'Wireless Sensors',
+			description: 'Sensor & device data · rtl_433',
+			icon: 'sensors',
+			active: vfos.some((vfo) => vfo.rtl433),
+			open: receiver.rtl433.panelOpen,
+		},
 	];
+}
+
+function tetraTool(receiver: AppInstance): UiMenuItem {
+	return {
+		id: 'tetra',
+		label: 'TETRA',
+		description: 'Cell broadcast: network, colour code, services',
+		icon: 'radio',
+		active: receiver.vfos.some((vfo) => vfo.tetra),
+		open: receiver.tetra.panelOpen,
+	};
+}
+
+function tetraEarTool(receiver: AppInstance): UiMenuItem {
+	return {
+		id: 'tetraear',
+		label: 'TetraEar',
+		description: 'TETRA frames, messages & voice bridge',
+		icon: 'radio',
+		active: !!receiver.tetraear?.session,
+		open: receiver.tetraear?.panelOpen,
+	};
 }
 
 function utilityGroup(receiver: AppInstance): UiMenuGroup {
@@ -161,6 +183,8 @@ function selectTool(receiver: AppInstance, id: string, openOnly = false): void {
 			rtk: receiver.rtk,
 			acars: receiver.acars,
 			aprs: receiver.aprs,
+			tetra: receiver.tetra,
+			tetraear: receiver.tetraear,
 		};
 		const panel = panels[id as keyof typeof panels];
 		if (panel) panel.panelOpen = openOnly || !panel.panelOpen;

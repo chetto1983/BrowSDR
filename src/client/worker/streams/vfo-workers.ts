@@ -10,12 +10,14 @@ import type {
 	BleCallback,
 	AcarsCallback,
 	AprsCallback,
+	TetraCallback,
 	HdRadioCallback,
 } from '@/worker/runtime/callbacks.types';
 import { routeHdRadioMessage } from '@/worker/decoders/hd-radio/routing';
 import type { DspOutput } from '@/worker/runtime/dsp-messages.types';
 import type { VfoParams, VfoState } from '@/worker/runtime/types';
 import type { Backend } from '@/worker/runtime/backend';
+import { routeTetraEar } from '@/worker/decoders/tetraear/routing';
 import { AUDIO_QUEUE_CAPACITY } from './audio-queue';
 import { deviceIqFormat, iqComponentBytes } from '@/radio/iq/format';
 import { IqDispatcher } from './iq-dispatch';
@@ -36,6 +38,7 @@ export function initializeVfoWorkers(
 	rtkCallback: RtkCallback | null = null,
 	aprsCallback: AprsCallback | null = null,
 	hdRadioCallback: HdRadioCallback | null = null,
+	tetraCallback?: TetraCallback | null,
 ) {
 	// Free any existing DDCs and timers
 	if (backend.ddcs)
@@ -101,6 +104,7 @@ export function initializeVfoWorkers(
 				rtkCallback,
 				aprsCallback,
 				hdRadioCallback,
+				tetraCallback,
 			);
 		worker.postMessage({
 			type: 'init',
@@ -136,7 +140,9 @@ export function routeLocalWorkerMessage(
 	rtkCallback: RtkCallback | null = null,
 	aprsCallback: AprsCallback | null = null,
 	hdRadioCallback: HdRadioCallback | null = null,
+	tetraCallback?: TetraCallback | null,
 ) {
+	if (routeTetraMessages(backend, worker, msg, tetraCallback)) return;
 	if (
 		routePacketMessage(
 			backend,
@@ -169,6 +175,18 @@ export function routeLocalWorkerMessage(
 		if (currentIndex === -1) return;
 		if (dsdStatusCallback) dsdStatusCallback(currentIndex, msg.status);
 	} else routeWorkerDiagnostics(backend, worker, msg);
+}
+
+function routeTetraMessages(backend: Backend, worker: Worker, msg: DspOutput, callback?: TetraCallback | null): boolean {
+	if (msg.type === 'tetra') {
+		routeToVfo(backend, worker, msg, 'tetra', callback ?? null);
+		return true;
+	}
+	if (msg.type === 'tetraear_symbols') {
+		routeTetraEar(backend, worker, msg);
+		return true;
+	}
+	return false;
 }
 
 function routeRdsMessages(
@@ -275,7 +293,7 @@ function routeToVfo<T extends { freq: number }>(
 	backend: Backend,
 	worker: Worker,
 	msg: T,
-	decoder: 'aprs' | 'radiosonde' | 'rtk' | 'ble',
+	decoder: 'aprs' | 'tetra' | 'radiosonde' | 'rtk' | 'ble',
 	callback: ((index: number, freq: number, msg: T) => void) | null,
 ): true {
 	const index = backend.dspWorkers!.indexOf(worker);

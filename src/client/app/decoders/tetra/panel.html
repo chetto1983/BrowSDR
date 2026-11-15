@@ -1,0 +1,76 @@
+<section v-if="receiver.tetra.panelOpen" class="adsb-panel tetra-panel" aria-label="TETRA cells">
+	<UiToolHeader variant="msgcenter" closable close-label="Close TETRA panel" @close="receiver.toggleTetraPanel">
+		TETRA Cells <span class="msgcenter-count">{{ cells.length }} cells</span>
+		<template #actions>
+			<UiSelect v-model.number="receiver.activeVfoIndex" aria-label="TETRA VFO" class="decoder-vfo-select">
+				<option v-for="(vfo, i) in receiver.vfos" :key="i" :value="i">VFO {{ i + 1 }} · {{ vfo.freq.toFixed(4) }} MHz</option>
+			</UiSelect>
+			<UiCheckbox
+				v-if="selectedVfo"
+				class="adsb-decode-control"
+				v-model="selectedVfo.tetra"
+				:label="'Decode VFO ' + (receiver.activeVfoIndex + 1)"
+				:input-label="'TETRA decoding for VFO ' + (receiver.activeVfoIndex + 1)"
+				:disabled="!isTetraFrequency(selectedVfo.freq) && !selectedVfo.tetra"
+				@change="receiver.updateBackendVfoParams(receiver.activeVfoIndex)"
+			/>
+		</template>
+	</UiToolHeader>
+	<div class="adsb-summary">
+		<span v-if="!receiver.running">Reception stopped</span>
+		<template v-for="(vfo, i) in receiver.vfos" :key="i">
+			<span v-if="vfo.tetra" :class="{ 'rtl433-error': receiver.tetra.status[i]?.state === 'error' }"
+				>VFO {{ i + 1 }} · {{ receiver.tetraStatusText(i) }}</span
+			>
+		</template>
+		<span v-if="!active"
+			>Put a VFO on the centre of a TETRA carrier, then enable decoding. Only a cell's main carrier sends sync bursts.</span
+		>
+	</div>
+	<div class="adsb-content adsb-list-only">
+		<div class="adsb-list">
+			<div v-if="cells.length" class="adsb-table-wrap">
+				<table class="adsb-table">
+					<thead>
+						<tr>
+							<th>Network</th>
+							<th>Colour code</th>
+							<th>Main carrier</th>
+							<th>Location area</th>
+							<th>Services</th>
+							<th>Air encryption</th>
+							<th>Heard</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr v-for="cell in cells" :key="cell.key">
+							<td>{{ cell.mcc }} / {{ cell.mnc }}<small>{{ countryName(cell.mcc) }}</small></td>
+							<td>{{ cell.colourCode }}<small>{{ cellLoadText(cell.sync.cellServiceLevel) }}</small></td>
+							<td>
+								<template v-if="cell.sysinfo"
+									>{{ cell.sysinfo.mainCarrierMHz.toFixed(4) }} MHz<small
+										>carrier {{ cell.sysinfo.mainCarrier }} · band {{ cell.sysinfo.band }}</small
+									></template
+								>
+								<template v-else>—</template>
+							</td>
+							<td>{{ cell.sysinfo ? cell.sysinfo.locationArea : '—' }}</td>
+							<td>{{ cell.sysinfo ? serviceList(cell.sysinfo.services) || '—' : '—' }}</td>
+							<td>{{ encryptionText(cell) }}</td>
+							<td>
+								{{ time(cell.lastSeen) }}<small
+									>VFO {{ cell.vfoIndex + 1 }} · {{ cell.syncCount }} sync · {{ cell.sysinfoCount }} SYSINFO · TS {{ cell.sync.timeslot }}
+									FN {{ cell.sync.frame }} MN {{ cell.sync.multiframe }}</small
+								>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+			<p v-else class="adsb-detail-note">{{ active ? 'Waiting for a synchronisation burst…' : 'No TETRA cells yet.' }}</p>
+		</div>
+	</div>
+	<div class="adsb-footer">
+		TETRA downlink · BSCH and SYSINFO broadcasts only, CRC checked. Traffic, addresses and voice are never decoded.
+	</div>
+</section>

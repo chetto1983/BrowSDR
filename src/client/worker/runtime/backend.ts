@@ -18,12 +18,14 @@ import type {
 	BleCallback,
 	AcarsCallback,
 	AprsCallback,
+	TetraCallback,
 	HdRadioCallback,
 	DsdCallback,
 	HostCallback,
 	HostStats,
 } from '@/worker/runtime/callbacks.types';
 import { setRemoteHostHdRadioCallback } from '@/worker/decoders/hd-radio/routing';
+import { setTetraEarCallback } from '@/worker/decoders/tetraear/routing';
 import { hdAudioChanged } from '@/worker/decoders/hd-radio/types';
 import type { DspAudio } from '@/worker/runtime/dsp-messages.types';
 import type { IqDispatcher } from '@/worker/streams/iq-dispatch';
@@ -94,6 +96,7 @@ import {
 	initRemoteClient,
 	feedRemoteAudioChunk,
 } from '@/worker/streams/remote-clients';
+import { setRemoteHostTetraCallback } from '@/worker/decoders/tetra/remote';
 import { startRxStream } from '@/worker/streams/rx-stream';
 import type { VfoParams, VfoState, PerfCounters, RxStreamOpts, RemoteClientState, DeviceOpenOpts } from './types';
 import { displayToDeviceFrequencyHz } from '@/radio/frequency-shift';
@@ -106,6 +109,7 @@ import { openRtlTcp } from './rtl-tcp';
 import type { RecordingFormat } from '@/radio/iq/types';
 
 export class Backend {
+	setTetraEarCallback = setTetraEarCallback.bind(this);
 	openIqReplay = openIqReplay.bind(this);
 	replaceIqReplay = replaceIqReplay.bind(this);
 	getIqReplayProgress = getIqReplayProgress.bind(this);
@@ -219,6 +223,7 @@ export class Backend {
 	_remoteHostAcarsCb?: HostCallback<Parameters<AcarsCallback>>;
 	_remoteHostHdRadioCb?: HostCallback<Parameters<HdRadioCallback>>;
 	_remoteHostAprsCb?: HostCallback<Parameters<AprsCallback>>;
+	_remoteHostTetraCb?: HostCallback<Parameters<TetraCallback>>;
 	_remoteHostAdsbCb?: HostCallback<Parameters<AdsbCallback>>;
 	_remoteHostRtl433Cb?: HostCallback<Parameters<Rtl433Callback>>;
 	_remoteHostSquelchCb?: HostCallback<[boolean[]]>;
@@ -304,6 +309,7 @@ export class Backend {
 	setRemoteHostAcarsCallback = setRemoteHostAcarsCallback.bind(this);
 	setRemoteHostHdRadioCallback = setRemoteHostHdRadioCallback.bind(this);
 	setRemoteHostAprsCallback = setRemoteHostAprsCallback.bind(this);
+	setRemoteHostTetraCallback = setRemoteHostTetraCallback.bind(this);
 	setRemoteHostAdsbCallback = setRemoteHostAdsbCallback.bind(this);
 	setRemoteHostRtl433Callback = setRemoteHostRtl433Callback.bind(this);
 	setRemoteHostSquelchCallback = setRemoteHostSquelchCallback.bind(this);
@@ -344,6 +350,7 @@ export class Backend {
 		rtkCallback: RtkCallback | null = null,
 		aprsCallback: AprsCallback | null = null,
 		hdRadioCallback: HdRadioCallback | null = null,
+		tetraCallback?: TetraCallback | null,
 	): Promise<void> {
 		this.iqCapture.cancel('Reception restarted during IQ capture');
 		return startRxStream(
@@ -372,6 +379,7 @@ export class Backend {
 			rtkCallback,
 			aprsCallback,
 			hdRadioCallback,
+			tetraCallback,
 		);
 	}
 

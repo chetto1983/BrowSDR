@@ -10,6 +10,9 @@ import { aisMethods } from '@/app/decoders/ais';
 import { radiosondeMethods } from '@/app/decoders/radiosonde/controller';
 import AprsPanel from '@/app/decoders/aprs/panel';
 import { aprsMethods } from '@/app/decoders/aprs/controller';
+import TetraPanel from '@/app/decoders/tetra/panel';
+import TetraEarPanel from '@/app/decoders/tetraear/panel';
+import { tetraMethods } from '@/app/decoders/tetra/controller';
 import { isRecord } from '@/platform/data';
 import type { AppInstance } from '@/app/core/receiver.types';
 import type { Backend as BackendInstance } from '@/worker/runtime/backend';
@@ -79,6 +82,8 @@ const Receiver = {
 		BlePanel,
 		AcarsPanel,
 		AprsPanel,
+		TetraPanel,
+		TetraEarPanel,
 		HeaderTools,
 		DiscoveryPanel,
 		IqCapturePanel,
@@ -122,6 +127,7 @@ const Receiver = {
 		...bleMethods,
 		...acarsMethods,
 		...aprsMethods,
+		...tetraMethods,
 	},
 	created: async function (this: AppInstance) {
 		this._cleanup = [];

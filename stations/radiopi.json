@@ -106,11 +106,14 @@
 		"id": "radiopi-tetra-390",
 		"type": "group",
 		"category": "emergency",
-		"name": "TETRA 390.3–391.0 (cifrato, solo spettro)",
+		"name": "TETRA 391.000 + 390.250 (celle 222/55, solo dati di sistema)",
 		"centerFreq": 390.65,
 		"sampleRate": 2400000,
 		"activeVfoIndex": 0,
-		"vfos": [{ "freq": 391.0024, "mode": "nfm", "bandwidth": 25000, "snapInterval": 6250, "deEmphasis": "none", "volume": 0 }]
+		"vfos": [
+			{ "freq": 391, "mode": "nfm", "bandwidth": 25000, "snapInterval": 6250, "deEmphasis": "none", "tetra": true, "volume": 0 },
+			{ "freq": 390.25, "mode": "nfm", "bandwidth": 25000, "snapInterval": 6250, "deEmphasis": "none", "tetra": true, "volume": 0 }
+		]
 	},
 	{
 		"id": "radiopi-srd-868",

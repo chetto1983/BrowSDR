@@ -110,6 +110,13 @@ class Decoder:
             return record
 
     def _parse_record(self, block, record):
+        bits = block.type1_bits
+        # EN 300 392-2 21.4.3.1: null MAC-RESOURCE ends at the address-type
+        # field. Its spare bits and encryption flags carry no payload meaning.
+        # Do this before upstream parsing, which otherwise consumes the padding.
+        if len(bits) >= 16 and not np.any(bits[:2]) and not np.any(bits[13:16]):
+            record['kind'] = 'MAC_NULL'
+            return record
         if (len(self.parser._llc_defrag) > 128 or len(self.parser._ssi_votes) > 4096 or
                 (self.parser._mac_frag_bits is not None and len(self.parser._mac_frag_bits) > 65536)):
             self.parser = TetraProtocolParser()
@@ -120,7 +127,9 @@ class Decoder:
         record.update(kind=pdu.pdu_type.name, encrypted=bool(pdu.encrypted), address=pdu.address)
         if pdu.encrypted:
             return record
-        call = self.parser.parse_call_metadata(pdu)
+        # Require identified CMCE signalling. The upstream public parser falls
+        # back to interpreting arbitrary MAC-RESOURCE bytes as a voice call.
+        call = self.parser._parse_cmce_metadata(pdu)
         if call:
             record['call'] = asdict(call)
         payload = pdu.reassembled_data or pdu.data

@@ -66,6 +66,7 @@ class DecoderTests(unittest.TestCase):
         self.assertTrue(record['encrypted'])
         decoder.parser.parse_sds_data.assert_not_called()
         decoder.parser.parse_call_metadata.assert_not_called()
+        decoder.parser._parse_cmce_metadata.assert_not_called()
 
     def test_upstream_call_metadata_parser(self):
         from tetraear.core.protocol import MacPDU, PDUType
@@ -74,6 +75,49 @@ class DecoderTests(unittest.TestCase):
         call = decoder.parser.parse_call_metadata(pdu)
         self.assertEqual(call.talkgroup_id, 1234)
         self.assertEqual(call.duplex_mode, 'simplex')
+
+    def test_null_resource_does_not_become_a_call(self):
+        import numpy as np
+        # The live null PDU used length indication 62 (second half-slot stolen).
+        # ETSI EN 300 392-2 21.4.3.1: address type 000 ends the PDU at bit 16.
+        for encryption_mode in ('00', '11'):
+            with self.subTest(encryption_mode=encryption_mode):
+                bits = np.array([int(bit) for bit in
+                                 '0000' + encryption_mode + '0' + '111110' + '000' + '0' * 108], dtype=np.uint8)
+                block = SimpleNamespace(block_type=BlockType.NDB, codec_input=None, crc_ok=True, type1_bits=bits)
+                decoder = Decoder()
+                record = decoder._record(block)
+                self.assertEqual(record['kind'], 'MAC_NULL')
+                self.assertIsNone(record['address'])
+                self.assertIsNone(record['encrypted'])
+                self.assertIsNone(record['call'])
+                self.assertEqual(record['text'], '')
+                self.assertEqual(decoder.valid, 1)
+
+    def test_non_call_signalling_does_not_become_a_call(self):
+        import numpy as np
+        # Captured broadcast-addressed BL-UDATA, with MLE discriminator 101,
+        # rather than CMCE (010). Upstream's fallback invents an Individual call.
+        payload = np.unpackbits(np.frombuffer(bytes.fromhex('2aaf888a6a0e1d8835a9800084000000'), dtype=np.uint8))
+        header = np.array([int(bit) for bit in '0000000' + '010000' + '001' + '1' * 24 + '000'], dtype=np.uint8)
+        block = SimpleNamespace(block_type=BlockType.SCH_F, codec_input=None, crc_ok=True,
+                                type1_bits=np.concatenate((header, payload)))
+        record = Decoder()._record(block)
+        self.assertEqual(record['kind'], 'MAC_RESOURCE')
+        self.assertEqual(record['address'], 0xFFFFFF)
+        self.assertIsNone(record['call'])
+
+    def test_cmce_connect_keeps_the_call_identifier(self):
+        import numpy as np
+        # Clear MAC-RESOURCE, SSI 1234; BL-UDATA, CMCE, D-CONNECT, call ID 42.
+        bits = '0000000' + '010000' + '001' + format(1234, '024b') + '000'
+        bits += '0010' + '010' + '00010' + format(42, '014b') + '0' * 16
+        block = SimpleNamespace(block_type=BlockType.SCH_F, codec_input=None, crc_ok=True,
+                                type1_bits=np.array([int(bit) for bit in bits], dtype=np.uint8))
+        record = Decoder()._record(block)
+        self.assertEqual(record['address'], 1234)
+        self.assertEqual(record['call']['call_type'], 'Connect')
+        self.assertEqual(record['call']['call_identifier'], 42)
 
     def test_wasm_and_browser_demodulator_output(self):
         for name in ('int8', 'float'):

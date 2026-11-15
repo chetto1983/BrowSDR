@@ -68,6 +68,9 @@ on a phone refers to the phone, not the PC. WebRTC guest decoding is unsupported
 - Text extraction is attempted only for an identified SDS message. TetraEar's
   text heuristics otherwise produce apparent GSM7 text from binary SYSINFO.
   Metadata and SDS interpretation retain the limitations of the upstream parser.
+- Null MAC-RESOURCE PDUs are labelled `MAC_NULL`, without call or encryption
+  claims. Call metadata requires identified CMCE signalling; the upstream
+  fallback that guesses a call from arbitrary MAC-RESOURCE data is not used.
 - Encryption flags are displayed when available. No keys, brute force or
   decryption are wired into this integration; unknown encryption stays unknown.
 
@@ -119,3 +122,22 @@ Browser acceptance uses a synthetic SigMF replay built from captured synchroniza
 bursts, through the real DSP workers and loopback Python service. It verifies
 visible CRC-valid network information and disconnect on replay pause. This is
 offline integration validation, not a new over-the-air reception or speech test.
+
+### Live validation, 2026-11-15
+
+Two approximately 60-second receptions used the RTL-TCP relay, production
+BrowSDR DSP worker, and TetraEar WebSocket bridge in the existing 390.650 MHz
+band at 2.4 MS/s. Both cells reported network 222/55 and air-encryption support.
+
+| Channel     | CRC-valid blocks | CRC failures | Distinct MAC addresses, excluding broadcast |
+| ----------- | ---------------: | -----------: | ------------------------------------------: |
+| 391.000 MHz |            7,822 |           20 |                                           6 |
+| 390.250 MHz |            7,681 |           23 |                                           1 |
+
+Native codecs were available. Live slot-2 decoding produced no audio. Replaying
+the received soft bits through all four slots produced 43 non-silent PCM blocks
+(20,640 samples, 2.58 seconds at 8 kHz) on slot 4 at 391.000 MHz, and none on
+390.250 MHz. This validates codec output, not intelligible speech or clear voice.
+No identified CMCE calls or SDS text remained after filtering null PDUs and
+disabling the upstream generic call heuristic. The observed MAC addresses alone
+do not establish whether an address identifies an individual radio or a group.

@@ -247,6 +247,9 @@
 				<div v-if="receiver.dsdStatus[i]?.slot0Burst" style="color:#aaa;">SLOT0: {{ receiver.dsdStatus[i].slot0Burst }}</div>
 				<div v-if="receiver.dsdStatus[i]?.slot1Burst" style="color:#aaa;">SLOT1: {{ receiver.dsdStatus[i].slot1Burst }}</div>
 				<div v-if="receiver.dsdStatus[i]?.colorCode != null" style="color:#aaa;">CC: {{ receiver.dsdStatus[i].colorCode }}</div>
+				<div v-if="receiver.dsdStatus[i]?.dmrCall" style="color:#ddd;">
+					TS{{ receiver.dsdStatus[i].dmrCall.slot + 1 }} · {{ receiver.dsdStatus[i].dmrCall.group ? 'TG' : 'ID' }} {{ receiver.dsdStatus[i].dmrCall.target }} ← SRC {{ receiver.dsdStatus[i].dmrCall.source }}<span v-if="receiver.dsdStatus[i].dmrCall.privacy" style="color:#ff8844;"> · ENCRYPTED</span><span v-if="receiver.dsdStatus[i].dmrCall.emergency" style="color:#ff4444;"> · EMERGENCY</span><span v-if="receiver.dsdStatus[i].dmrCall.terminator" style="opacity:0.6;"> · ended</span>
+				</div>
 			</template>
 			<!-- P25 details -->
 			<template v-if="receiver.dsdStatus[i]?.mode === 'p25'">

@@ -11,6 +11,7 @@ import { SyncType } from './types';
 import { syncTypeToMode, syncTypeLabel, isVoiceSync } from './sync';
 import { processDMRSingleBurst } from './dsd-dmr';
 import { checkDMRBurstSync } from './dsd-dmr';
+import { decodeDmrLinkControl, DMR_IDLE, slotType } from './dmr-lc';
 import { processNXDNVoice, NXDN_VOICE_DIBITS } from './dsd-nxdn';
 import { processDSTARVoice, DSTAR_FRAME_DIBITS } from './dsd-dstar';
 import {
@@ -464,6 +465,14 @@ export class DSDDecoder {
 
 		if (!isVoice) {
 			this.status.mbeDecoding = false;
+			const lc = decodeDmrLinkControl(this.dibitBuf, startPos, 0xffff);
+			if (lc) {
+				this.status.colorCode = lc.colourCode;
+				this.status.dmrCall = { ...lc, slot: this.status.slot ?? 0, at: Date.now() };
+			} else {
+				const slot = slotType(this.dibitBuf, startPos - 78, 0xffff);
+				if (slot.dataType === DMR_IDLE) this.status.colorCode = slot.colourCode;
+			}
 			return;
 		}
 

@@ -39,6 +39,8 @@ export interface DSDStatus {
 	slot0Burst?: string;
 	/** DMR slot 1 burst type description */
 	slot1Burst?: string;
+	/** Last DMR call addressing from a Voice LC Header or Terminator, with its slot and time. */
+	dmrCall?: DmrLinkControl & { slot: number; at: number };
 
 	// ── P25 ──
 	/** P25 Network Access Code (12-bit) */
@@ -61,6 +63,36 @@ export interface DSDStatus {
 	// ── NXDN ──
 	/** NXDN type description */
 	nxdnType?: string;
+}
+
+/** DMR Full Link Control of a voice call (ETSI TS 102 361-2 §7.1.1). */
+export interface DmrLinkControl {
+	colourCode: number;
+	/** Terminator with LC (end of the transmission) rather than a Voice LC Header. */
+	terminator: boolean;
+	/** Group call (talkgroup in target) rather than unit-to-unit. */
+	group: boolean;
+	featureSet: number;
+	emergency: boolean;
+	/** Service option privacy flag: the voice is encrypted. */
+	privacy: boolean;
+	target: number;
+	source: number;
+}
+
+/** DMR Full Link Control of a voice call (ETSI TS 102 361-2 §7.1.1). */
+export interface DmrLinkControl {
+	colourCode: number;
+	/** Terminator with LC (end of the transmission) rather than a Voice LC Header. */
+	terminator: boolean;
+	/** Group call (talkgroup in target) rather than unit-to-unit. */
+	group: boolean;
+	featureSet: number;
+	emergency: boolean;
+	/** Service option privacy flag: the voice is encrypted. */
+	privacy: boolean;
+	target: number;
+	source: number;
 }
 
 // ── Frame sync state ─────────────────────────────────────────────────

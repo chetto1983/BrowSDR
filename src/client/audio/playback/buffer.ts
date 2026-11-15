@@ -2,7 +2,12 @@ import type { AudioChannels } from '@/audio/types';
 import type { PlaybackStats } from './types';
 
 const INPUT_RATE = 48000;
-const CAPACITY = 4800; // Hard limit: 100ms of PCM, independent of target.
+// The reserve grows only when arrivals are bursty. USB stays at a few ms, but rtl_tcp over a
+// Pi relay arrives as ~96 ms bursts (rtl_tcp reads 256 KB USB blocks), which needs a reserve
+// near 100 ms plus room for the burst itself.
+const MAX_TARGET_MS = 250;
+const CAPACITY_MS = 500; // Hard storage limit, independent of target.
+const CAPACITY = CAPACITY_MS * 48;
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 
 /** Bounded stereo queue, consumed exclusively by the audio rendering thread. */
@@ -66,8 +71,8 @@ export class AdaptivePlaybackBuffer {
 		// Peaks decay slowly; catch-up bursts don't erase evidence of a stall.
 		const decay = Math.exp(-elapsedMs / 10000);
 		this.packetMs = Math.max(durationMs, this.packetMs * decay);
-		this.jitterMs = Math.max(Math.min(100, elapsedMs - this.lastPacketMs), this.jitterMs * decay, 0);
-		const required = clamp(this.packetMs + this.jitterMs + 3, 5, 100);
+		this.jitterMs = Math.max(Math.min(MAX_TARGET_MS, elapsedMs - this.lastPacketMs), this.jitterMs * decay, 0);
+		const required = clamp(this.packetMs + this.jitterMs + 3, 5, MAX_TARGET_MS);
 		this.targetMs = Math.max(required, this.targetMs - elapsedMs / 5000);
 		this.lastPacketMs = durationMs;
 		this.lastArrival = now;
@@ -107,7 +112,7 @@ export class AdaptivePlaybackBuffer {
 		// Smooth the sawtooth between packet arrivals before steering the clock.
 		const smoothing = 1 - Math.exp(-seconds / 0.2);
 		this.smoothedQueueMs += (this.length / 48 - this.smoothedQueueMs) * smoothing;
-		const desiredMean = Math.min(this.targetMs + this.packetMs / 2, 100 - this.packetMs / 2 - 3);
+		const desiredMean = Math.min(this.targetMs + this.packetMs / 2, CAPACITY_MS - this.packetMs / 2 - 3);
 		const correction = clamp((this.smoothedQueueMs - desiredMean) * 0.0005, -0.005, 0.005);
 		this.rate += (1 + correction - this.rate) * (1 - Math.exp(-seconds / 0.2));
 	}
@@ -119,7 +124,7 @@ export class AdaptivePlaybackBuffer {
 			this.gapMs += silenceMs;
 			this.recovering = true;
 		}
-		this.targetMs = clamp(Math.max(this.targetMs * 1.5, this.targetMs + 10), 5, 100);
+		this.targetMs = clamp(Math.max(this.targetMs * 1.5, this.targetMs + 10), 5, MAX_TARGET_MS);
 	}
 
 	stats(): PlaybackStats {

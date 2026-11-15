@@ -46,7 +46,8 @@ describe('adaptive audio playback', () => {
 		const stats = simulate(60, 240, 47000);
 		expect(stats.gapCount).toBeGreaterThan(0);
 		expect(stats.gapMs).toBeGreaterThan(0);
-		expect(stats.targetMs).toBeLessThanOrEqual(100);
+		// Bounded by the reserve ceiling (250 ms, sized for bursty network sources).
+		expect(stats.targetMs).toBeLessThanOrEqual(250);
 		expect(stats.rate).toBeGreaterThanOrEqual(0.995);
 	});
 	it('grows the reserve for periodic stalls then lowers it gradually', () => {
@@ -71,15 +72,23 @@ describe('adaptive audio playback', () => {
 		queue.reset(true);
 		expect(queue.stats().gapCount).toBe(0);
 	});
-	it('discards only whole oldest frames at the 100ms storage limit', () => {
+	it('plays an rtl_tcp source that delivers ~96 ms bursts without gaps or discards', () => {
+		// Measured on the Pi relay: 16 ms blocks arrive six at a time, then ~90 ms of nothing.
+		const burst = (packet) => (Math.floor(packet / 6) + 1) * 0.096 - packet * 0.016;
+		const stats = simulate(60, 768, 48000, burst);
+		expect(stats.gapCount).toBeLessThan(3);
+		expect(stats.droppedFrames).toBe(0);
+		expect(stats.targetMs).toBeLessThanOrEqual(250);
+	});
+	it('discards only whole oldest frames at the 500ms storage limit', () => {
 		const queue = new AdaptivePlaybackBuffer();
-		const stereo = new Float32Array(6000 * 2);
-		for (let frame = 0; frame < 6000; frame++) {
+		const stereo = new Float32Array(25200 * 2);
+		for (let frame = 0; frame < 25200; frame++) {
 			stereo[frame * 2] = frame;
 			stereo[frame * 2 + 1] = -frame;
 		}
 		queue.push(stereo, 2, 0);
-		expect(queue.stats().queueMs).toBe(100);
+		expect(queue.stats().queueMs).toBe(500);
 		expect(queue.stats().droppedFrames).toBe(1200);
 		const output = block();
 		queue.render(output, 48000);

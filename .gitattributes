@@ -1,2 +1,4 @@
 # Go sources and Raspberry Pi system files must keep LF endings, even on a Windows checkout.
 relay/** text eol=lf
+# Shell scripts run in WSL/Linux bash, which rejects CRLF.
+wasm/**/*.sh text eol=lf

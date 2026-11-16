@@ -180,6 +180,7 @@ export default defineConfig({
 const wasmAssets = {
 	dsp: ['browsdr_dsp.js', 'browsdr_dsp_bg.wasm'],
 	mbelib: ['mbelib.js', 'mbelib.wasm', 'COPYRIGHT', 'NOTICE'],
+	meteor: ['meteor.js', 'meteor.wasm', 'LICENSE', 'NOTICE'],
 	rtl433: ['rtl433.js', 'rtl433.wasm', 'COPYING', 'NOTICE'],
 	nrsc5: ['nrsc5.js', 'nrsc5.wasm', 'LICENSE-nrsc5', 'COPYING-faad2', 'COPYING-fftw', 'COPYING.GPL3', 'NOTICE'],
 };
@@ -205,7 +206,7 @@ function wasmAssetsPlugin(): Plugin {
 		configureServer(server) {
 			server.middlewares.use((request, response, next) => {
 				const pathname = new URL(request.url ?? '/', 'http://localhost').pathname;
-				const match = /^\/wasm\/(dsp|mbelib|rtl433|nrsc5)\/([^/]+)$/.exec(pathname);
+				const match = /^\/wasm\/(dsp|mbelib|meteor|rtl433|nrsc5)\/([^/]+)$/.exec(pathname);
 				if (!match) return next();
 				const module = match[1] as keyof typeof wasmAssets;
 				const file = match[2];

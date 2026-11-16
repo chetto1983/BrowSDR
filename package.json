@@ -20,6 +20,7 @@
 		"build:nrsc5": "node wasm/nrsc5/build.mjs",
 		"test:nrsc5": "node wasm/nrsc5/tests/memory.mjs",
 		"build:mbelib": "bash wasm/mbelib/build.sh",
+		"build:meteor": "bash wasm/meteor/build.sh",
 		"build:rtl433": "node scripts/update-rtl433.mjs --build",
 		"check:rtl433": "node scripts/update-rtl433.mjs --check",
 		"update:rtl433": "node scripts/update-rtl433.mjs",

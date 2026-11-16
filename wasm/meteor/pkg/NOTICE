@@ -1,0 +1,3 @@
+meteor.js and meteor.wasm are built from meteor_decode by dbdexter-dev
+(https://github.com/dbdexter-dev/meteor_decode, commit e7ca456ea969dc4834b5544c3789de1dd5d2f663),
+distributed under the MIT licence in LICENSE, together with BrowSDR's wasm/meteor/wrapper.c.

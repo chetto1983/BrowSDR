@@ -1,0 +1,45 @@
+/** The Emscripten module built from wasm/meteor (meteor_decode plus BrowSDR's wrapper.c). */
+export interface MeteorModule {
+	HEAP8: Int8Array;
+	HEAPU8: Uint8Array;
+	_meteor_init(): void;
+	_meteor_reset(): void;
+	_meteor_input(): number;
+	_meteor_input_size(): number;
+	_meteor_push(count: number): number;
+	_meteor_rows(): number;
+	_meteor_width(): number;
+	_meteor_channel(index: number): number;
+	_meteor_apid(index: number): number;
+	_meteor_rs(): number;
+	_meteor_vit(): number;
+	_meteor_vcdu_seq(): number;
+	_meteor_mpdus(): number;
+}
+
+export type MeteorFactory = (options: { locateFile(path: string): string }) => Promise<MeteorModule>;
+
+export type MeteorChannelIndex = 0 | 1 | 2;
+
+export interface MeteorStats {
+	/** Reed-Solomon errors corrected in the last CADU; -1 when it could not be corrected. */
+	rs: number;
+	/** Average Viterbi path cost per byte: lower is better, about 1100 or less decodes. */
+	vit: number;
+	vcduSeq: number;
+	mpdus: number;
+}
+
+/** One meteor_decode instance: soft QPSK symbols in, AVHRR image rows out. */
+export interface MeteorDecoder {
+	/** Queues int8 soft symbols (two per QPSK symbol) and returns how many image rows were completed. */
+	push(symbols: Int8Array): number;
+	rows(): number;
+	width(): number;
+	/** Pixels of one composite channel (rows × width), viewed in WASM memory: copy before keeping. */
+	channel(index: MeteorChannelIndex): Uint8Array;
+	/** APID shown in that channel, or -1 while it is unused. */
+	apid(index: MeteorChannelIndex): number;
+	stats(): MeteorStats;
+	reset(): void;
+}

@@ -4,6 +4,8 @@ node_modules/
 
 # Downloaded upstream mbelib source (see wasm/mbelib/README.md)
 /wasm/mbelib/mbelib/
+# Downloaded upstream meteor_decode source (see wasm/meteor/README.md)
+/wasm/meteor/meteor_decode/
 
 # Downloaded rtl_433 source and compiler outputs
 /wasm/rtl433/rtl_433-*/

@@ -41,6 +41,10 @@ Enjoy the power of a desktop SDR platform fully within your web browser.
 - **📍 APRS Stations and Live Map**
   Decode amateur radio position reports, messages, weather and telemetry on
   1200-baud packet channels, with a live station map.
+- **📡 Digital Modes (ported from OnAir)**
+  Tools → Digital Modes: DSC on VHF channel 70, CubeSat AX.25 telemetry (1200 AFSK,
+  9600/4800 G3RUH) and SSTV (ISS on FM, HF on USB), in one log with pictures. See
+  [the guide](docs/digital-modes.md).
 - **🌍 Satellite Map and Doppler Tracking**
   Tools → Satellites shows the ISS, SO-50, AO-123, RS-44, FO-29, AO-7, JO-97 and
   Meteor-M live on a world map with ground track and coverage, pointing from your

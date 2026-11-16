@@ -40,15 +40,17 @@
 	</div>
 	<div class="adsb-content" :class="{ 'adsb-list-only': !imageRows }">
 		<div v-if="imageRows" class="digimode-image">
-			<div class="meteor-image-tools">
+			<div class="meteor-image-tools digimode-image-tools">
 				<strong>{{ picture.title }}</strong>
-				<UiButton @click="savePicture">Save PNG</UiButton>
+				<UiButton variant="transcript" @click="savePicture">Save PNG</UiButton>
 			</div>
 			<canvas ref="canvas" class="meteor-canvas" aria-label="Decoded picture"></canvas>
 		</div>
 		<div class="adsb-list">
 			<div class="digimode-tools">
-				<UiInput v-model="query" aria-label="Search decoded messages" placeholder="Search"></UiInput>
+				<UiInputGroup class="digimode-search"
+					><UiInput v-model="query" aria-label="Search decoded messages" placeholder="Search decoded messages"></UiInput
+				></UiInputGroup>
 				<UiButton variant="transcript" :disabled="!log.length" @click="exportLog">Export</UiButton>
 				<UiButton variant="transcript" :disabled="!log.length" @click="receiver.clearDigimodeLog()">Clear</UiButton>
 			</div>

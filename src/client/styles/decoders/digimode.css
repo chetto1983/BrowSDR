@@ -16,12 +16,19 @@
 	padding: 8px;
 	align-items: center;
 }
-.digimode-tools > :first-child {
+.digimode-search {
 	flex: 1 1 auto;
 	min-width: 0;
 }
+.digimode-image-tools {
+	align-items: center;
+	justify-content: space-between;
+}
 .digimode-log th:first-child {
-	width: 120px;
+	width: 130px;
+}
+.digimode-log th:last-child {
+	width: auto;
 }
 .digimode-log td {
 	white-space: normal;
@@ -41,4 +48,7 @@
 .digimode-fields td {
 	cursor: default;
 	background: var(--bg-header);
+}
+.digimode-log td:first-child small {
+	white-space: normal;
 }

@@ -177,5 +177,67 @@
 				"volume": 0
 			}
 		]
+	},
+	{
+		"id": "radiopi-air-levaldigi",
+		"type": "group",
+		"category": "aviation",
+		"name": "Levaldigi LIMZ: Cuneo 119.550, Torino App 121.100, 120.663",
+		"centerFreq": 120.4,
+		"sampleRate": 2400000,
+		"activeVfoIndex": 0,
+		"vfos": [
+			{
+				"freq": 119.55,
+				"mode": "am",
+				"bandwidth": 10000,
+				"snapInterval": 1000,
+				"deEmphasis": "none",
+				"lowPass": false
+			},
+			{
+				"freq": 121.1,
+				"mode": "am",
+				"bandwidth": 10000,
+				"snapInterval": 1000,
+				"deEmphasis": "none",
+				"lowPass": false
+			},
+			{
+				"freq": 120.6633,
+				"mode": "am",
+				"bandwidth": 10000,
+				"snapInterval": 1000,
+				"deEmphasis": "none",
+				"lowPass": false
+			}
+		]
+	},
+	{
+		"id": "radiopi-air-torino-milano",
+		"type": "group",
+		"category": "aviation",
+		"name": "Torino App 129.275, Milano Info 128.925",
+		"centerFreq": 129.1,
+		"sampleRate": 2400000,
+		"activeVfoIndex": 0,
+		"vfos": [
+			{
+				"freq": 129.275,
+				"mode": "am",
+				"bandwidth": 10000,
+				"snapInterval": 1000,
+				"deEmphasis": "none",
+				"lowPass": false
+			},
+			{
+				"freq": 128.925,
+				"mode": "am",
+				"bandwidth": 10000,
+				"snapInterval": 1000,
+				"deEmphasis": "none",
+				"lowPass": false
+			}
+		]
 	}
 ]

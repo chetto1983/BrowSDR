@@ -154,3 +154,5 @@ file). Algorithms and protocol tables follow the OnAir source.
 | `src/client/worker/decoders/digimode/lorawan/names.ts` | `rust/onair_mesh/src/lorawan_names.rs` (MAC commands, MType names, networks, OUIs, EUI text) |
 | `src/client/worker/decoders/digimode/lorawan/proto.ts` | `rust/onair_mesh/src/lorawan.rs` (MHDR, FHDR, MAC commands, join and rejoin requests), `core/src/mesh/mesh_proto_lora_rs.cpp` (meshDecodeLorawan) |
 | `src/client/worker/decoders/digimode/lorawan/index.ts` | `core/src/lorawan/lorawan_rx.cpp` (LoRaWAN monitor channel and frame row), `core/src/mesh/mesh_rx.cpp` (onLorawan) |
+| `src/client/worker/decoders/digimode/lora-aprs/proto.ts` | `rust/onair_mesh/src/aprs.rs` (lora_aprs: prefix, TNC2 split, call checks), `core/src/mesh/mesh_proto_lora_rs.cpp` (meshDecodeLoraAprs) |
+| `src/client/worker/decoders/digimode/lora-aprs/index.ts` | `core/src/mesh/mesh_rx.cpp` (LoRa APRS decoders, onAprs), `core/src/mesh/mesh_proto_lora_rs.cpp` |

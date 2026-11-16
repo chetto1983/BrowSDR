@@ -195,6 +195,22 @@ export const DIGIMODES: readonly DigimodeInfo[] = [
 		],
 		source: 'core/src/lorawan/lora_bank.cpp, lorawan_rx.cpp, core/src/mesh/mesh_proto_lorawan.cpp, rust/onair_mesh',
 	},
+	{
+		id: 'lora-aprs',
+		label: 'LoRa APRS',
+		family: 'LoRa & mesh',
+		description:
+			'APRS over LoRa (the LoRa_APRS iGate and tracker firmware): 125 kHz, SF12 and SF9 at once, sync word 0x12. Positions, objects, messages, status, weather and telemetry of the TNC2 packets.',
+		rate: 250000,
+		bandwidth: 175000,
+		presets: [
+			{ label: 'EU 433.775 (SF12)', freqMHz: 433.775 },
+			{ label: 'PL 434.855 (SF9)', freqMHz: 434.855 },
+			{ label: 'UK 439.9125 (SF12)', freqMHz: 439.9125 },
+			{ label: '915 MHz (SF12)', freqMHz: 915 },
+		],
+		source: 'core/src/mesh/mesh_lora_demod.cpp, mesh_proto_aprs.cpp, rust/onair_mesh/src/aprs.rs',
+	},
 ];
 
 export const digimodeInfo = (id: string | undefined): DigimodeInfo | undefined => DIGIMODES.find((mode) => mode.id === id);

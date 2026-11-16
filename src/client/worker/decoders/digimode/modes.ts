@@ -10,6 +10,7 @@ import { WefaxDecoder } from './wefax';
 import { MeshtasticDecoder } from './meshtastic';
 import { MeshCoreDecoder } from './meshcore';
 import { LorawanDecoder } from './lorawan';
+import { LoraAprsDecoder } from './lora-aprs';
 
 /** Worker-side constructors of the catalog's decoders. */
 export const DIGIMODE_DECODERS: Record<string, (sink: DigimodeSink) => DigimodeDecoder> = {
@@ -25,4 +26,5 @@ export const DIGIMODE_DECODERS: Record<string, (sink: DigimodeSink) => DigimodeD
 	meshtastic: (sink) => new MeshtasticDecoder(sink),
 	meshcore: (sink) => new MeshCoreDecoder(sink),
 	lorawan: (sink) => new LorawanDecoder(sink),
+	'lora-aprs': (sink) => new LoraAprsDecoder(sink),
 };

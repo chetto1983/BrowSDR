@@ -16,6 +16,8 @@ node_modules/
 
 # Rust build artifacts
 /wasm/nrsc5/vendor/
+/wasm/faad2/vendor/
+/wasm/faad2/build/
 /wasm/nrsc5/build/
 wasm/dsp/target/
 

@@ -1,0 +1,12 @@
+DAB+ AAC decoder for BrowSDR
+
+faad2: https://github.com/knik0/faad2, 2.11.2
+Revision: 673a22a3c7c33e96e2ff7aae7c4d2bc190dfbf92
+License: GPL-2.0-or-later (COPYING-faad2). Copyright (C) 2003-2005 M. Bakker, Nero AG,
+and the faad2 contributors.
+Compiler: Emscripten 4.0.7.
+
+Corresponding source: the pinned faad2 revision above, and wasm/faad2/wrapper.c and
+build.sh in the BrowSDR repository. The wrapper only configures faad2 the way
+OnAir's DAB receiver does (float output, no down-matrix) and interleaves the output
+as stereo. faad2 itself is unmodified.

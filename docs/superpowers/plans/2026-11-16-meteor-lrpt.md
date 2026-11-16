@@ -5,6 +5,7 @@
 **Goal:** Receive Meteor-M2-3/M2-4 LRPT images in BrowSDR, both live in a Tools → Meteor panel and unattended through `browsdr-cli` on the home PC. Pass predictions and relay-safe tuning are part of it.
 
 **Architecture:**
+
 - A pure-TypeScript QPSK demodulator in the DSP worker (`MeteorStream`, same lifecycle as `TetraStream`) feeds int8 soft symbols to upstream `meteor_decode` compiled to Wasm (`wasm/meteor/`, mbelib-style packaging).
 - Image rows flow back to the app panel and to the CLI.
 - Pass prediction (satellite.js SGP4) lives in one shared module that both use.
@@ -40,12 +41,14 @@
 ### Task 1: Relay client tokens
 
 **Files:**
+
 - Modify: `relay/hub.go` (`Client` gets `Token string`; `ClientStatus` gets `Token string \`json:"client,omitempty"\``; `Join(kind, remote, token string, takeControl bool)`)
 - Modify: `relay/serve.go:62` (pass `r.URL.Query().Get("client")`; the TCP path passes `""`)
 - Modify: `relay/README.md` (document `?client=`)
 - Test: `relay/hub_test.go`, `relay/ws_test.go`
 
 **Interfaces:**
+
 - Produces: `GET /status` → `clients[i].client` is the token the client connected with. The field is omitted when the client gave none. A token is limited to 64 chars of `[A-Za-z0-9_-]`; anything else is stored as `""`.
 
 - [ ] **Step 1: Write failing tests**
@@ -61,6 +64,7 @@
 ### Task 2: Clients identify themselves to the relay
 
 **Files:**
+
 - Modify: `src/client/devices/rtltcp/protocol.ts` (add `withRelayClient`)
 - Create: `src/client/devices/rtltcp/relay-control.ts` (status URL, token, control check)
 - Modify: `src/client/worker/runtime/rtl-tcp.ts` (connect with the token)
@@ -68,6 +72,7 @@
 - Test: `test/devices/…` is full, so tests go in `test/cli/relay-control.spec.js`; update `test/cli/plan.spec.js`
 
 **Interfaces:**
+
 - Produces:
   - `withRelayClient(wsUrl: string, token: string, take?: boolean): string`: adds `client=<token>`, and `control=take` when `take`, keeping existing query params.
   - `relayStatusUrl(wsUrl: string): string`: `ws(s)://host/...` → `http(s)://host/status`.
@@ -91,11 +96,13 @@
 ### Task 3: Satellite pass prediction
 
 **Files:**
+
 - Modify: `package.json` (`satellite.js` dependency, MIT)
 - Create: `src/client/satellites/types.ts`, `src/client/satellites/passes.ts`, `src/client/satellites/tle.ts`
 - Test: `test/satellites/passes.spec.js`, `test/satellites/tle.spec.js`
 
 **Interfaces:**
+
 - Produces (types in `types.ts`):
   - `interface Site { lat: number; lon: number; altM: number }`
   - `interface Tle { name: string; norad: number; line1: string; line2: string; epoch: Date }`
@@ -119,21 +126,21 @@ METEOR-M2 4
 2 59051  98.7247 277.5227 0008135  90.3361 269.8749 14.22443441140841
 ```
 
-  - `predictPasses` returns 10 passes. Each check below is within ±30 s for times and ±1.5° for elevation:
+- `predictPasses` returns 10 passes. Each check below is within ±30 s for times and ±1.5° for elevation:
 
-| Satellite | AOS | Max elevation | Other checks |
-|---|---|---|---|
-| M2 3 | 2026-11-16T09:05:38Z | 89.5° | LOS 09:16:17Z, `azimuthName(aosAzimuth)` = N, `azimuthName(losAzimuth)` = S |
-| M2 4 | 2026-11-16T13:10:31Z | 50.4° | |
-| M2 3 | 2026-11-16T20:28:29Z | 49.1° | |
-| M2 4 | 2026-11-17T03:05:17Z | 66.7° | |
-| M2 3 | 07:28:21Z | 12.0° | `poor === true` |
+| Satellite | AOS                  | Max elevation | Other checks                                                                |
+| --------- | -------------------- | ------------- | --------------------------------------------------------------------------- |
+| M2 3      | 2026-11-16T09:05:38Z | 89.5°         | LOS 09:16:17Z, `azimuthName(aosAzimuth)` = N, `azimuthName(losAzimuth)` = S |
+| M2 4      | 2026-11-16T13:10:31Z | 50.4°         |                                                                             |
+| M2 3      | 2026-11-16T20:28:29Z | 49.1°         |                                                                             |
+| M2 4      | 2026-11-17T03:05:17Z | 66.7°         |                                                                             |
+| M2 3      | 07:28:21Z            | 12.0°         | `poor === true`                                                             |
 
-  - In-progress pass: `from = 2026-11-16T09:10:00Z` gives first pass M2 3 with `inProgress: true` and AOS ≈ 09:05:38Z.
-  - Missing site: `predictPasses(tles, null, …)` throws `'Set the station location first.'`.
-  - `parseTle` reads the fixture into 2 TLEs with NORAD ids 57166 and 59051.
-  - `TleCache` round-trips through a fake storage. `stale()` is true at fetchedAt + 49 h. With `storage = null`, `get()` returns null and nothing throws.
-  - `fetchTles` with a fetch stub that rejects → the promise rejects. The caller falls back to the cache, which is tested in Task 7.
+- In-progress pass: `from = 2026-11-16T09:10:00Z` gives first pass M2 3 with `inProgress: true` and AOS ≈ 09:05:38Z.
+- Missing site: `predictPasses(tles, null, …)` throws `'Set the station location first.'`.
+- `parseTle` reads the fixture into 2 TLEs with NORAD ids 57166 and 59051.
+- `TleCache` round-trips through a fake storage. `stale()` is true at fetchedAt + 49 h. With `storage = null`, `get()` returns null and nothing throws.
+- `fetchTles` with a fetch stub that rejects → the promise rejects. The caller falls back to the cache, which is tested in Task 7.
 - [ ] **Step 2:** `npx vitest run test/satellites --project client` → FAIL.
 - [ ] **Step 3:** Implement. Use satellite.js `propagate` + `ecfToLookAngles`. Coarse 30 s steps, then bisect AOS/LOS to 1 s and golden-section search the TCA.
 - [ ] **Step 4:** Same command → PASS; typecheck and lint pass.
@@ -142,12 +149,14 @@ METEOR-M2 4
 ### Task 4: meteor_decode as Wasm
 
 **Files:**
+
 - Create: `wasm/meteor/build.sh`, `wasm/meteor/wrapper.c`, `wasm/meteor/README.md`, `wasm/meteor/pkg/{meteor.js,meteor.wasm,LICENSE,NOTICE}`
 - Modify: `package.json` (`"build:meteor": "bash wasm/meteor/build.sh"`), `.gitignore` (`wasm/meteor/meteor_decode/` source cache)
 - Create: `src/client/worker/decoders/meteor/types.ts` (module types), `src/client/worker/decoders/meteor-init.ts`
 - Test: `test/decoders/meteor/wasm.spec.js`
 
 **Interfaces:**
+
 - **`build.sh`:**
   - Mirrors `wasm/mbelib/build.sh`: pinned archive `https://codeload.github.com/dbdexter-dev/meteor_decode/tar.gz/e7ca456ea969dc4834b5544c3789de1dd5d2f663`, with its SHA-256 recorded on the first download and then enforced.
   - Compiles the CMake `LIBRARY_SOURCES` list (correlator, deinterleave, diffcode, ecc, jpeg, math/int.c, parser, protocol, channel.c, raw_channel.c, decode.c, utils.c) plus `wrapper.c`.
@@ -177,10 +186,12 @@ METEOR-M2 4
 ### Task 5: LRPT QPSK demodulator
 
 **Files:**
+
 - Create: `src/client/worker/decoders/meteor/demodulator.ts` (plus types in `meteor/types.ts`)
 - Create: `test/decoders/meteor/fixtures.js` (synthetic signal), `test/decoders/meteor/demodulator.spec.js`
 
 **Interfaces:**
+
 - Produces:
   - `export const METEOR_SYMBOL_RATE = 72000; export const METEOR_CHANNEL_RATE = 144000;`
   - `class MeteorDemodulator { constructor(onSymbols: (soft: Int8Array) => void); process(iq: Float32Array /* interleaved I,Q at METEOR_CHANNEL_RATE */): void; reset(): void; readonly locked: boolean; readonly freqOffsetHz: number; readonly quality: number /* 0..1 */ }`
@@ -207,6 +218,7 @@ METEOR-M2 4
 ### Task 6: `meteor` VFO decoder through the DSP worker
 
 **Files:**
+
 - Create: `src/client/worker/decoders/meteor.ts` (`MeteorStream`), `src/client/worker/decoders/meteor/validation.ts` (message validator, like `tetra/validation.ts`)
 - Modify: the files the `tetra` flag touched in commit `04af9ee`, with `meteor` mirroring `tetra`. They are listed by `git show --stat 04af9ee`. The main ones:
   - `worker/runtime/types.ts` (`VfoParams.meteor?: boolean`), `worker/streams/channel-plan.ts` (width 150000 when `meteor`), `channel-dispatch.ts`, `vfo-workers.ts` (route `type: 'meteor'`), `rx-stream.ts`, `remote-clients.ts`;
@@ -215,19 +227,32 @@ METEOR-M2 4
 - Test: `test/decoders/meteor/worker.spec.js`
 
 **Interfaces:**
+
 - Consumes: `MeteorDemodulator` (Task 5), `ensureMeteorInitialized`/`MeteorDecoder` (Task 4).
 - Produces the message:
 
 ```ts
 type MeteorMessage = {
-  type: 'meteor'; freq: number;
-  status: { state: 'off'|'receiving'|'error'; message: string; locked: boolean; quality: number;
-            freqOffsetHz: number; rs: number; vit: number; mpdus: number; rows: number; apids: [number, number, number] };
-  rows?: { from: number; to: number; width: number; channels: [Uint8Array, Uint8Array, Uint8Array] };
-}
+	type: 'meteor';
+	freq: number;
+	status: {
+		state: 'off' | 'receiving' | 'error';
+		message: string;
+		locked: boolean;
+		quality: number;
+		freqOffsetHz: number;
+		rs: number;
+		vit: number;
+		mpdus: number;
+		rows: number;
+		apids: [number, number, number];
+	};
+	rows?: { from: number; to: number; width: number; channels: [Uint8Array, Uint8Array, Uint8Array] };
+};
 ```
 
-  `rows` carries only the rows `from..to-1` that are new since the last message. `export const isMeteorFrequency = (f: number) => f >= 137 && f <= 138;`
+`rows` carries only the rows `from..to-1` that are new since the last message. `export const isMeteorFrequency = (f: number) => f >= 137 && f <= 138;`
+
 - **`MeteorStream`:** constructor `(Processor, memory, post)` and methods `configure(params, inputRate, centerFreq)`, `process(ptr, values, floatInput, chunkId?)`, `reset()`. These follow `TetraStream` (worker/decoders/tetra.ts) line for line:
   - The DDC is set to `METEOR_CHANNEL_RATE` with bandwidth 150000.
   - The error texts are "Tune this VFO to a Meteor LRPT downlink (137.0-138.0 MHz)." and "Meteor LRPT needs a 150 kHz channel inside the received band. Move the center frequency closer to 137.9 MHz."
@@ -246,6 +271,7 @@ type MeteorMessage = {
 ### Task 7: Tools → Meteor panel
 
 **Files:**
+
 - Create: `src/client/app/decoders/meteor/{controller.ts, panel.ts, panel.html, image.ts, passes-view.ts}`, `src/client/styles/decoders/meteor.css`
 - Modify: the app files the `tetra` panel touched in commit `04af9ee`. The main ones:
   - `app/core/{constants,decoder-state,receiver.types,state,types}.ts`, `app/main.ts`, `app/radio/vfo.ts`;
@@ -254,6 +280,7 @@ type MeteorMessage = {
 - Test: `test/ui/meteor-image.spec.js`, `test/ui/meteor-passes.spec.js`
 
 **Interfaces:**
+
 - Consumes: `MeteorMessage` (Task 6), `predictPasses`, `TleCache`, `fetchTles`, `METEOR_SATELLITES`, `azimuthName` (Task 3), `fetchRelayRole`, `backend.relayToken()` (Task 2).
 - Produces:
   - `class MeteorImage { append(rows: MeteorMessage['rows']): void; rows: number; toImageData(view: 'rgb'|0|1|2): ImageData; reset(): void }` in `image.ts`. It grows by row ranges. A gap in `from` (from > rows) is filled with grey (128) rows.
@@ -283,11 +310,13 @@ type MeteorMessage = {
 ### Task 8: Station bookmarks
 
 **Files:**
+
 - Modify: `stations/radiopi.json`. Add a group "Weather satellites" with:
   - `radiopi-meteor-lrpt`: 137.900 MHz, `meteor: true`;
   - `radiopi-meteor-lrpt-backup`: 137.100 MHz, `meteor: true`.
 
   Both have center 137.75 or 137.0 respectively and rate 1024000, in the file's existing format.
+
 - Modify: `src/cli/bookmarks.ts` (`DECODER_FLAGS` gains `'meteor'`)
 - Test: `test/cli/bookmarks.spec.js`
 
@@ -300,6 +329,7 @@ type MeteorMessage = {
 ### Task 9: CLI — passes, decode meteor, next-pass
 
 **Files:**
+
 - Modify: `src/cli/types.ts` (`DecoderName` gains `'meteor'`; `DecodeRun` gains `nextPass?: boolean; repeat?: boolean; lat?: number; lon?: number; out?: string`)
 - Modify: `src/cli/plan.ts` (meteor profile: `freqMHz 137.9`, `sampleRate 1024000`, `centerOffsetMHz -0.15`, `halfBandHz 75e3`, `minSampleRate 250e3`, params `decoderVfo(freq, { meteor: true, bandwidth: 150000 })`)
 - Modify: `src/cli/main.ts` (`passes` command; `--next-pass`, `--repeat`, `--lat`, `--lon`, `--out <dir>`, defaulting to `BROWSDR_LAT`/`BROWSDR_LON` and the current directory; update the usage text)
@@ -308,6 +338,7 @@ type MeteorMessage = {
 - Test: `test/cli/png.spec.js`, `test/cli/next-pass.spec.js`, `test/cli/plan.spec.js`
 
 **Interfaces:**
+
 - Consumes: Tasks 2, 3, 4 and 6.
 - Produces:
   - `passes [--json] [--hours 48]`: prints `passRows`-like lines in local time, or NDJSON `Pass` objects.
@@ -334,6 +365,7 @@ type MeteorMessage = {
 ### Task 10: Deploy, live validation, real fixture, docs
 
 **Files:**
+
 - Modify: `README.md` (Meteor feature and CLI usage), `wasm/README.md` (meteor entry), `d:/SDR/CLAUDE.md` (Meteor notes)
 - Create: `test/decoders/meteor/real-pass.s` (≤1 MB excerpt of int8 soft symbols) and a test in `wasm.spec.js` that it decodes
 - Pi: the relay binary from Task 1 and the BrowSDR `dist/`

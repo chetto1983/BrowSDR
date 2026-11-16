@@ -19,6 +19,8 @@ export default defineConfig(
 		'output/rtk/**',
 		'docs/local/**',
 		'.codex/**',
+		// Agent worktrees: full copies of the repository with their own node_modules.
+		'.claude/**',
 		'public/lib/**',
 		'wasm/dsp/pkg/**',
 		'wasm/dsp/node/**',
@@ -27,6 +29,7 @@ export default defineConfig(
 		'wasm/mbelib/**',
 		'wasm/meteor/**',
 		'wasm/nrsc5/**',
+		'wasm/faad2/**',
 		'types/worker.d.ts',
 	]),
 	{

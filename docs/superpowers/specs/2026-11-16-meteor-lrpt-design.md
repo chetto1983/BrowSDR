@@ -10,6 +10,7 @@ The station owner wants to receive images from the Russian Meteor-M weather sate
 - **Unattended, at home only (owner's decision):** a pass can happen while nobody has the browser open. At home the PC records it with `browsdr-cli`. Unattended capture in the field (Pi + phone only) is a later, separate project.
 
 Success means two things:
+
 - during a pass, the image builds up line by line in a BrowSDR panel and can be saved as a PNG;
 - the same pass can be captured by `browsdr-cli` with no browser open.
 
@@ -52,6 +53,7 @@ Success means two things:
    - the meteor decoder turned on.
 
    The action follows relay etiquette: it tunes only when this client is the controller, and otherwise explains why it cannot.
+
 5. **Arm a pass.** The panel can arm a pass: if the tab is still open and in control at the start of the pass, it tunes as in goal 4, records to the end of the pass, and keeps the image.
 6. **CLI.**
    - `npm run -s cli -- passes [--json]` lists passes.
@@ -132,6 +134,7 @@ Success means two things:
 **Why it is needed:** goals 4 and 5 need the app to know reliably whether it is the relay controller. Today it cannot: `/status` lists clients by IP:port, and the CLI guesses its own id (`src/cli/decode.ts:49`).
 
 **The change:** the relay accepts an optional `?client=<random token>` query parameter on the WebSocket URL and reports it in `/status` for each client, alongside `controller: true|false`. The app and the CLI generate a token per connection and find themselves by it.
+
 - **Compatibility:** clients without a token behave as before.
 - **Code and tests:** Go change plus tests in `BrowSDR/relay/`.
 - **Deploy:** redeploy on the Pi, which needs the owner's sudo password.

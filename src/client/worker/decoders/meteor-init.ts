@@ -37,6 +37,7 @@ function wrap(module: MeteorModule): MeteorDecoder {
 			return rows;
 		},
 		rows: () => module._meteor_rows(),
+		channelRows: (index: MeteorChannelIndex) => module._meteor_channel_rows(index),
 		width: () => width,
 		channel(index: MeteorChannelIndex) {
 			const pointer = module._meteor_channel(index);

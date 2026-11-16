@@ -206,6 +206,7 @@ function needsIq(params: VfoParams): boolean {
 		params.acars === true ||
 		params.aprs === true ||
 		params.tetra === true ||
+		params.meteor === true ||
 		!!params.tetraear
 	);
 }
@@ -228,6 +229,7 @@ function disabledDecoders(params: VfoParams): VfoParams {
 		acars: false,
 		aprs: false,
 		tetra: false,
+		meteor: false,
 		tetraear: 0,
 	};
 }

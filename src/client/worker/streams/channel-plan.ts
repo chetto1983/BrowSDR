@@ -23,6 +23,7 @@ export function needsVfoInput(params: VfoParams): boolean {
 			params.acars,
 			params.aprs,
 			params.tetra,
+			params.meteor,
 		].some((enabled) => enabled === true)
 	);
 }
@@ -45,6 +46,7 @@ export function planSharedBands(sampleRate: number, centerFreq: number, params: 
 				value.acars ||
 				value.aprs ||
 				value.tetra ||
+				value.meteor ||
 				value.tetraear ||
 				value.rtl433 ||
 				(value.rds && value.mode === 'wfm'),
@@ -96,6 +98,7 @@ function channelWidth(value: VfoParams, sampleRate: number): number {
 		value.acars ? 48000 : 0,
 		value.aprs ? 48000 : 0,
 		value.tetra ? 72000 : 0,
+		value.meteor ? 150000 : 0,
 		value.tetraear ? 72000 : 0,
 	);
 }

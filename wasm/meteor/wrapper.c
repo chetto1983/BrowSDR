@@ -171,6 +171,8 @@ meteor_push(int n)
 }
 
 EMSCRIPTEN_KEEPALIVE int meteor_width(void) { return MCU_PER_LINE * 8; }
+/* Rows of channel i that are final: its own decoded lines, which later strips never rewrite. */
+EMSCRIPTEN_KEEPALIVE int meteor_channel_rows(int i) { return i >= 0 && i < NUM_CHANNELS ? (int)(channels[i].offset / (MCU_PER_LINE * 8)) : 0; }
 EMSCRIPTEN_KEEPALIVE uint8_t *meteor_channel(int i) { return i >= 0 && i < NUM_CHANNELS ? channels[i].pixels : NULL; }
 EMSCRIPTEN_KEEPALIVE int meteor_apid(int i) { return i >= 0 && i < NUM_CHANNELS ? channels[i].apid : -1; }
 EMSCRIPTEN_KEEPALIVE int meteor_rs(void) { return decode_get_rs(); }

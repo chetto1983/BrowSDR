@@ -9,6 +9,7 @@ export interface MeteorModule {
 	_meteor_push(count: number): number;
 	_meteor_rows(): number;
 	_meteor_width(): number;
+	_meteor_channel_rows(index: number): number;
 	_meteor_channel(index: number): number;
 	_meteor_apid(index: number): number;
 	_meteor_rs(): number;
@@ -35,6 +36,8 @@ export interface MeteorDecoder {
 	/** Queues int8 soft symbols (two per QPSK symbol) and returns how many image rows were completed. */
 	push(symbols: Int8Array): number;
 	rows(): number;
+	/** Rows of one channel that are final (later strips never rewrite them). */
+	channelRows(index: MeteorChannelIndex): number;
 	width(): number;
 	/** Pixels of one composite channel (rows × width), viewed in WASM memory: copy before keeping. */
 	channel(index: MeteorChannelIndex): Uint8Array;
@@ -42,4 +45,34 @@ export interface MeteorDecoder {
 	apid(index: MeteorChannelIndex): number;
 	stats(): MeteorStats;
 	reset(): void;
+}
+
+export interface MeteorStatus {
+	state: 'off' | 'receiving' | 'error';
+	message: string;
+	locked: boolean;
+	quality: number;
+	freqOffsetHz: number;
+	rs: number;
+	vit: number;
+	mpdus: number;
+	/** Image rows decoded so far. */
+	rows: number;
+	/** APID shown in each composite channel (red, green, blue), -1 while unused. */
+	apids: [number, number, number];
+}
+
+/** New image rows from..to-1 of the three composite channels, each (to - from) × width pixels. */
+export interface MeteorRows {
+	from: number;
+	to: number;
+	width: number;
+	channels: [Uint8Array, Uint8Array, Uint8Array];
+}
+
+export interface MeteorMessage {
+	type: 'meteor';
+	freq: number;
+	status: MeteorStatus;
+	rows?: MeteorRows;
 }

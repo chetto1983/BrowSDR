@@ -83,26 +83,38 @@ const AGC_TARGET = 190;
 const AGC_BIAS_POLE = 0.001;
 const AGC_GAIN_POLE = 0.0001;
 
+/** Symbols over which the AGC sets its gain from the mean magnitude before its slow loop takes over. */
+const AGC_PRIME_SYMBOLS = 64;
+
 /** Removes DC and scales symbols towards a magnitude of 190. */
 export class Agc {
 	gain = 0;
 	private biasI = 0;
 	private biasQ = 0;
+	private primeSum = 0;
+	private primeCount = 0;
 
-	/** In place on [i, q]. A gain of 0 means "not primed": the first sample sets it directly. */
+	/** In place on [i, q]. */
 	apply(sample: Float64Array): void {
 		this.biasI = this.biasI * (1 - AGC_BIAS_POLE) + AGC_BIAS_POLE * sample[0];
 		this.biasQ = this.biasQ * (1 - AGC_BIAS_POLE) + AGC_BIAS_POLE * sample[1];
 		const i = sample[0] - this.biasI;
 		const q = sample[1] - this.biasQ;
-		if (this.gain === 0) this.gain = AGC_TARGET / Math.max(Math.hypot(i, q), 1e-9);
+		if (this.primeCount < AGC_PRIME_SYMBOLS) {
+			// Upstream starts at gain 1 for int16 input; floats need a gain from the signal itself, and a
+			// mean (not one sample) so a filter's start-up transient cannot set it.
+			this.primeSum += Math.hypot(i, q);
+			this.primeCount++;
+			this.gain = this.primeSum > 0 ? (AGC_TARGET * this.primeCount) / this.primeSum : 0;
+		}
 		sample[0] = i * this.gain;
 		sample[1] = q * this.gain;
 		this.gain = Math.max(0, this.gain + AGC_GAIN_POLE * (AGC_TARGET - Math.hypot(sample[0], sample[1])));
+		if (!Number.isFinite(this.gain)) this.reset();
 	}
 
 	reset(): void {
-		this.gain = this.biasI = this.biasQ = 0;
+		this.gain = this.biasI = this.biasQ = this.primeSum = this.primeCount = 0;
 	}
 }
 

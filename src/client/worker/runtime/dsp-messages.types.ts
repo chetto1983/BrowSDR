@@ -7,6 +7,7 @@ import type { RtkMessage } from '@/worker/decoders/rtk/types';
 import type { AcarsMessage } from '@/worker/decoders/acars/types';
 import type { AprsMessage } from '@/worker/decoders/aprs/types';
 import type { TetraMessage } from '@/worker/decoders/tetra/types';
+import type { MeteorMessage } from '@/worker/decoders/meteor/types';
 import type { AdsbMessage } from '@/worker/decoders/adsb/types';
 import type { VfoParams } from './types';
 import type { RDSMessage, RdsStatus, Rtl433Message } from '@/worker/decoders/types';
@@ -32,6 +33,7 @@ export type DspOutput =
 	| AcarsMessage
 	| AprsMessage
 	| TetraMessage
+	| MeteorMessage
 	| { type: 'rds'; msg: RDSMessage }
 	| { type: 'rds_status'; status: RdsStatus }
 	| { type: 'dsd_status'; status: DSDStatus }

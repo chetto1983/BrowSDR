@@ -7,6 +7,7 @@ import { RtkStream } from './decoders/rtk/stream';
 import { AcarsStream } from './decoders/acars';
 import { AprsStream } from './decoders/aprs';
 import { TetraStream } from './decoders/tetra';
+import { MeteorStream } from './decoders/meteor';
 import { TetraEarStream } from './decoders/tetraear/stream';
 import { SharedBandPool } from './streams/shared-band-pool';
 import { errorMessage } from '@/platform/errors';
@@ -94,7 +95,7 @@ let ais: AisStream;
 let radiosonde: RadiosondeStream;
 let rtk: RtkStream;
 let ble: BleStream;
-let acars: AcarsStream, aprs: AprsStream, tetra: TetraStream;
+let acars: AcarsStream, aprs: AprsStream, tetra: TetraStream, meteor: MeteorStream;
 let tetraear: TetraEarStream;
 
 const IF_RATES: Record<string, number> = {
@@ -126,6 +127,9 @@ async function startup(): Promise<void> {
 				acars = new AcarsStream(DspProcessor, _wasm.memory, (message) => self.postMessage(message));
 				aprs = new AprsStream(DspProcessor, _wasm.memory, (message) => self.postMessage(message));
 				tetra = new TetraStream(DspProcessor, _wasm.memory, (message) => self.postMessage(message));
+				meteor = new MeteorStream(DspProcessor, _wasm.memory, (message) =>
+					self.postMessage(message, { transfer: message.rows ? message.rows.channels.map((channel) => channel.buffer) : [] }),
+				);
 				tetraear = new TetraEarStream(DspProcessor, _wasm.memory, (message) =>
 					self.postMessage(message, { transfer: message.bits ? [message.bits] : [] }),
 				);
@@ -498,7 +502,7 @@ function handleDspChannelize(msg: Extract<DspInput, { type: 'channelize' }>) {
 }
 
 function handleDspInit(msg: Extract<DspInput, { type: 'init' }>) {
-	for (const decoder of [hdRadio, rtl433, adsb, ais, radiosonde, rtk, ble, acars, aprs, tetra, tetraear]) decoder.reset();
+	for (const decoder of [hdRadio, rtl433, adsb, ais, radiosonde, rtk, ble, acars, aprs, tetra, meteor, tetraear]) decoder.reset();
 	inputIsFloat = false;
 	inputUsesBandCenter = false;
 	dsdStatus.reset();
@@ -556,7 +560,7 @@ function handleDspProcess(msg: Extract<DspInput, { type: 'process' }>) {
 		const input = inputIsFloat ? sharedFloatPtr : sharedIqPtr;
 		rtl433.process(input, msg.chunkLen, inputIsFloat);
 		const sequence = msg.sequence ?? msg.chunkId;
-		for (const decoder of [adsb, ais, radiosonde, rtk, ble, acars, aprs, tetra, tetraear])
+		for (const decoder of [adsb, ais, radiosonde, rtk, ble, acars, aprs, tetra, meteor, tetraear])
 			decoder.process(input, msg.chunkLen, inputIsFloat, sequence);
 		const audioOut = processReceiveAudio(input, msg, sequence);
 		// Complete decoder work before acknowledging the input. Otherwise replies
@@ -662,7 +666,7 @@ function decodeDigitalAudio(iq: Float32Array, squelched: boolean, count: number)
 }
 
 function configurePacketDecoders(params: VfoParams, center: number): void {
-	for (const decoder of [hdRadio, rtl433, adsb, ais, radiosonde, rtk, ble, acars, aprs, tetra, tetraear])
+	for (const decoder of [hdRadio, rtl433, adsb, ais, radiosonde, rtk, ble, acars, aprs, tetra, meteor, tetraear])
 		decoder.configure(params, systemSampleRate, center);
 }
 

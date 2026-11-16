@@ -46,6 +46,8 @@ export interface VfoParams {
 	acars?: boolean;
 	aprs?: boolean;
 	tetra?: boolean;
+	/** Meteor-M LRPT weather satellite images. */
+	meteor?: boolean;
 	rtl433?: boolean;
 	rtl433SampleRate?: number;
 	rtl433Protocols?: string;

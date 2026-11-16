@@ -6,6 +6,8 @@ import { validDigimodeMessage } from '@/worker/decoders/digimode/validation';
 import { dscBuildDistress, dscFrameBits } from '@/worker/decoders/digimode/dsc/symbols';
 import { vhfDscSignal } from './fixtures';
 import { navtexBits, navtexSignal } from './marine-fixtures';
+import { avlcFrame, controlI } from '@/worker/decoders/digimode/vdl2/avlc';
+import { vdl2AcarsInfo, vdl2Signal } from './vdl2-fixtures';
 
 const binary = readFileSync(new URL('../../wasm/dsp/pkg/browsdr_dsp_bg.wasm', import.meta.url));
 vi.mock('/wasm/dsp/browsdr_dsp.js', async () => {
@@ -70,6 +72,34 @@ describe('Digital Modes through the production DSP worker', () => {
 		expect(output.every(validDigimodeMessage)).toBe(true);
 		const records = output.flatMap((message) => message.records);
 		expect(records.map((record) => record.text)).toEqual(['NAVTEX G Navigational warning 01: WIND SW 5 TO 6.']);
+	}, 20_000);
+	it('decodes a VDL2 ACARS burst on 136.975 MHz 25 kHz from the centre at 240 kS/s', async () => {
+		const { messages, send } = await startWorker();
+		const params = { freq: 136.975, mode: 'nfm', bandwidth: 12500, enabled: false, digimode: 'vdl2' };
+		await send({ type: 'init', sampleRate: 240000, centerFreq: 136.95, params });
+		const gs = { addr: 0x10a000, type: 4, status: false };
+		const aircraft = { addr: 0x4a1234, type: 1, status: false };
+		const info = vdl2AcarsInfo('G-EUUA', 'H1', '3', 'M07ABA0117#DFB/FUEL 145/ETA 1230');
+		const iq = vdl2Signal([{ frames: [avlcFrame(gs, aircraft, controlI(2, 1, false), info)] }], {
+			rate: 240000,
+			offsetHz: 25000 + 300,
+			snrDb: 25,
+			leadSec: 0.3,
+		});
+		const input = Int8Array.from(iq, (value) => Math.max(-127, Math.min(127, Math.round(value * 800))));
+		let clock = performance.now();
+		vi.spyOn(performance, 'now').mockImplementation(() => (clock += 300));
+		for (let i = 0, chunkId = 1; i < input.length; i += 48000, chunkId++) {
+			const block = input.slice(i, i + 48000);
+			await send({ type: 'process', params, chunk: block.buffer, chunkLen: block.length, floatIq: false, chunkId });
+		}
+		const output = digimodeMessages(messages);
+		expect(output.every(validDigimodeMessage)).toBe(true);
+		const records = output.flatMap((message) => message.records);
+		expect(records.map((record) => record.text)).toEqual([
+			'4A1234 (G-EUUA) → GS 10A000 · I · ACARS H1 (Terminal message) BA0117: #DFB/FUEL 145/ETA 1230',
+		]);
+		expect(records[0]).toMatchObject({ mode: 'vdl2', damaged: false });
 	}, 20_000);
 	it('reports a channel that does not fit the received band', async () => {
 		const { messages, send } = await startWorker();

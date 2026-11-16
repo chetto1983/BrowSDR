@@ -66,6 +66,26 @@ export const DIGIMODES: readonly DigimodeInfo[] = [
 		image: true,
 		source: 'core/src/hfdig/hfdig_sstv.cpp, hfdig_sstv_modes.h',
 	},
+	{
+		id: 'vdl2',
+		label: 'VDL Mode 2',
+		family: 'Aviation',
+		description:
+			'VHF data link between aircraft and ground stations: D8PSK bursts at 10.5 ksymbol/s carrying AVLC frames with ACARS messages, ATN packets and link management (ICAO Annex 10, Doc 9776).',
+		rate: 84000,
+		bandwidth: 25000,
+		presets: [
+			{ label: '136.975 (CSC)', freqMHz: 136.975 },
+			{ label: '136.900', freqMHz: 136.9 },
+			{ label: '136.875', freqMHz: 136.875 },
+			{ label: '136.850', freqMHz: 136.85 },
+			{ label: '136.825', freqMHz: 136.825 },
+			{ label: '136.775', freqMHz: 136.775 },
+			{ label: '136.725', freqMHz: 136.725 },
+			{ label: '136.675', freqMHz: 136.675 },
+		],
+		source: 'core/src/vdl2/vdl2_rx.cpp, vdl2_proto.cpp, rust/onair_vdl2',
+	},
 ];
 
 export const digimodeInfo = (id: string | undefined): DigimodeInfo | undefined => DIGIMODES.find((mode) => mode.id === id);

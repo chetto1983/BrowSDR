@@ -35,8 +35,8 @@ export default defineComponent({
 		if (!receiver) throw new Error('MeteorPanel requires a receiver');
 		const canvas = ref<HTMLCanvasElement | null>(null);
 		const now = ref(new Date());
-		const latitude = ref(receiver.meteor.site?.lat ?? '');
-		const longitude = ref(receiver.meteor.site?.lon ?? '');
+		const latitude = ref(receiver.station?.lat ?? '');
+		const longitude = ref(receiver.station?.lon ?? '');
 		const imageVfo = computed(() => {
 			const index = receiver.vfos.findIndex((vfo) => vfo.meteor);
 			return index < 0 ? receiver.activeVfoIndex : index;

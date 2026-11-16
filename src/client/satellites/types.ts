@@ -59,3 +59,51 @@ export interface PassRow {
 	inProgress: boolean;
 	pass: Pass;
 }
+
+/** How BrowSDR receives a downlink: demodulator, tuning point and, for linear transponders, the passband. */
+export interface Downlink {
+	label: string;
+	freqMHz: number;
+	mode: 'nfm' | 'usb' | 'cw';
+	/** Receive filter width when the mode default does not fit (CW beacons need room for Doppler and dongle error). */
+	bandwidthHz?: number;
+	/** Passband of a linear transponder, in MHz. */
+	band?: [number, number];
+	/** A decoder that takes the downlink instead of Doppler tracking (its decoder restarts when the frequency changes). */
+	decoder?: 'aprs' | 'meteor';
+}
+
+/** A satellite on the tracking map, with what it transmits and how to work it. */
+export interface TrackedSatellite {
+	name: string;
+	norad: number;
+	downlinks: Downlink[];
+	/** Uplink for stations that transmit; BrowSDR only receives. */
+	uplink?: string;
+	note?: string;
+}
+
+/** Where a satellite is at one instant, and how it looks from the station when one is set. */
+export interface OrbitState {
+	norad: number;
+	latitude: number;
+	longitude: number;
+	altitudeKm: number;
+	sunlit: boolean;
+	look: (Look & { rangeKm: number; rangeRateKmS: number }) | null;
+}
+
+/** Doppler tracking of one downlink on one VFO. */
+export interface SatelliteTracking {
+	norad: number;
+	downlink: number;
+	vfoIndex: number;
+	/** Downlink frequency at the satellite, in MHz; follows the VFO when the user retunes it. */
+	baseMHz: number;
+	/** Frequency the tracker last set, to notice manual retuning. */
+	lastMHz: number;
+	dopplerHz: number;
+}
+
+/** A map point in degrees; longitudes may run past ±180° so lines stay continuous. */
+export type LatLon = [latitude: number, longitude: number];

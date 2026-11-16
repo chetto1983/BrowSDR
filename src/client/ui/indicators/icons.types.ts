@@ -9,6 +9,7 @@ export type UiIconName =
 	| 'vessel'
 	| 'message'
 	| 'location'
+	| 'satellite'
 	| 'stats'
 	| 'activity'
 	| 'reset';

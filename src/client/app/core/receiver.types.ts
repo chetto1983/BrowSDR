@@ -307,6 +307,15 @@ export interface ReceiverMethods {
 	meteorTune(pass?: Pass): Promise<boolean>;
 	meteorArm(pass: Pass): void;
 	meteorDisarm(): void;
+	toggleSatellitesPanel(): void;
+	satellitesRefresh(now?: Date): Promise<void>;
+	setStationLocation(lat: number, lon: number): string;
+	locateStation(): Promise<string>;
+	satelliteSetLocation(lat: number, lon: number): void;
+	satelliteUseMyPosition(): void;
+	satelliteSelect(norad: number): void;
+	satelliteTrack(norad?: number, downlink?: number): Promise<void>;
+	satelliteStopTracking(): void;
 	toggleAdsbPanel(): void;
 	tuneAdsbVfo(index?: number): void;
 	_onAdsbMessage(index: number, freq: number, msg: AdsbMessage): void;

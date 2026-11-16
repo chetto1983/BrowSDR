@@ -41,6 +41,11 @@ Enjoy the power of a desktop SDR platform fully within your web browser.
 - **📍 APRS Stations and Live Map**
   Decode amateur radio position reports, messages, weather and telemetry on
   1200-baud packet channels, with a live station map.
+- **🌍 Satellite Map and Doppler Tracking**
+  Tools → Satellites shows the ISS, SO-50, AO-123, RS-44, FO-29, AO-7, JO-97 and
+  Meteor-M live on a world map with ground track and coverage, pointing from your
+  station and the next passes. Track tunes a VFO to the downlink and corrects
+  Doppler every second. See [the satellite guide](docs/satellites.md).
 - **🛰️ Meteor-M Weather Satellite Images**
   Receive LRPT pictures from Meteor-M2 3 and M2 4 on 137.9 MHz: an OQPSK demodulator
   in the DSP worker feeds [meteor_decode](wasm/meteor/README.md), and the picture

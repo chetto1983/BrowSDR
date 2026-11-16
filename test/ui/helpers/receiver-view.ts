@@ -12,6 +12,8 @@ import AprsPanel from '@/app/decoders/aprs/panel';
 import { aprsMethods } from '@/app/decoders/aprs/controller';
 import MeteorPanel from '@/app/decoders/meteor/panel';
 import { meteorMethods } from '@/app/decoders/meteor/controller';
+import SatellitesPanel from '@/app/satellites/panel';
+import { satelliteMethods } from '@/app/satellites/controller';
 import { defineComponent } from 'vue';
 import template from '@/app/templates/receiver';
 import VfoPanel from '@/app/radio/vfo-panel';
@@ -62,6 +64,7 @@ export const ReceiverView = defineComponent({
 		AcarsPanel,
 		AprsPanel,
 		MeteorPanel,
+		SatellitesPanel,
 		HeaderTools,
 		DiscoveryPanel,
 		IqCapturePanel,
@@ -91,6 +94,7 @@ export const ReceiverView = defineComponent({
 		...acarsMethods,
 		...aprsMethods,
 		...meteorMethods,
+		...satelliteMethods,
 		...bookmarkMethods,
 		...zoomMethods,
 		...audioMethods,

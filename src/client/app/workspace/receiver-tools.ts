@@ -150,6 +150,14 @@ function utilityGroup(receiver: AppInstance): UiMenuGroup {
 				open: receiver.iqRecording.panelOpen,
 			},
 			{
+				id: 'satellites',
+				label: 'Satellites',
+				description: 'Live map, passes & Doppler tracking',
+				icon: 'satellite',
+				active: !!receiver.satellites.tracking,
+				open: receiver.satellites.panelOpen,
+			},
+			{
 				id: 'discovery',
 				label: 'Signal Discovery',
 				description: 'Find frequencies & estimate signal widths',
@@ -182,6 +190,7 @@ function selectTool(receiver: AppInstance, id: string, openOnly = false): void {
 	else if (id === 'activity') receiver.showActivity = !receiver.showActivity;
 	else if (id === 'discovery') receiver.discovery.panelOpen = !receiver.discovery.panelOpen;
 	else if (id === 'iqRecording') receiver.iqRecording.panelOpen = !receiver.iqRecording.panelOpen;
+	else if (id === 'satellites') receiver.toggleSatellitesPanel();
 	else {
 		const panels = {
 			whisper: receiver.whisper,

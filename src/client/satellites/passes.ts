@@ -1,11 +1,11 @@
 import { degreesToRadians, ecfToLookAngles, eciToEcf, gstime, propagate, twoline2satrec } from 'satellite.js';
 import type { SatRec } from 'satellite.js';
-import { METEOR_SATELLITES } from './catalog';
+import { satelliteName } from './catalog';
 import type { Look, Pass, Site, Tle } from './types';
 
 const STEP_MS = 30_000;
-/** A Meteor pass lasts at most ~16 minutes, so a pass that is up at `from` rose less than 20 minutes earlier. */
-const LOOKBACK_MS = 20 * 60_000;
+/** The longest pass here (AO-7, about 24 minutes from horizon to horizon) rose less than 30 minutes before `from`. */
+const LOOKBACK_MS = 30 * 60_000;
 const POOR_ELEVATION = 20;
 const COMPASS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
 const DEGREES = 180 / Math.PI;
@@ -48,9 +48,8 @@ function culmination(satrec: SatRec, site: Site, aos: number, los: number): numb
 function buildPass(tle: Tle, satrec: SatRec, site: Site, aos: number, los: number, from: number): Pass {
 	const tca = culmination(satrec, site, aos, los);
 	const maxElevation = elevationAt(satrec, site, tca);
-	const known = METEOR_SATELLITES.find((satellite) => satellite.norad === tle.norad);
 	return {
-		satellite: known?.name ?? tle.name,
+		satellite: satelliteName(tle.norad, tle.name),
 		norad: tle.norad,
 		aos: new Date(aos),
 		tca: new Date(tca),

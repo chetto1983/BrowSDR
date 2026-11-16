@@ -1,0 +1,136 @@
+<section
+	v-if="state.panelOpen"
+	class="adsb-panel satellites-panel"
+	:class="{ 'adsb-fullscreen': fullscreen }"
+	aria-label="Satellite tracking"
+>
+	<UiToolHeader variant="msgcenter" closable close-label="Close satellites panel" @close="receiver.toggleSatellitesPanel">
+		Satellites <span class="msgcenter-count">{{ visible }} above the horizon</span>
+		<template #actions>
+			<UiButton variant="transcript" @click="showMap = !showMap" :aria-expanded="showMap">{{ showMap ? 'Hide map' : 'Show map' }}</UiButton>
+			<UiButton variant="transcript" @click="setFullscreen(!fullscreen)" :aria-pressed="fullscreen"
+				>{{ fullscreen ? 'Exit fullscreen' : 'Fullscreen map' }}</UiButton
+			>
+		</template>
+	</UiToolHeader>
+	<div class="adsb-summary">
+		<span v-if="tracking" class="satellite-tracking"
+			>{{ tracking }} <UiButton variant="transcript" @click="receiver.satelliteStopTracking()">Stop</UiButton></span
+		>
+		<span v-if="state.notice" class="meteor-notice">{{ state.notice }}</span>
+		<span v-if="state.message">{{ state.message }}</span>
+	</div>
+	<div class="adsb-content" :class="{ 'adsb-list-only': !showMap }">
+		<div v-if="showMap" class="adsb-map-wrap">
+			<div ref="mapElement" class="adsb-map" aria-label="Satellite map"></div>
+			<div v-if="error" class="adsb-map-error" role="status">{{ error }}</div>
+		</div>
+		<div class="adsb-list satellites-list">
+			<div class="meteor-location">
+				<label>Lat <input v-model="latitude" inputmode="decimal" aria-label="Station latitude" size="7" /></label>
+				<label>Lon <input v-model="longitude" inputmode="decimal" aria-label="Station longitude" size="7" /></label>
+				<UiButton @click="setLocation">Set</UiButton>
+				<UiButton @click="receiver.satelliteUseMyPosition()">My position</UiButton>
+			</div>
+			<table class="adsb-table" aria-label="Satellites">
+				<thead>
+					<tr>
+						<th>Satellite</th>
+						<th>Az · El</th>
+						<th>Next pass</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr
+						v-for="row in rows"
+						:key="row.satellite.norad"
+						:class="{ selected: state.selected === row.satellite.norad, 'satellite-up': (row.state?.look?.elevation ?? -90) > 0 }"
+					>
+						<td>
+							<UiButton variant="transcript" @click="select(row.satellite.norad)" :aria-pressed="state.selected === row.satellite.norad"
+								>{{ row.satellite.name }}</UiButton
+							><small v-if="row.state">{{ row.state.sunlit ? 'Sunlit' : 'Eclipse' }} · {{ Math.round(row.state.altitudeKm) }} km</small
+							><small v-else>No orbit yet</small>
+						</td>
+						<td>{{ pointing(row.state) }}</td>
+						<td>
+							<template v-if="row.next">{{ row.next.inProgress ? 'now' : row.next.when }}<small>{{ row.next.detail }}</small></template>
+							<template v-else>—</template>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<div class="adsb-details satellite-details" aria-label="Selected satellite">
+				<div class="adsb-details-heading">
+					<strong>{{ selected.satellite.name }}</strong>
+					<UiSelect v-model.number="state.downlink" aria-label="Downlink">
+						<option v-for="(item, i) in selected.satellite.downlinks" :key="i" :value="i">
+							{{ item.label }} · {{ item.freqMHz.toFixed(3) }} MHz {{ item.mode.toUpperCase() }}
+						</option>
+					</UiSelect>
+					<UiButton @click="receiver.satelliteTrack()">Track on VFO {{ receiver.activeVfoIndex + 1 }}</UiButton>
+				</div>
+				<dl class="adsb-detail-grid">
+					<div>
+						<dt>Heard now</dt>
+						<dd v-if="heard">{{ formatMHz(heard.freq) }}<small>Doppler {{ formatKHz(heard.shiftHz) }}</small></dd>
+						<dd v-else>
+							{{ formatMHz(downlink.freqMHz) }}<small>{{ downlink.decoder ? 'Decoder handles Doppler' : 'Needs station and orbit' }}</small>
+						</dd>
+					</div>
+					<div>
+						<dt>Pointing</dt>
+						<dd>
+							{{ pointing(selected.state) }}<small v-if="selected.state?.look">{{ Math.round(selected.state.look.rangeKm) }} km away</small>
+						</dd>
+					</div>
+					<div v-if="downlink.band">
+						<dt>Passband</dt>
+						<dd>{{ downlink.band[0].toFixed(3) }}–{{ downlink.band[1].toFixed(3) }} MHz</dd>
+					</div>
+					<div v-if="selected.satellite.uplink">
+						<dt>Uplink</dt>
+						<dd>{{ selected.satellite.uplink }}</dd>
+					</div>
+				</dl>
+				<p v-if="selected.satellite.note" class="adsb-detail-note">{{ selected.satellite.note }}</p>
+			</div>
+			<div class="satellite-pass-tools">
+				<UiSelect v-model.number="passFilter" aria-label="Passes of">
+					<option :value="0">All satellites</option>
+					<option v-for="item in satellites" :key="item.norad" :value="item.norad">{{ item.name }}</option>
+				</UiSelect>
+				<UiSelect v-model.number="state.minPeak" aria-label="Lowest peak elevation">
+					<option v-for="degrees in [10, 20, 30, 45]" :key="degrees" :value="degrees">Peak ≥ {{ degrees }}°</option>
+				</UiSelect>
+				<UiSelect v-model.number="state.hours" aria-label="Prediction span">
+					<option :value="48">48 hours</option>
+					<option :value="168">7 days</option>
+				</UiSelect>
+			</div>
+			<div class="adsb-table-wrap">
+				<table v-if="passList.length" class="adsb-table satellite-passes" aria-label="Passes">
+					<thead>
+						<tr>
+							<th>Pass</th>
+							<th>Start</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr v-for="row in passList" :key="row.key" :class="{ selected: state.selected === row.pass.norad }">
+							<td>
+								<UiButton variant="transcript" @click="select(row.pass.norad)">{{ row.label }}</UiButton><small>{{ row.detail }}</small>
+							</td>
+							<td>{{ row.inProgress ? 'now' : row.when }}</td>
+						</tr>
+					</tbody>
+				</table>
+				<p v-else-if="receiver.station && state.tles.length" class="meteor-empty">No passes above {{ state.minPeak }}° in this span.</p>
+			</div>
+		</div>
+	</div>
+	<div class="adsb-footer">
+		<span>{{ state.tleNote || 'Orbits load from Celestrak' }} · SGP4 · Doppler updated every second while tracking</span
+		><span>Green: above your horizon · yellow: sunlit · grey: in Earth's shadow. Map tiles need internet.</span>
+	</div>
+</section>

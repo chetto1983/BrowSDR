@@ -10,6 +10,7 @@ import {
 	Radio,
 	RadioTower,
 	RotateCcw,
+	Satellite,
 	Ship,
 	Smartphone,
 } from '@lucide/vue';
@@ -28,6 +29,7 @@ const icons = {
 	vessel: Ship,
 	message: Mail,
 	location: MapPin,
+	satellite: Satellite,
 	stats: ChartNoAxesColumn,
 	activity: Activity,
 	reset: RotateCcw,

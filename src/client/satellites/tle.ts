@@ -1,7 +1,7 @@
 import type { StoredTles, Tle } from './types';
 
 const CELESTRAK = 'https://celestrak.org/NORAD/elements/gp.php';
-const STORAGE_KEY = 'browsdr.meteorTles';
+const METEOR_STORAGE_KEY = 'browsdr.meteorTles';
 const STALE_MS = 2 * 24 * 3600e3;
 
 /** TLE epoch field (line 1, columns 19-32): two-digit year, then day of year with its fraction. */
@@ -44,11 +44,14 @@ export async function fetchTles(norads: readonly number[], fetchFn: typeof fetch
 
 /** TLEs kept per browser so predictions also work offline in the field; refetched after two days. */
 export class TleCache {
-	constructor(private readonly storage: Pick<Storage, 'getItem' | 'setItem'> | null) {}
+	constructor(
+		private readonly storage: Pick<Storage, 'getItem' | 'setItem'> | null,
+		private readonly key = METEOR_STORAGE_KEY,
+	) {}
 
 	get(): { tles: Tle[]; fetchedAt: Date } | null {
 		try {
-			const raw = this.storage?.getItem(STORAGE_KEY);
+			const raw = this.storage?.getItem(this.key);
 			if (!raw) return null;
 			const stored = JSON.parse(raw) as StoredTles;
 			return { fetchedAt: new Date(stored.fetchedAt), tles: stored.tles.map((tle) => ({ ...tle, epoch: new Date(tle.epoch) })) };
@@ -60,7 +63,7 @@ export class TleCache {
 	put(tles: Tle[], at: Date): void {
 		const stored: StoredTles = { fetchedAt: at.toISOString(), tles: tles.map((tle) => ({ ...tle, epoch: tle.epoch.toISOString() })) };
 		try {
-			this.storage?.setItem(STORAGE_KEY, JSON.stringify(stored));
+			this.storage?.setItem(this.key, JSON.stringify(stored));
 		} catch {
 			/* Storage may be full or blocked; the fresh TLEs still serve this session. */
 		}

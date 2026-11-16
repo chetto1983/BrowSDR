@@ -1,0 +1,75 @@
+.satellites-list {
+	overflow: auto;
+}
+.satellites-list .meteor-location {
+	padding: 8px 8px 0;
+	font-size: 12px;
+}
+.satellites-panel .adsb-table {
+	min-width: 0;
+}
+.satellites-panel .adsb-table th:nth-child(1) {
+	width: 32%;
+}
+.satellites-panel .adsb-table th:nth-child(2) {
+	width: 26%;
+}
+.satellites-panel .adsb-table th:nth-child(3) {
+	width: auto;
+}
+.satellites-panel .adsb-table td:last-child {
+	white-space: normal;
+}
+.satellites-panel.adsb-fullscreen .adsb-content {
+	grid-template-columns: minmax(0, 1fr) minmax(400px, 32%);
+}
+.satellites-panel .adsb-footer {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px 20px;
+}
+.satellites-panel .adsb-table small {
+	display: block;
+	color: var(--text-muted);
+}
+.satellites-panel tr.satellite-up td:first-child {
+	box-shadow: inset 3px 0 0 #22c55e;
+}
+.satellite-details {
+	overflow: visible;
+	border-top: 1px solid var(--border);
+}
+.satellite-details .adsb-details-heading {
+	flex-wrap: wrap;
+	justify-content: flex-start;
+}
+.satellite-details .adsb-details-heading > :nth-child(2) {
+	flex: 1 1 180px;
+	min-width: 0;
+}
+.satellite-pass-tools {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	padding: 0 8px 6px;
+}
+.satellite-tracking {
+	color: var(--text-main);
+}
+.leaflet-tooltip.satellite-label {
+	padding: 0 4px;
+	font-size: 11px;
+	background: rgba(17, 24, 39, 0.8);
+	color: #f9fafb;
+	border: 0;
+	box-shadow: none;
+}
+.leaflet-tooltip.satellite-label::before {
+	display: none;
+}
+.satellites-panel .satellite-passes th:nth-child(1) {
+	width: 65%;
+}
+.satellites-panel .satellite-passes th:nth-child(2) {
+	width: auto;
+}

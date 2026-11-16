@@ -6,7 +6,8 @@ import { METEOR_SATELLITES } from '@/satellites/catalog';
 import { predictPasses } from '@/satellites/passes';
 import { errorMessage } from '@/platform/errors';
 import { MeteorImage } from './image';
-import { loadStation, meteorTles, saveStation } from './station';
+import { loadStation } from '@/satellites/station';
+import { meteorTles } from './station';
 import { tuneForMeteor } from './tuning';
 
 const PASS_HOURS = 48;
@@ -78,15 +79,15 @@ export const meteorMethods = {
 		return `${status.message}${signal}${decode}`;
 	},
 	async meteorRefreshPasses(this: AppInstance, now = new Date()): Promise<void> {
-		this.meteor.site ??= loadStation();
-		if (!this.meteor.site) {
+		this.station ??= loadStation();
+		if (!this.station) {
 			this.meteor.passes = [];
 			this.meteor.passMessage = 'Set the station location first.';
 			return;
 		}
 		try {
 			const { tles, note } = await meteorTles(now);
-			this.meteor.passes = predictPasses(tles, this.meteor.site, now, PASS_HOURS);
+			this.meteor.passes = predictPasses(tles, this.station, now, PASS_HOURS);
 			this.meteor.tleNote = note;
 			this.meteor.passMessage = this.meteor.passes.length ? '' : 'No passes in the next 48 hours.';
 		} catch (error) {
@@ -95,24 +96,10 @@ export const meteorMethods = {
 		}
 	},
 	meteorSetLocation(this: AppInstance, lat: number, lon: number): void {
-		if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) {
-			this.meteor.notice = 'Enter latitude (-90 to 90) and longitude (-180 to 180) in degrees.';
-			return;
-		}
-		this.meteor.site = { lat, lon, altM: 0 };
-		saveStation(this.meteor.site);
-		this.meteor.notice = '';
-		void this.meteorRefreshPasses();
+		this.meteor.notice = this.setStationLocation(lat, lon);
 	},
 	meteorUseMyPosition(this: AppInstance): void {
-		if (!navigator.geolocation) {
-			this.meteor.notice = 'This browser cannot report its position; enter it by hand.';
-			return;
-		}
-		navigator.geolocation.getCurrentPosition(
-			(position) => this.meteorSetLocation(+position.coords.latitude.toFixed(3), +position.coords.longitude.toFixed(3)),
-			(error) => (this.meteor.notice = `Position unavailable: ${error.message}`),
-		);
+		void this.locateStation().then((notice) => (this.meteor.notice = notice));
 	},
 	async meteorTune(this: AppInstance, pass?: Pass): Promise<boolean> {
 		const freq = METEOR_SATELLITES.find((satellite) => satellite.norad === pass?.norad)?.freqMHz;

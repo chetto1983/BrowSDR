@@ -63,3 +63,15 @@ file). Algorithms and protocol tables follow the OnAir source.
 | `src/client/worker/decoders/digimode/vdl2/types.ts` | `rust/onair_vdl2/src/bits.rs`, `avlc.rs`, `proto.rs`, `core/include/dect2/vdl2/vdl2_tel.h` (Vdl2Message), `rust/onair_acars/src/block.rs` |
 | `src/client/worker/decoders/digimode/vdl2/index.ts` | after `core/src/vdl2/vdl2_rx.cpp` (one record per AVLC frame) |
 | `test/digimode/vdl2-fixtures.js` | `core/src/vdl2/vdl2_gen.cpp` (burst waveform), `vdl2_proto.cpp` (builders), `core/src/acars/acars_proto.cpp` (acarsBuildFrame) |
+| `src/client/worker/decoders/digimode/tones/proto.ts` | `core/src/tones/tones_proto.cpp`, `core/include/dect2/tones/tones_proto.h` (CTCSS, DCS, DTMF, five-tone and SELCAL tables), `dtmf_numbers.h` (key group kinds) |
+| `src/client/worker/decoders/digimode/tones/types.ts` | `core/include/dect2/tones/tones_proto.h` (SeqSet, DcsHit), `tones_tel.h` (ToneEvent) |
+| `src/client/worker/decoders/digimode/tones/dsp.ts` | `core/src/tones/tones_rx.cpp` (Biquad, Goertzel, FFT, Hann windows), `core/include/dect2/dmr/dmr_dsp.h` (lowpassTaps) |
+| `src/client/worker/decoders/digimode/tones/audio.ts` | `core/src/tones/tones_rx.cpp` (8 kHz and 1 kHz audio history) |
+| `src/client/worker/decoders/digimode/tones/front.ts` | `core/src/packet/packet_demod.cpp` (FmFront discriminator), `core/src/tones/tones_rx.cpp` (audio filter to 8 kHz) |
+| `src/client/worker/decoders/digimode/tones/subaudible.ts` | `core/src/tones/tones_rx.cpp` (CTCSS and DCS detectors) |
+| `src/client/worker/decoders/digimode/tones/voice.ts` | `core/src/tones/tones_rx.cpp` (DTMF and five-tone sequential detectors) |
+| `src/client/worker/decoders/digimode/tones/selcal.ts` | `core/src/tones/tones_rx.cpp` (SELCAL detector) |
+| `src/client/worker/decoders/digimode/tones/twotone.ts` | `core/src/tones/tones_rx.cpp` (pure tone tracker, two-tone paging detector) |
+| `src/client/worker/decoders/digimode/tones/receiver.ts` | `core/src/tones/tones_rx.cpp` (TonesReceiver: audio stream and hop schedule) |
+| `src/client/worker/decoders/digimode/tones/index.ts` | `core/src/tones/tones_rx.cpp` (FM path, events), `core/include/dect2/tones/tones_tel.h` (kind names, summary) |
+| `test/digimode/tones/fixtures.js` | `core/src/tones/tones_gen.cpp` (ToneScene, toneSceneFm) |

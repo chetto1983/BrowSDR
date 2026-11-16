@@ -86,6 +86,20 @@ export const DIGIMODES: readonly DigimodeInfo[] = [
 		],
 		source: 'core/src/vdl2/vdl2_rx.cpp, vdl2_proto.cpp, rust/onair_vdl2',
 	},
+	{
+		id: 'tones',
+		label: 'Tone signalling (CTCSS, DCS, DTMF, selcall)',
+		family: 'Two-way radio',
+		description:
+			'Sub-audible CTCSS tones and DCS codes (normal and inverted), DTMF digits, five-tone selcall (ZVEI, CCIR, EEA, EIA, DZVEI), SELCAL and two-tone pages on an FM voice channel. The status line shows what is on the channel now; the record follows when the tone, code, key group or call ends.',
+		rate: 16000,
+		bandwidth: 12500,
+		presets: [
+			{ label: 'PMR446 channel 1', freqMHz: 446.00625 },
+			{ label: '2 m FM calling (Region 1)', freqMHz: 145.5 },
+		],
+		source: 'core/src/tones/tones_rx.cpp, tones_proto.cpp',
+	},
 ];
 
 export const digimodeInfo = (id: string | undefined): DigimodeInfo | undefined => DIGIMODES.find((mode) => mode.id === id);

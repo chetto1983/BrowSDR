@@ -2,3 +2,4 @@
 relay/** text eol=lf
 # Shell scripts run in WSL/Linux bash, which rejects CRLF.
 wasm/**/*.sh text eol=lf
+test/decoders/meteor/*.s binary

@@ -2,7 +2,8 @@
 export interface MeteorModule {
 	HEAP8: Int8Array;
 	HEAPU8: Uint8Array;
-	_meteor_init(): void;
+	/** `diffcoded` 1 differentially decodes the symbols (OQPSK downlinks), 0 leaves them as they are. */
+	_meteor_init(diffcoded: number): void;
 	_meteor_reset(): void;
 	_meteor_input(): number;
 	_meteor_input_size(): number;
@@ -21,6 +22,9 @@ export interface MeteorModule {
 export type MeteorFactory = (options: { locateFile(path: string): string }) => Promise<MeteorModule>;
 
 export type MeteorChannelIndex = 0 | 1 | 2;
+
+/** LRPT modulation: plain QPSK, or offset QPSK (Q half a symbol late), which Meteor-M2 3 and 4 send. */
+export type MeteorModulation = 'qpsk' | 'oqpsk';
 
 export interface MeteorStats {
 	/** Reed-Solomon errors corrected in the last CADU; -1 when it could not be corrected. */

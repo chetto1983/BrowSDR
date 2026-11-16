@@ -112,7 +112,7 @@ export class MeteorStream {
 
 	/** Each channel gets its own meteor_decode instance; symbols wait while it loads. */
 	private load(key: string): void {
-		const loading = createMeteorDecoder().then(
+		const loading = createMeteorDecoder(undefined, this.demodulator.modulation).then(
 			(decoder) => {
 				if (this.key !== key || this.loading !== loading) return;
 				this.decoder = decoder;

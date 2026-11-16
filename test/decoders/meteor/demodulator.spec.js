@@ -5,7 +5,7 @@ import { bestBitErrorRate, noiseOnly, qpskSignal } from './fixtures';
 /** Runs the demodulator over `iq` in 10 ms blocks, sampling `locked` after each block. */
 function demodulate(iq) {
 	const chunks = [];
-	const demodulator = new MeteorDemodulator((soft) => chunks.push(Int8Array.from(soft)));
+	const demodulator = new MeteorDemodulator((soft) => chunks.push(Int8Array.from(soft)), 'qpsk');
 	const lockedAt = [];
 	const block = (METEOR_CHANNEL_RATE / 100) * 2;
 	for (let at = 0; at < iq.length; at += block) {
@@ -48,7 +48,7 @@ describe('Meteor LRPT QPSK demodulator', () => {
 	it('relocks quickly after a reset', () => {
 		const { iq, bits } = qpskSignal(72000 * 2, { offsetHz: -1200, snrDb: 20, seed: 5 });
 		const chunks = [];
-		const demodulator = new MeteorDemodulator((soft) => chunks.push(Int8Array.from(soft)));
+		const demodulator = new MeteorDemodulator((soft) => chunks.push(Int8Array.from(soft)), 'qpsk');
 		demodulator.process(iq.subarray(0, iq.length / 2));
 		demodulator.reset();
 		expect(demodulator.locked).toBe(false);

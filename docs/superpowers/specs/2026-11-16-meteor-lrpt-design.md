@@ -18,7 +18,7 @@ Success means two things:
 - **Satellites:**
   - Meteor-M2-3 is NORAD 57166. It is weaker because of an antenna deployment problem.
   - Meteor-M2-4 is NORAD 59051. It is the better target.
-  - Both send LRPT on **137.900 MHz**, with 137.100 MHz as backup. The signal is QPSK at 72 ksym/s ("72k" mode), about 120 kHz wide. Doppler is about ±3.5 kHz.
+  - Both send LRPT on **137.900 MHz**, with 137.100 MHz as backup. The signal is OQPSK (see the correction under Non-goals), differentially coded, at 72 ksym/s ("72k" mode), about 120 kHz wide. Doppler is about ±3.5 kHz.
 - **NOAA APT:** the NOAA 15/18/19 satellites were switched off in 2025 and are out of scope.
 - **Pass predictions:** TLEs come from Celestrak (`https://celestrak.org/NORAD/elements/gp.php?CATNR=<id>&FORMAT=TLE`). A pass above 20° elevation lasts about 8–11 minutes. Daytime passes carry visible channels; night passes carry IR only.
 - **Upstream code**, both MIT licensed, by dbdexter-dev:
@@ -65,7 +65,8 @@ Success means two things:
 
 - Unattended capture in the field, meaning a recorder on the Pi with decoding afterwards on the phone. It is a later project, once live reception works.
 - NOAA APT and other satellites (Metop HRPT, GOES): not now.
-- 80k interleaved and OQPSK modes: `meteor_decode` supports them. The demodulator stays QPSK-only for now, and the mode is fixed to 72k.
+- 80k interleaved mode: `meteor_decode` supports it; the mode is fixed to 72k.
+- **Correction (2026-11-16, after the first live pass):** the satellites send **OQPSK**, differentially coded, not QPSK. The pass recorded at 15:54 showed x² lines at 2Δf ± 72 kHz, and a QPSK demodulator never got the Viterbi to sync. The demodulator now has an OQPSK mode (meteor_demod's `demod_oqpsk`), which is the default, and the wrapper calls `decode_init(1, 0)` for it. The carrier window is ±10 kHz: that pass sat about 3.7 kHz low at closest approach.
 - Map projection/georeferencing of images, and rotator control.
 - Decoding on the Pi.
 

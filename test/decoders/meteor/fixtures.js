@@ -1,4 +1,4 @@
-/** Synthetic Meteor LRPT downlinks: QPSK at 72 ksym/s with a root-raised-cosine pulse (alpha 0.6). */
+/** Synthetic Meteor LRPT downlinks: QPSK or OQPSK at 72 ksym/s with a root-raised-cosine pulse (alpha 0.6). */
 
 const SYMBOL_RATE = 72000;
 const ALPHA = 0.6;
@@ -30,9 +30,13 @@ export function prng(seed) {
 /**
  * `symbols` random QPSK symbols as interleaved float I/Q at `rate`. `bits` holds two bits per symbol
  * (I sign, then Q sign; 1 means negative). Offsets: carrier `offsetHz` plus `dopplerHzPerS` drift,
- * symbol timing shifted by `timingOffset` symbol periods, white noise for `snrDb` (per sample).
+ * symbol timing shifted by `timingOffset` symbol periods, white noise for `snrDb` (per sample). With
+ * `oqpsk`, the Q rail is delayed by half a symbol (offset QPSK, as Meteor-M2 3 and 4 transmit).
  */
-export function qpskSignal(symbols, { rate = 144000, offsetHz = 0, dopplerHzPerS = 0, timingOffset = 0, snrDb = 20, seed = 1 } = {}) {
+export function qpskSignal(
+	symbols,
+	{ rate = 144000, offsetHz = 0, dopplerHzPerS = 0, timingOffset = 0, snrDb = 20, seed = 1, oqpsk = false } = {},
+) {
 	const random = prng(seed);
 	const bits = new Uint8Array(symbols * 2);
 	for (let i = 0; i < bits.length; i++) bits[i] = random() < 0.5 ? 1 : 0;
@@ -46,10 +50,10 @@ export function qpskSignal(symbols, { rate = 144000, offsetHz = 0, dopplerHzPerS
 		const t = n / perSymbol - timingOffset; // in symbols
 		let i = 0;
 		let q = 0;
-		for (let k = Math.max(0, Math.ceil(t - SPAN)); k <= Math.min(symbols - 1, Math.floor(t + SPAN)); k++) {
-			const h = rrc(t - k);
-			i += h * (bits[2 * k] ? -1 : 1);
-			q += h * (bits[2 * k + 1] ? -1 : 1);
+		const delay = oqpsk ? 0.5 : 0;
+		for (let k = Math.max(0, Math.ceil(t - SPAN - 1)); k <= Math.min(symbols - 1, Math.floor(t + SPAN)); k++) {
+			i += rrc(t - k) * (bits[2 * k] ? -1 : 1);
+			q += rrc(t - k - delay) * (bits[2 * k + 1] ? -1 : 1);
 		}
 		i *= Math.SQRT1_2;
 		q *= Math.SQRT1_2;
@@ -95,4 +99,32 @@ export function bestBitErrorRate(soft, bits, count, maxLag = 64) {
 		}
 	}
 	return best;
+}
+
+/**
+ * Worst rail's bit error rate: each output rail (I, then Q) is matched on its own against either input
+ * rail, either sign and any lag within `maxLag` symbols. OQPSK's 90-degree ambiguity swaps the rails with
+ * a one-symbol shift between them, which a per-symbol rotation (bestBitErrorRate) cannot express.
+ */
+export function bestRailErrorRate(soft, bits, count, maxLag = 64) {
+	const symbolsOut = soft.length / 2;
+	const start = Math.max(0, symbolsOut - count);
+	const railError = (out) => {
+		let best = 1;
+		for (const rail of [0, 1]) {
+			for (let lag = -maxLag; lag <= maxLag; lag++) {
+				let errors = 0;
+				let total = 0;
+				for (let s = start; s < symbolsOut; s++) {
+					const k = s + lag;
+					if (k < 0 || 2 * k + rail >= bits.length) continue;
+					errors += (soft[2 * s + out] < 0 ? 1 : 0) !== bits[2 * k + rail] ? 1 : 0;
+					total++;
+				}
+				if (total > count / 2) best = Math.min(best, errors / total, 1 - errors / total);
+			}
+		}
+		return best;
+	};
+	return Math.max(railError(0), railError(1));
 }

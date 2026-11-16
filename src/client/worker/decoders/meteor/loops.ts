@@ -1,5 +1,5 @@
 /*
- * The tracking loops of a Meteor LRPT QPSK demodulator, ported from meteor_demod by dbdexter-dev
+ * The tracking loops of a Meteor LRPT QPSK/OQPSK demodulator, ported from meteor_demod by dbdexter-dev
  * (https://github.com/dbdexter-dev/meteor_demod, MIT): a polyphase RRC interpolating filter, an AGC,
  * a Costas loop for the carrier and a Mueller & Müller symbol clock. Gains and thresholds are upstream's.
  */
@@ -123,7 +123,10 @@ const LOCK_BELOW = 85;
 const UNLOCK_ABOVE = 105;
 const SWEEP_STEP = 0.000001;
 
-/** QPSK Costas loop; frequency and phase are in radians per symbol. Sweeps the range while unlocked. */
+/**
+ * QPSK Costas loop; frequency and phase are in radians per mixing step (a symbol for QPSK, half a symbol for
+ * OQPSK). Sweeps the range while unlocked.
+ */
 export class CostasLoop {
 	freq = 0;
 	locked = false;
@@ -147,8 +150,23 @@ export class CostasLoop {
 		const [i, q] = [sample[0], sample[1]];
 		sample[0] = i * c - q * s;
 		sample[1] = i * s + q * c;
-		this.phase += this.freq;
-		if (this.phase >= 2 * Math.PI) this.phase -= 2 * Math.PI;
+		this.advancePhase();
+	}
+
+	/** OQPSK half-symbol: mixes and returns only the in-phase part, advancing the oscillator. */
+	mixI(sample: Float64Array): number {
+		const c = Math.cos(-this.phase);
+		const s = Math.sin(-this.phase);
+		this.advancePhase();
+		return sample[0] * c - sample[1] * s;
+	}
+
+	/** OQPSK full symbol: mixes and returns only the quadrature part, advancing the oscillator. */
+	mixQ(sample: Float64Array): number {
+		const c = Math.cos(-this.phase);
+		const s = Math.sin(-this.phase);
+		this.advancePhase();
+		return sample[0] * s + sample[1] * c;
 	}
 
 	update(i: number, q: number): void {
@@ -169,6 +187,11 @@ export class CostasLoop {
 		this.freq = Math.max(-this.maxFreq, Math.min(this.maxFreq, freq));
 	}
 
+	private advancePhase(): void {
+		this.phase += this.freq;
+		if (this.phase >= 2 * Math.PI) this.phase -= 2 * Math.PI;
+	}
+
 	reset(): void {
 		this.freq = this.phase = 0;
 		this.error = 1000;
@@ -182,6 +205,7 @@ export class SymbolClock {
 	private phase = 0;
 	private freq: number;
 	private previous = 0;
+	private dualState: 1 | 2 = 1;
 	private readonly maxDeviation: number;
 	private readonly alpha: number;
 	private readonly beta: number;
@@ -201,6 +225,18 @@ export class SymbolClock {
 		return this.phase >= 2 * Math.PI;
 	}
 
+	/**
+	 * OQPSK: advances one interpolated slot; 1 at the half-symbol point (take I), 2 at the symbol point
+	 * (take Q, a symbol is due), else 0. Upstream advance_timeslot_dual.
+	 */
+	advanceDual(): 0 | 1 | 2 {
+		this.phase += this.freq;
+		if (this.phase < this.dualState * Math.PI) return 0;
+		const slot = this.dualState;
+		this.dualState = slot === 1 ? 2 : 1;
+		return slot;
+	}
+
 	retime(q: number): void {
 		const error = sign(this.previous) * q - sign(q) * this.previous;
 		this.previous = q;
@@ -211,6 +247,7 @@ export class SymbolClock {
 
 	reset(): void {
 		this.phase = this.previous = 0;
+		this.dualState = 1;
 		this.freq = this.centerFreq;
 	}
 }

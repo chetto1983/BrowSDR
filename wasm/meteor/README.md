@@ -2,7 +2,8 @@
 
 `wrapper.c` and `build.sh` are BrowSDR's integration with the upstream Meteor-M LRPT decoder
 [dbdexter-dev/meteor_decode](https://github.com/dbdexter-dev/meteor_decode) (MIT). It turns
-int8 soft QPSK symbols into the three AVHRR image channels. The upstream source directory
+int8 soft (O)QPSK symbols into the three AVHRR image channels. `meteor_init(diff)` turns on upstream's
+differential decoding (`--diff`), which the OQPSK downlinks of Meteor-M2 3 and 4 need. The upstream source directory
 `meteor_decode/` is a downloaded cache and is excluded from Git.
 
 `wrapper.c` replaces upstream `main.c`:

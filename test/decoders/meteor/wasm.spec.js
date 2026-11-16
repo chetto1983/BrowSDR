@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { beforeAll, describe, expect, it } from 'vitest';
 import MeteorModule from '../../../wasm/meteor/pkg/meteor.js';
@@ -14,6 +15,32 @@ function noise(count, seed = 7) {
 	for (let i = 0; i < count; i++) out[i] = Math.max(-127, Math.min(127, Math.round((uniform() + uniform() + uniform()) * 60)));
 	return out;
 }
+
+/**
+ * 1 MB of soft symbols from the Meteor-M2 4 pass of 2026-11-16 (15:55:33 local, recorded through the relay at
+ * 1.024 MS/s, demodulated by MeteorDemodulator in OQPSK mode): about 7 s of real downlink.
+ */
+const realPass = () => {
+	const bytes = readFileSync(fileURLToPath(new URL('./real-pass.s', import.meta.url)));
+	return new Int8Array(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+};
+
+describe('meteor_decode on a real pass', () => {
+	it('decodes the OQPSK pass once differentially decoded, into image rows', async () => {
+		const decoder = await createMeteorDecoder(factory, 'oqpsk');
+		decoder.push(realPass());
+		expect(decoder.stats().mpdus).toBeGreaterThan(200);
+		expect(decoder.rows()).toBeGreaterThanOrEqual(40);
+		const apids = [0, 1, 2].map((c) => decoder.apid(c)).filter((apid) => apid >= 0);
+		expect(apids.length).toBeGreaterThan(0);
+		expect(apids.every((apid) => apid >= 64 && apid <= 69)).toBe(true);
+	});
+	it('finds nothing in the same symbols without differential decoding', async () => {
+		const decoder = await createMeteorDecoder(factory, 'qpsk');
+		decoder.push(realPass());
+		expect(decoder.stats().mpdus).toBe(0);
+	});
+});
 
 describe('meteor_decode WASM', () => {
 	let decoder;

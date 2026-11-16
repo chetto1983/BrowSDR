@@ -1,4 +1,4 @@
-import type { MeteorChannelIndex, MeteorDecoder, MeteorFactory, MeteorModule } from './meteor/types';
+import type { MeteorChannelIndex, MeteorDecoder, MeteorFactory, MeteorModulation, MeteorModule } from './meteor/types';
 import { isRecord } from '@/platform/data';
 
 /*
@@ -54,10 +54,13 @@ function wrap(module: MeteorModule): MeteorDecoder {
 	};
 }
 
-/** A fresh, initialised meteor_decode instance. */
-export async function createMeteorDecoder(factory?: MeteorFactory): Promise<MeteorDecoder> {
+/**
+ * A fresh, initialised meteor_decode instance for symbols demodulated as `modulation`: OQPSK downlinks are
+ * also differentially coded (meteor_decode --diff), QPSK ones are not.
+ */
+export async function createMeteorDecoder(factory?: MeteorFactory, modulation: MeteorModulation = 'oqpsk'): Promise<MeteorDecoder> {
 	const create = factory ?? providedFactory ?? (await browserFactory());
 	const module = await create({ locateFile: (path) => '/wasm/meteor/' + path });
-	module._meteor_init();
+	module._meteor_init(modulation === 'oqpsk' ? 1 : 0);
 	return wrap(module);
 }

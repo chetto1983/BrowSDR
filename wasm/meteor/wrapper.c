@@ -111,13 +111,17 @@ meteor_rows(void)
 	return offset / (MCU_PER_LINE * 8);
 }
 
+/* Differential decoding: Meteor-M2 3 and 4 send OQPSK with differentially coded symbols. */
+static int diffcoded;
+
 EMSCRIPTEN_KEEPALIVE void
-meteor_init(void)
+meteor_init(int diff)
 {
 	int i;
 
+	diffcoded = diff;
 	for (i = 0; i < NUM_CHANNELS; i++) channel_init(&channels[i], -1);
-	decode_init(0, 0);
+	decode_init(diffcoded, 0);
 	queue_len = queue_pos = 0;
 	first = 1;
 	mpdus = 0;
@@ -130,7 +134,7 @@ meteor_reset(void)
 	int i;
 
 	for (i = 0; i < NUM_CHANNELS; i++) channel_close(&channels[i]);
-	meteor_init();
+	meteor_init(diffcoded);
 }
 
 /* Where the caller writes up to INPUT_SIZE soft symbols before meteor_push(). */

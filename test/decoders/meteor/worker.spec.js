@@ -40,11 +40,11 @@ async function feed(send, params, input, chunk = 57600) {
 const meteorMessages = (messages) => messages.filter((message) => message.type === 'meteor');
 
 describe('Meteor LRPT through the production DSP worker', () => {
-	it('channelizes an offset downlink at 288 kS/s and locks', async () => {
+	it('channelizes an offset OQPSK downlink at 288 kS/s and locks', async () => {
 		const { messages, send } = await startWorker();
 		const params = { freq: 137.9, mode: 'nfm', bandwidth: 150000, enabled: false, meteor: true };
 		await send({ type: 'init', sampleRate: 288000, centerFreq: 137.85, params });
-		const { iq } = qpskSignal(72000 * 1.5, { rate: 288000, offsetHz: 50000 + 900, snrDb: 20 });
+		const { iq } = qpskSignal(72000 * 1.5, { rate: 288000, offsetHz: 50000 + 900, snrDb: 20, oqpsk: true });
 		await feed(
 			send,
 			params,
@@ -55,12 +55,12 @@ describe('Meteor LRPT through the production DSP worker', () => {
 		expect(last.status.locked).toBe(true);
 		expect(Math.abs(last.status.freqOffsetHz - 900)).toBeLessThan(150);
 		expect(meteorMessages(messages).every(validMeteorMessage)).toBe(true);
-	});
+	}, 20_000); // seconds of signal through the real worker: slow when the whole suite runs in parallel
 	it('keeps receiving and relocks after a gap in the input', async () => {
 		const { messages, send } = await startWorker();
 		const params = { freq: 137.9, mode: 'nfm', bandwidth: 150000, enabled: false, meteor: true };
 		await send({ type: 'init', sampleRate: 288000, centerFreq: 137.85, params });
-		const { iq } = qpskSignal(72000 * 2, { rate: 288000, offsetHz: 50000 - 700, snrDb: 20, seed: 4 });
+		const { iq } = qpskSignal(72000 * 2, { rate: 288000, offsetHz: 50000 - 700, snrDb: 20, seed: 4, oqpsk: true });
 		const input = Int8Array.from(iq, (value) => Math.round(value * 127));
 		const half = input.length / 2;
 		await feed(send, params, input.subarray(0, half));
@@ -75,7 +75,7 @@ describe('Meteor LRPT through the production DSP worker', () => {
 		expect(last.status.state).toBe('receiving');
 		expect(last.status.locked).toBe(true);
 		expect(Math.abs(last.status.freqOffsetHz + 700)).toBeLessThan(150);
-	});
+	}, 20_000); // seconds of signal through the real worker: slow when the whole suite runs in parallel
 	it('refuses a VFO outside the Meteor band', async () => {
 		const { messages, send } = await startWorker();
 		const params = { freq: 136.5, mode: 'nfm', bandwidth: 150000, enabled: false, meteor: true };

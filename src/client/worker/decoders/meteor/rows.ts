@@ -9,7 +9,10 @@ const STALLED_ROWS = 64;
  * sent before it is final. A stalled channel no longer holds the others back, and pixels a channel never
  * wrote (no APID, or past its last row) go out as zeros rather than whatever its memory holds.
  */
-export function selectRows(decoder: Pick<MeteorDecoder, 'width' | 'channelRows' | 'channel' | 'apid'>, sentRows: number): MeteorRows | undefined {
+export function selectRows(
+	decoder: Pick<MeteorDecoder, 'width' | 'channelRows' | 'channel' | 'apid'>,
+	sentRows: number,
+): MeteorRows | undefined {
 	const active = CHANNELS.filter((index) => decoder.apid(index) >= 0);
 	if (!active.length) return undefined;
 	const counts = active.map((index) => decoder.channelRows(index));

@@ -42,7 +42,7 @@ Enjoy the power of a desktop SDR platform fully within your web browser.
   Decode amateur radio position reports, messages, weather and telemetry on
   1200-baud packet channels, with a live station map.
 - **🛰️ Meteor-M Weather Satellite Images**
-  Receive LRPT pictures from Meteor-M2 3 and M2 4 on 137.9 MHz: a QPSK demodulator
+  Receive LRPT pictures from Meteor-M2 3 and M2 4 on 137.9 MHz: an OQPSK demodulator
   in the DSP worker feeds [meteor_decode](wasm/meteor/README.md), and the picture
   builds up line by line. Tools → Meteor lists the next passes for your location,
   tunes or arms a pass, and saves the image as PNG.

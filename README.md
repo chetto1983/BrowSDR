@@ -41,6 +41,10 @@ Enjoy the power of a desktop SDR platform fully within your web browser.
 - **📍 APRS Stations and Live Map**
   Decode amateur radio position reports, messages, weather and telemetry on
   1200-baud packet channels, with a live station map.
+- **📻 DAB+ Digital Radio**
+  Band III ensembles with service list, labels and now-playing text; HE-AAC v2 audio
+  through faad2 in WebAssembly. The receiver is ported from OnAir. See
+  [the DAB+ guide](docs/dab.md).
 - **📡 Digital Modes (ported from OnAir)**
   Tools → Digital Modes: DSC on VHF channel 70, NAVTEX, HF weather fax, VDL Mode 2 with ACARS, CubeSat
   AX.25 telemetry (1200 AFSK, 9600/4800 G3RUH), SSTV (ISS on FM, HF on USB) and tone

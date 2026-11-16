@@ -18,6 +18,7 @@ export interface Vfo {
 	acars?: boolean;
 	aprs?: boolean;
 	tetra?: boolean;
+	meteor?: boolean;
 	rtl433?: boolean;
 	rtl433SampleRate?: number;
 	rtl433Protocols?: string;

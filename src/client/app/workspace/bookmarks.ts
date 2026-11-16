@@ -59,6 +59,7 @@ export const bookmarkMethods = {
 				acars: vfo.acars,
 				aprs: vfo.aprs,
 				tetra: vfo.tetra,
+				meteor: vfo.meteor,
 				rtl433: vfo.rtl433,
 				rtl433SampleRate: vfo.rtl433SampleRate,
 				rtl433Protocols: vfo.rtl433Protocols,
@@ -87,43 +88,7 @@ export const bookmarkMethods = {
 		if ((bm.type || 'group') === 'individual') {
 			applyIndividualBookmark.call(this, bm);
 		} else {
-			if (bm.centerFreq === undefined || !bm.vfos?.length) return;
-			this.radio.centerFreq = bm.centerFreq;
-			if (bm.sampleRate) this.radio.sampleRate = bm.sampleRate;
-
-			// Sync backend VFO count: remove extras, then add missing slots
-			if (this.backend && this.running) {
-				const oldCount = this.vfos.length;
-				const newCount = bm.vfos.length;
-				// Remove excess VFOs (from the end to avoid index shifting)
-				for (let i = oldCount - 1; i >= newCount; i--) {
-					if (this.remoteMode === 'client' && this._webrtc) {
-						this._webrtc.sendCommand({ type: 'removeRemoteVfo', index: i });
-					} else {
-						await this.backend.removeVfo(i);
-					}
-				}
-				// Add missing VFO slots
-				for (let i = oldCount; i < newCount; i++) {
-					if (this.remoteMode === 'client' && this._webrtc) {
-						this._webrtc.sendCommand({ type: 'addRemoteVfo' });
-					} else {
-						await this.backend.addVfo();
-					}
-				}
-			}
-
-			this.soloAudioVfo = null;
-			this.vfos = bm.vfos.map((v) => ({
-				...makeDefaultVfo(),
-				...v,
-				rdsRegion: (v as { rdsRegion?: string }).rdsRegion || 'eu',
-				enabled: true,
-				focused: false,
-				displayFreq: this.formatFreq(v.freq || bm.centerFreq),
-			}));
-			this.activeVfoIndex = bookmarkSelection(bm.activeVfoIndex, this.vfos.length);
-			this.showMsg(`Loaded "${bm.name}" — ${bm.vfos.length} VFO${bm.vfos.length !== 1 ? 's' : ''} loaded.`);
+			await applyGroupBookmark.call(this, bm);
 		}
 	},
 	openEditBookmark(this: AppInstance, index: number) {
@@ -329,6 +294,7 @@ function bookmarkPacketDecoders(bm: Bookmark) {
 		acars: bm.acars ?? false,
 		aprs: bm.aprs ?? false,
 		tetra: bm.tetra ?? false,
+		meteor: bm.meteor ?? false,
 	};
 }
 
@@ -351,4 +317,45 @@ function sortBookmarks(bookmarks: Bookmark[]): Bookmark[] {
 		const bFreq = bIsIndividual ? b.freq : b.centerFreq;
 		return (aFreq ?? 0) - (bFreq ?? 0);
 	});
+}
+
+/** Applies a group bookmark: center frequency, sample rate and its VFOs (backend VFO slots follow). */
+export async function applyGroupBookmark(this: AppInstance, bm: Bookmark): Promise<void> {
+	if (bm.centerFreq === undefined || !bm.vfos?.length) return;
+	this.radio.centerFreq = bm.centerFreq;
+	if (bm.sampleRate) this.radio.sampleRate = bm.sampleRate;
+
+	// Sync backend VFO count: remove extras, then add missing slots
+	if (this.backend && this.running) {
+		const oldCount = this.vfos.length;
+		const newCount = bm.vfos.length;
+		// Remove excess VFOs (from the end to avoid index shifting)
+		for (let i = oldCount - 1; i >= newCount; i--) {
+			if (this.remoteMode === 'client' && this._webrtc) {
+				this._webrtc.sendCommand({ type: 'removeRemoteVfo', index: i });
+			} else {
+				await this.backend.removeVfo(i);
+			}
+		}
+		// Add missing VFO slots
+		for (let i = oldCount; i < newCount; i++) {
+			if (this.remoteMode === 'client' && this._webrtc) {
+				this._webrtc.sendCommand({ type: 'addRemoteVfo' });
+			} else {
+				await this.backend.addVfo();
+			}
+		}
+	}
+
+	this.soloAudioVfo = null;
+	this.vfos = bm.vfos.map((v) => ({
+		...makeDefaultVfo(),
+		...v,
+		rdsRegion: (v as { rdsRegion?: string }).rdsRegion || 'eu',
+		enabled: true,
+		focused: false,
+		displayFreq: this.formatFreq(v.freq || bm.centerFreq),
+	}));
+	this.activeVfoIndex = bookmarkSelection(bm.activeVfoIndex, this.vfos.length);
+	this.showMsg(`Loaded "${bm.name}" — ${bm.vfos.length} VFO${bm.vfos.length !== 1 ? 's' : ''} loaded.`);
 }

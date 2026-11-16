@@ -15,6 +15,7 @@ function packetDecoders(vfo: Vfo, inBandwidth: boolean) {
 		acars: on(vfo.acars),
 		aprs: on(vfo.aprs),
 		tetra: on(vfo.tetra),
+		meteor: on(vfo.meteor),
 	};
 }
 
@@ -405,7 +406,16 @@ function removeDecoderState(receiver: AppInstance, index: number): void {
 	receiver.ble?.status.splice(index, 1);
 	receiver.rtk.frames.splice(index, 1);
 	receiver.rtk.frequencies.splice(index, 1);
-	for (const decoder of [receiver.adsb, receiver.ais, receiver.radiosonde, receiver.rtk, receiver.acars, receiver.aprs, receiver.tetra]) {
+	for (const decoder of [
+		receiver.adsb,
+		receiver.ais,
+		receiver.radiosonde,
+		receiver.rtk,
+		receiver.acars,
+		receiver.aprs,
+		receiver.tetra,
+		receiver.meteor,
+	]) {
 		decoder?.status.splice(index, 1);
 		decoder?.sources.splice(index, 1);
 	}

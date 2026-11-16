@@ -9,6 +9,7 @@
 @import './styles/decoders/radiosonde.css';
 @import './styles/decoders/aprs.css';
 @import './styles/decoders/tetra.css';
+@import './styles/decoders/meteor.css';
 @import './styles/decoders/tetraear.css';
 @import './styles/bookmarks.css';
 @import './styles/activity.css';

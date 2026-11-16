@@ -29,6 +29,9 @@ describe('decoder tools menu', () => {
 			'Pager',
 			'Radiosonde',
 			'RTK',
+			'TETRA',
+			'Meteor',
+			'TetraEar',
 			'Wireless Sensors',
 		]);
 		expect(wrapper.get('.ui-menu-list').text()).toContain('Sensor & device data · rtl_433');

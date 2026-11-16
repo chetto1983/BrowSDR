@@ -46,3 +46,16 @@ export interface Look {
 	elevation: number;
 	azimuth: number;
 }
+
+/** One line of a pass list. */
+export interface PassRow {
+	key: string;
+	label: string;
+	/** Local start time, e.g. "lun 16 14:10". */
+	when: string;
+	/** e.g. "max 50° · 10 min · SE→N". */
+	detail: string;
+	poor: boolean;
+	inProgress: boolean;
+	pass: Pass;
+}

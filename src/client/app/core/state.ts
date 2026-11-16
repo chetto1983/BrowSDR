@@ -6,6 +6,7 @@ import type { RtkStatus, RtkStation, RtkMessage } from '@/worker/decoders/rtk/ty
 import type { AcarsStatus, AcarsRecord } from '@/worker/decoders/acars/types';
 import type { AprsPacket, AprsStation, AprsStatus } from '@/worker/decoders/aprs/types';
 import type { TetraCell, TetraStatus } from '@/worker/decoders/tetra/types';
+import { meteorPanelState } from '@/app/decoders/meteor/station';
 import type { AdsbStatus, Aircraft } from '@/worker/decoders/adsb/types';
 import type { POCSAGStatus } from '@/worker/decoders/types';
 import type { RdsStatus } from '@/worker/decoders/types';
@@ -208,6 +209,7 @@ function createDecoderAndBookmarkState() {
 			status: [] as Array<TetraStatus | null>,
 			sources: [] as Array<{ freq: number; cells: TetraCell[] } | null>,
 		},
+		meteor: meteorPanelState(),
 		ais: { panelOpen: false, status: [] as Array<AisStatus | null>, sources: [] as Vessel[][] },
 		radiosonde: { panelOpen: false, status: [] as Array<RadiosondeStatus | null>, sources: [] as Radiosonde[][] },
 		rtk: {

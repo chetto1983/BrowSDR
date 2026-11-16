@@ -91,6 +91,7 @@ function decoderTools(receiver: AppInstance): UiMenuItem[] {
 			open: receiver.rtk.panelOpen,
 		},
 		tetraTool(receiver),
+		meteorTool(receiver),
 		tetraEarTool(receiver),
 		{
 			id: 'rtl433',
@@ -111,6 +112,17 @@ function tetraTool(receiver: AppInstance): UiMenuItem {
 		icon: 'radio',
 		active: receiver.vfos.some((vfo) => vfo.tetra),
 		open: receiver.tetra.panelOpen,
+	};
+}
+
+function meteorTool(receiver: AppInstance): UiMenuItem {
+	return {
+		id: 'meteor',
+		label: 'Meteor',
+		description: 'Weather satellite images · LRPT',
+		icon: 'radio',
+		active: receiver.vfos.some((vfo) => vfo.meteor),
+		open: receiver.meteor.panelOpen,
 	};
 }
 
@@ -184,6 +196,7 @@ function selectTool(receiver: AppInstance, id: string, openOnly = false): void {
 			acars: receiver.acars,
 			aprs: receiver.aprs,
 			tetra: receiver.tetra,
+			meteor: receiver.meteor,
 			tetraear: receiver.tetraear,
 		};
 		const panel = panels[id as keyof typeof panels];

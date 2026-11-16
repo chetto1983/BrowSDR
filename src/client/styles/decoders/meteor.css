@@ -1,0 +1,44 @@
+.meteor-body {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	padding: 8px;
+	min-height: 0;
+	overflow: auto;
+}
+.meteor-image {
+	flex: 2 1 320px;
+	min-width: 0;
+}
+.meteor-image-tools {
+	display: flex;
+	gap: 8px;
+	margin-bottom: 6px;
+}
+.meteor-canvas {
+	width: 100%;
+	height: auto;
+	image-rendering: pixelated;
+	background: #000;
+}
+.meteor-passes {
+	flex: 1 1 260px;
+	min-width: 0;
+}
+.meteor-location {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	align-items: center;
+	margin-bottom: 6px;
+}
+.meteor-location input {
+	width: 6em;
+}
+.meteor-poor {
+	opacity: 0.5;
+}
+.meteor-empty,
+.meteor-notice {
+	opacity: 0.8;
+}

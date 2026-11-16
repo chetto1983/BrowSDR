@@ -1,0 +1,73 @@
+<section v-if="receiver.meteor.panelOpen" class="adsb-panel meteor-panel" aria-label="Meteor weather satellites">
+	<UiToolHeader variant="msgcenter" closable close-label="Close Meteor panel" @close="receiver.toggleMeteorPanel">
+		Meteor-M LRPT <span class="msgcenter-count">{{ imageRows }} lines</span>
+		<template #actions>
+			<UiSelect v-model.number="receiver.activeVfoIndex" aria-label="Meteor VFO" class="decoder-vfo-select">
+				<option v-for="(vfo, i) in receiver.vfos" :key="i" :value="i">VFO {{ i + 1 }} · {{ vfo.freq.toFixed(3) }} MHz</option>
+			</UiSelect>
+			<UiCheckbox
+				v-if="selectedVfo"
+				class="adsb-decode-control"
+				v-model="selectedVfo.meteor"
+				:label="'Decode VFO ' + (receiver.activeVfoIndex + 1)"
+				:input-label="'Meteor decoding for VFO ' + (receiver.activeVfoIndex + 1)"
+				:disabled="!isMeteorFrequency(selectedVfo.freq) && !selectedVfo.meteor"
+				@change="receiver.updateBackendVfoParams(receiver.activeVfoIndex)"
+			/>
+		</template>
+	</UiToolHeader>
+	<div class="adsb-summary">
+		<span v-if="!receiver.running">Reception stopped</span>
+		<template v-for="(vfo, i) in receiver.vfos" :key="i">
+			<span v-if="vfo.meteor" :class="{ 'rtl433-error': receiver.meteor.status[i]?.state === 'error' }"
+				>VFO {{ i + 1 }} · {{ receiver.meteorStatusText(i) }}</span
+			>
+		</template>
+		<span v-if="!active">Tune a VFO to 137.900 MHz (or use Tune below), then enable decoding.</span>
+		<span v-if="receiver.meteor.notice" class="meteor-notice">{{ receiver.meteor.notice }}</span>
+		<span v-if="receiver.meteor.armed" class="meteor-notice">Keep this tab open and the screen on until the pass ends.</span>
+	</div>
+	<div class="meteor-body">
+		<div class="meteor-image">
+			<div class="meteor-image-tools">
+				<UiSelect v-model="receiver.meteor.view" aria-label="Meteor image channel">
+					<option v-for="view in views" :key="view.label" :value="view.value">{{ view.label }}</option>
+				</UiSelect>
+				<UiButton :disabled="!imageRows" @click="save">Save PNG</UiButton>
+			</div>
+			<canvas v-show="imageRows" ref="canvas" class="meteor-canvas" aria-label="Meteor image"></canvas>
+			<p v-if="!imageRows" class="meteor-empty">The image appears here line by line during a pass.</p>
+		</div>
+		<div class="meteor-passes">
+			<div class="meteor-location">
+				<label>Lat <input v-model="latitude" inputmode="decimal" aria-label="Station latitude" size="7" /></label>
+				<label>Lon <input v-model="longitude" inputmode="decimal" aria-label="Station longitude" size="7" /></label>
+				<UiButton @click="setLocation">Set</UiButton>
+				<UiButton @click="receiver.meteorUseMyPosition()">My position</UiButton>
+			</div>
+			<p v-if="receiver.meteor.passMessage" class="meteor-empty">{{ receiver.meteor.passMessage }}</p>
+			<table v-if="rows.length" class="adsb-table">
+				<thead>
+					<tr>
+						<th>Pass</th>
+						<th>Start</th>
+						<th></th>
+						<th></th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr v-for="row in rows" :key="row.key" :class="{ 'meteor-poor': row.poor }">
+						<td>{{ row.label }}<small>{{ row.detail }}</small></td>
+						<td>{{ row.inProgress ? 'now' : row.when }}</td>
+						<td><UiButton @click="receiver.meteorTune(row.pass)">Tune</UiButton></td>
+						<td>
+							<UiButton v-if="receiver.meteor.armed?.key === row.key" @click="receiver.meteorDisarm()">Disarm</UiButton>
+							<UiButton v-else :disabled="row.poor" @click="receiver.meteorArm(row.pass)">Arm</UiButton>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<small v-if="receiver.meteor.tleNote">{{ receiver.meteor.tleNote }}</small>
+		</div>
+	</div>
+</section>

@@ -58,6 +58,7 @@ type Client struct {
 	ID     int
 	Kind   string
 	Remote string
+	Token  string // chosen by the client so it can find itself in /status
 	Since  time.Time
 
 	out        chan []byte
@@ -70,8 +71,8 @@ type Client struct {
 	ignored atomic.Int64
 }
 
-func newClient(id int, kind, remote string, depth int) *Client {
-	return &Client{ID: id, Kind: kind, Remote: remote, Since: time.Now(), out: make(chan []byte, depth), done: make(chan struct{})}
+func newClient(id int, kind, remote, token string, depth int) *Client {
+	return &Client{ID: id, Kind: kind, Remote: remote, Token: validToken(token), Since: time.Now(), out: make(chan []byte, depth), done: make(chan struct{})}
 }
 
 // deliver never blocks: a client that cannot keep up loses whole chunks, which keeps I/Q pairs intact.
@@ -89,6 +90,7 @@ type ClientStatus struct {
 	ID              int       `json:"id"`
 	Kind            string    `json:"kind"`
 	Remote          string    `json:"remote"`
+	Token           string    `json:"client,omitempty"`
 	Controller      bool      `json:"controller"`
 	Since           time.Time `json:"since"`
 	SentBytes       int64     `json:"sent_bytes"`
@@ -124,11 +126,11 @@ func NewHub(upstreamAddr string, logf func(string, ...any)) *Hub {
 }
 
 // Join registers a client; the first one (or one that takes control) becomes the controller.
-func (h *Hub) Join(kind, remote string, takeControl bool) *Client {
+func (h *Hub) Join(kind, remote, token string, takeControl bool) *Client {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.nextID++
-	c := newClient(h.nextID, kind, remote, clientQueueDepth)
+	c := newClient(h.nextID, kind, remote, token, clientQueueDepth)
 	h.clients = append(h.clients, c)
 	if h.controller == nil || takeControl {
 		h.controller = c
@@ -200,7 +202,7 @@ func (h *Hub) Status() Status {
 	status := Status{Upstream: h.upstreamAddr, Connected: h.up != nil, State: h.state, Clients: []ClientStatus{}}
 	for _, c := range h.clients {
 		status.Clients = append(status.Clients, ClientStatus{
-			ID: c.ID, Kind: c.Kind, Remote: c.Remote, Controller: c == h.controller, Since: c.Since,
+			ID: c.ID, Kind: c.Kind, Remote: c.Remote, Token: c.Token, Controller: c == h.controller, Since: c.Since,
 			SentBytes: c.sent.Load(), DroppedChunks: c.drops.Load(), IgnoredCommands: c.ignored.Load(),
 		})
 	}
@@ -297,4 +299,17 @@ func (h *Hub) kickAllLocked() {
 	for _, c := range h.clients {
 		c.close()
 	}
+}
+
+// validToken keeps a client token only if it is 1-64 characters of [A-Za-z0-9_-]; anything else is dropped.
+func validToken(token string) string {
+	if len(token) > 64 {
+		return ""
+	}
+	for _, r := range token {
+		if !(r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || r == '_' || r == '-') {
+			return ""
+		}
+	}
+	return token
 }

@@ -148,3 +148,26 @@ func TestAppWorksOverTLS(t *testing.T) {
 		t.Fatalf("GET / over TLS = %d %q", res.StatusCode, body)
 	}
 }
+
+func TestWebSocketClientTokenFromQuery(t *testing.T) {
+	upstream := newFakeRtlTcp(t)
+	hub := NewHub(upstream.ln.Addr().String(), testLogf(t))
+	srv := httptest.NewServer(ServeWS(hub))
+	t.Cleanup(srv.Close)
+	conn, err := net.Dial("tcp", strings.TrimPrefix(srv.URL, "http://"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+	conn.SetDeadline(time.Now().Add(5 * time.Second))
+	io.WriteString(conn, "GET /?client=abc&control=take HTTP/1.1\r\nHost: radiopi\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n"+
+		"Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-WebSocket-Version: 13\r\n\r\n")
+	line, err := bufio.NewReader(conn).ReadString('\n')
+	if err != nil || !strings.HasPrefix(line, "HTTP/1.1 101") {
+		t.Fatalf("handshake answer %q %v", line, err)
+	}
+	waitFor(t, "client registered", func() bool { return len(hub.Status().Clients) == 1 })
+	if c := hub.Status().Clients[0]; c.Token != "abc" || !c.Controller {
+		t.Fatalf("status client = %+v", c)
+	}
+}

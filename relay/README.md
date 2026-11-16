@@ -30,6 +30,11 @@ leaves, the oldest remaining client takes over. The upstream connection opens wi
 and closes after the last one leaves. If `rtl_tcp` drops, every client is closed. A slow client loses
 whole I/Q-aligned chunks and does not slow the others down.
 
+A WebSocket client can name itself with `?client=<token>` (1–64 characters of `A-Z a-z 0-9 _ -`;
+anything else is ignored). `/status` reports the token as `client` next to `controller`, so a client
+can tell for certain whether it holds control. BrowSDR and `browsdr-cli` send a random token on every
+connection.
+
 ## Build and test
 
 Build in WSL or Linux (the Windows antivirus flags Go executables):

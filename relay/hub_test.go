@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"io"
 	"net"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -195,8 +196,8 @@ func TestOnlyTheControllerTunesAndControlPassesOnWhenItLeaves(t *testing.T) {
 func TestTakeControlPreemptsTheCurrentController(t *testing.T) {
 	fake := newFakeRtlTcp(t)
 	hub, _ := startRelay(t, fake.ln.Addr().String())
-	a := hub.Join("tcp", "a", false)
-	b := hub.Join("ws", "b", true)
+	a := hub.Join("tcp", "a", "", false)
+	b := hub.Join("ws", "b", "", true)
 	defer hub.Leave(a)
 	defer hub.Leave(b)
 	if hub.Command(a, command(0x01, 1)) {
@@ -246,11 +247,36 @@ func TestClientsAreClosedWhenRtlTcpGoesAway(t *testing.T) {
 }
 
 func TestASlowClientDropsChunksInsteadOfBlocking(t *testing.T) {
-	c := newClient(1, "tcp", "slow", 2)
+	c := newClient(1, "tcp", "slow", "", 2)
 	c.deliver([]byte{1, 2})
 	c.deliver([]byte{3, 4})
 	c.deliver([]byte{5, 6})
 	if c.drops.Load() != 1 || len(c.out) != 2 {
 		t.Fatalf("drops=%d queued=%d", c.drops.Load(), len(c.out))
+	}
+}
+
+func TestStatusReportsEachClientsToken(t *testing.T) {
+	fake := newFakeRtlTcp(t)
+	hub, _ := startRelay(t, fake.ln.Addr().String())
+	a := hub.Join("ws", "a", "a1", false)
+	b := hub.Join("tcp", "b", "", false)
+	defer hub.Leave(a)
+	defer hub.Leave(b)
+	clients := hub.Status().Clients
+	if clients[0].Token != "a1" || clients[1].Token != "" {
+		t.Fatalf("tokens = %q, %q", clients[0].Token, clients[1].Token)
+	}
+}
+
+func TestInvalidTokenIsDropped(t *testing.T) {
+	fake := newFakeRtlTcp(t)
+	hub, _ := startRelay(t, fake.ln.Addr().String())
+	for _, token := range []string{"bad token!", strings.Repeat("x", 65)} {
+		c := hub.Join("ws", "a", token, false)
+		if got := hub.Status().Clients[0].Token; got != "" {
+			t.Fatalf("token %q stored as %q", token, got)
+		}
+		hub.Leave(c)
 	}
 }

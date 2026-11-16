@@ -22,7 +22,7 @@ func ServeTCP(ln net.Listener, hub *Hub) error {
 
 func serveTCPConn(conn net.Conn, hub *Hub) {
 	defer conn.Close()
-	c := hub.Join("tcp", conn.RemoteAddr().String(), false)
+	c := hub.Join("tcp", conn.RemoteAddr().String(), "", false)
 	defer hub.Leave(c)
 	go pumpTo(c, conn, func(b []byte) error { _, err := conn.Write(b); return err })
 	cmd := make([]byte, commandBytes)
@@ -50,7 +50,8 @@ func pumpTo(c *Client, conn net.Conn, write func([]byte) error) {
 	}
 }
 
-// ServeWS bridges browsers (BrowSDR's rtl_tcp source); "?control=take" makes the client the controller.
+// ServeWS bridges browsers (BrowSDR's rtl_tcp source); "?control=take" makes the client the controller and
+// "?client=<token>" names it in /status.
 func ServeWS(hub *Hub) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		conn, reader, err := upgrade(w, r)
@@ -59,7 +60,7 @@ func ServeWS(hub *Hub) http.HandlerFunc {
 			return
 		}
 		defer conn.Close()
-		c := hub.Join("ws", r.RemoteAddr, r.URL.Query().Get("control") == "take")
+		c := hub.Join("ws", r.RemoteAddr, r.URL.Query().Get("client"), r.URL.Query().Get("control") == "take")
 		defer hub.Leave(c)
 		var writeMu sync.Mutex
 		send := func(opcode byte, payload []byte) error {

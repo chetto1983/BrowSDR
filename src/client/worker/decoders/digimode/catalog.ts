@@ -28,6 +28,25 @@ export const DIGIMODES: readonly DigimodeInfo[] = [
 		source: 'core/src/marine/marine_navtex.cpp, marine_dsp.cpp, marine_rx.cpp',
 	},
 	{
+		id: 'wefax',
+		label: 'Weather fax (HF radiofax)',
+		family: 'Maritime',
+		description:
+			'Weather charts from HF radiofax stations: black 1500 Hz to white 2300 Hz in the upper sideband, 120 lpm (also 60, 90, 100, 180 and 240), IOC 576 or 288. Start and stop tones, phasing lines and slant are handled by themselves; a chart joined midway is picked up from its line rate. Tune the VFO to the USB dial frequency, 1.9 kHz below the assigned frequency (the presets do). Needs HF reception, e.g. an RTL-SDR in direct sampling mode or behind an upconverter.',
+		rate: 24000,
+		bandwidth: 3900,
+		offsetHz: 2000,
+		presets: [
+			{ label: 'DWD Pinneberg 3855 kHz', freqMHz: 3.8531 },
+			{ label: 'DWD Pinneberg 7880 kHz', freqMHz: 7.8781 },
+			{ label: 'DWD Pinneberg 13882.5 kHz', freqMHz: 13.8806 },
+			{ label: 'Northwood GYA 4610 kHz', freqMHz: 4.6081 },
+			{ label: 'Northwood GYA 8040 kHz', freqMHz: 8.0381 },
+		],
+		image: true,
+		source: 'core/src/marine/marine_fax.cpp, marine_dsp.cpp, marine_wefax_stations.cpp',
+	},
+	{
 		id: 'ax25-sat',
 		label: 'CubeSat AX.25 telemetry',
 		family: 'Satellite',

@@ -6,6 +6,7 @@ import { SstvFmDecoder, SstvUsbDecoder } from './sstv';
 import { Vdl2Decoder } from './vdl2';
 import { TonesDecoder } from './tones';
 import { WmbusDecoder } from './wmbus';
+import { WefaxDecoder } from './wefax';
 
 /** Worker-side constructors of the catalog's decoders. */
 export const DIGIMODE_DECODERS: Record<string, (sink: DigimodeSink) => DigimodeDecoder> = {
@@ -17,4 +18,5 @@ export const DIGIMODE_DECODERS: Record<string, (sink: DigimodeSink) => DigimodeD
 	vdl2: (sink) => new Vdl2Decoder(sink),
 	tones: (sink) => new TonesDecoder(sink),
 	wmbus: (sink) => new WmbusDecoder(sink),
+	wefax: (sink) => new WefaxDecoder(sink),
 };

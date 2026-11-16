@@ -82,3 +82,15 @@ file). Algorithms and protocol tables follow the OnAir source.
 | `src/client/worker/decoders/digimode/wmbus/report.ts` | `core/src/wmbus/wmbus_live.cpp` (WmbusLiveReceiver::finish: frame summary and log) |
 | `src/client/worker/decoders/digimode/wmbus/index.ts` | `core/src/wmbus/wmbus_live.cpp` (WmbusLiveReceiver: the 868 MHz channels) |
 | `test/digimode/wmbus/fixtures.js` | `core/src/wmbus/wmbus_gen.cpp` (simulated meters, GFSK bursts), `core/src/wmbus/wmbus_proto.cpp` (buildFrame, encodeChips) |
+| `src/client/worker/decoders/digimode/wefax/types.ts` | `core/include/dect2/marine/marine_fax.h` (FaxStatus), `core/src/marine/marine_fax.cpp` (decoder data shapes), `marine_wefax_stations.h` |
+| `src/client/worker/decoders/digimode/wefax/audio.ts` | `core/src/marine/marine_dsp.cpp` (FaxAudio) |
+| `src/client/worker/decoders/digimode/wefax/front.ts` | `core/src/marine/marine_fax.cpp` (FaxDecoder front end: mixer, low passes, discriminator, running sums) |
+| `src/client/worker/decoders/digimode/wefax/tones.ts` | `core/src/marine/marine_fax.cpp` (FaxDecoder start and stop tone detector) |
+| `src/client/worker/decoders/digimode/wefax/pulses.ts` | `core/src/marine/marine_fax.cpp` (FaxDecoder phasing pulse detector and pulse chain) |
+| `src/client/worker/decoders/digimode/wefax/picture.ts` | `core/src/marine/marine_fax.cpp` (FaxImage, row moves of applyManual and alignLines) |
+| `src/client/worker/decoders/digimode/wefax/core.ts` | `core/src/marine/marine_fax.cpp` (faxImageWidth; line fit, picture rows, row filter, slant, tone row trim) |
+| `src/client/worker/decoders/digimode/wefax/free.ts` | `core/src/marine/marine_fax.cpp` (chart joined midway: line rate search, levels, line start roll, slant follow-up) |
+| `src/client/worker/decoders/digimode/wefax/decoder.ts` | `core/src/marine/marine_fax.cpp` (FaxDecoder: setup, tone and pulse events, phasing lock, line state machine), `marine_fax.h` |
+| `src/client/worker/decoders/digimode/wefax/stations.ts` | `core/src/marine/marine_wefax_stations.cpp`, `core/include/dect2/marine/marine_wefax_stations.h` |
+| `src/client/worker/decoders/digimode/wefax/index.ts` | after `core/src/marine/marine_rx.cpp` (fax path: FaxAudio into the decoder, one message per chart) |
+| `test/digimode/wefax/fixtures.js` | `core/src/marine/marine_fax.cpp` (FaxAudioSource), `core/src/marine/marine_gen.cpp` (FaxSource) |

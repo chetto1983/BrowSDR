@@ -35,6 +35,15 @@ const PROFILES: Record<DecoderName, DecoderProfile> = {
 		minSampleRate: 1e6,
 		params: (freq) => decoderVfo(freq, { radiosonde: true }),
 	},
+	meteor: {
+		// LRPT 72k QPSK is about 120 kHz wide; the decoder runs a 150 kHz channel at 144 kS/s.
+		freqMHz: 137.9,
+		sampleRate: 1024000,
+		centerOffsetMHz: -0.15,
+		halfBandHz: 75e3,
+		minSampleRate: 250e3,
+		params: (freq) => decoderVfo(freq, { meteor: true, bandwidth: 150000 }),
+	},
 };
 
 /** Accepts host:port, ws(s):// or http(s):// and returns the relay's WebSocket and status URLs. */

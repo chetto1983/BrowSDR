@@ -52,3 +52,14 @@ describe('bookmark listing', () => {
 		});
 	});
 });
+
+describe('station Meteor bookmarks', () => {
+	it('decodes Meteor LRPT from the station file', async () => {
+		const { STATION_BOOKMARKS } = await import('@/app/workspace/station-bookmarks');
+		expect(bookmarkDecode(STATION_BOOKMARKS, 'radiopi-meteor-lrpt')).toEqual({
+			decoder: 'meteor',
+			options: { freq: 137.9, center: 137.75, rate: 1024000 },
+		});
+		expect(bookmarkDecode(STATION_BOOKMARKS, 'radiopi-meteor-lrpt-backup').options.freq).toBe(137.1);
+	});
+});

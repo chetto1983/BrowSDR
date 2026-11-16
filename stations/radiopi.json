@@ -135,5 +135,47 @@
 				"volume": 0
 			}
 		]
+	},
+	{
+		"id": "radiopi-meteor-lrpt",
+		"type": "group",
+		"category": "satellites",
+		"name": "Meteor-M LRPT 137.900 (decoder)",
+		"centerFreq": 137.75,
+		"sampleRate": 1024000,
+		"activeVfoIndex": 0,
+		"vfos": [
+			{
+				"freq": 137.9,
+				"mode": "nfm",
+				"bandwidth": 150000,
+				"snapInterval": 2500,
+				"deEmphasis": "none",
+				"meteor": true,
+				"enabled": false,
+				"volume": 0
+			}
+		]
+	},
+	{
+		"id": "radiopi-meteor-lrpt-backup",
+		"type": "group",
+		"category": "satellites",
+		"name": "Meteor-M LRPT backup 137.100 (decoder)",
+		"centerFreq": 137,
+		"sampleRate": 1024000,
+		"activeVfoIndex": 0,
+		"vfos": [
+			{
+				"freq": 137.1,
+				"mode": "nfm",
+				"bandwidth": 150000,
+				"snapInterval": 2500,
+				"deEmphasis": "none",
+				"meteor": true,
+				"enabled": false,
+				"volume": 0
+			}
+		]
 	}
 ]

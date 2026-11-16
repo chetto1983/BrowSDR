@@ -1,7 +1,7 @@
 import type { Bookmark } from '@/app/workspace/types';
 import type { BookmarkDecode, BookmarkSummary, DecoderName } from './types';
 
-const DECODER_FLAGS: DecoderName[] = ['adsb', 'rtl433', 'radiosonde'];
+const DECODER_FLAGS: DecoderName[] = ['adsb', 'rtl433', 'radiosonde', 'meteor'];
 
 function decoderOf(vfo: Partial<Record<DecoderName, unknown>> | undefined): DecoderName | undefined {
 	return DECODER_FLAGS.find((flag) => vfo?.[flag] === true);

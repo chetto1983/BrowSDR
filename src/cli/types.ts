@@ -1,7 +1,7 @@
 import type { VfoParams } from '@/worker/runtime/types';
 import type { DspInput, DspOutput } from '@/worker/runtime/dsp-messages.types';
 
-export type DecoderName = 'adsb' | 'rtl433' | 'radiosonde';
+export type DecoderName = 'adsb' | 'rtl433' | 'radiosonde' | 'meteor';
 
 /** The subset of the Pi relay's GET /status that the CLI relies on. */
 export interface RelayStatus {

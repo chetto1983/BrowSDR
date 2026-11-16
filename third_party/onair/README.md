@@ -147,3 +147,6 @@ file). Algorithms and protocol tables follow the OnAir source.
 | `test/digimode/lora/phy.js` | `core/src/mesh/mesh_lora_code.cpp` (TxFrame: the LoRa frame waveform), `core/include/dect2/dsp/gen_util.h` (noise) |
 | `test/digimode/lora/builders.js` | `core/src/mesh/mesh_pb.cpp` (Writer), `mesh_proto_meshtastic.cpp`, `mesh_proto_meshcore.cpp`, `mesh_proto_aprs.cpp`, `mesh_proto_lorawan.cpp` (packet builders) |
 | `test/digimode/lora/scene.js` | `core/src/mesh/mesh_gen.cpp` (the mesh test scene), `core/src/lorawan/lorawan_gen.cpp` (lorawanTestSchedule) |
+| `src/client/worker/decoders/digimode/meshcore/types.ts` | `rust/onair_mesh/src/meshcore.rs` (Parsed, Out, GroupOut), `core/src/mesh/mesh_proto_internal.h` (MeshCoreChannel) |
+| `src/client/worker/decoders/digimode/meshcore/proto.ts` | `rust/onair_mesh/src/meshcore.rs` (header, key-free payloads, group text), `core/src/mesh/mesh_proto_rs.cpp` (decodeMeshCore), `mesh_proto_meshcore.cpp` (meshcoreMacThenDecrypt), `mesh_proto.cpp` (meshcoreMakeChannel) |
+| `src/client/worker/decoders/digimode/meshcore/index.ts` | `core/src/mesh/mesh_rx.cpp` (MeshCore decoders of the region plan, packet row) |

@@ -152,6 +152,28 @@ export const DIGIMODES: readonly DigimodeInfo[] = [
 		],
 		source: 'core/src/mesh/mesh_lora_demod.cpp, mesh_lora_code.cpp, mesh_proto_rs.cpp, rust/onair_mesh',
 	},
+	{
+		id: 'meshcore',
+		label: 'MeshCore',
+		family: 'LoRa & mesh',
+		description:
+			'MeshCore LoRa mesh packets on a 62.5 kHz channel, SF7, SF8 and SF9 at once (the narrow community presets; sync word 0x12): adverts with node names, roles, positions and their Ed25519 signature check, messages on the Public channel, acknowledgements and traces. Other channels and direct messages stay encrypted.',
+		rate: 125000,
+		bandwidth: 112500,
+		presets: [
+			{ label: 'EU/UK Narrow, NL, CH, HU, SK, PT 868', freqMHz: 869.618 },
+			{ label: 'Czech Republic (Narrow)', freqMHz: 869.432 },
+			{ label: 'EU 433 MHz (Narrow)', freqMHz: 433.65 },
+			{ label: 'Portugal 433', freqMHz: 433.375 },
+			{ label: 'USA, Canada', freqMHz: 910.525 },
+			{ label: 'USA - Southern California', freqMHz: 927.875 },
+			{ label: 'New Zealand (Narrow)', freqMHz: 917.375 },
+			{ label: 'Australia (Narrow)', freqMHz: 916.575 },
+			{ label: 'Australia SA, WA, QLD; Brazil', freqMHz: 923.125 },
+			{ label: 'Vietnam (Narrow)', freqMHz: 920.25 },
+		],
+		source: 'core/src/mesh/mesh_lora_demod.cpp, mesh_proto_rs.cpp, mesh_crypto.cpp, rust/onair_mesh',
+	},
 ];
 
 export const digimodeInfo = (id: string | undefined): DigimodeInfo | undefined => DIGIMODES.find((mode) => mode.id === id);

@@ -27,6 +27,9 @@ and the About dialog for the credits.
 | MeshCore                | 869.618 MHz (EU/UK Narrow) and the other 62.5 kHz presets                                                 | LoRa mesh packets at SF7 to SF9: adverts with names, roles, positions and the signature check, Public channel messages, acks and traces; other channels and direct messages stay encrypted.                                                                                               |
 | LoRaWAN (headers)       | 868.1, 868.3, 868.5 and 867.1–867.9 MHz (EU868), 903.9 MHz (US915)                                        | Uplinks at SF7 to SF12: message type, DevAddr and its network, frame counter, flags, MAC commands, FPort and payload length, join requests with JoinEUI and DevEUI. Payloads are never decrypted.                                                                                         |
 | LoRa APRS               | 433.775 MHz (EU), 434.855 (PL), 439.9125 (UK)                                                             | APRS over LoRa at SF12 and SF9: positions, objects, messages, status, weather and telemetry.                                                                                                                                                                                              |
+| FT8                     | 1.840, 3.573, 7.074, 10.136, 14.074, 18.100, 21.074, 24.915, 28.074, 50.313 MHz (USB dial)                | Every station in the passband in 15 s UTC slots: call, report or locator (free text, telemetry, contest and hashed calls too), SNR and time offset, a few seconds after each slot. The computer clock must be right to about a second.                                                    |
+| FT4                     | 3.575, 7.0475, 14.080, 21.140, 28.180 MHz (USB dial)                                                      | As FT8 in 7.5 s slots; the clock must be right to about half a second.                                                                                                                                                                                                                    |
+| WSPR                    | 3.5686, 7.0386, 10.1387, 14.0956, 21.0946, 28.1246 MHz (USB dial)                                         | Propagation beacons in two-minute slots from the even minutes: call, locator and power (types 1 to 3, hashed calls resolved), SNR, time offset and audio frequency, down to about −28 dB in 2500 Hz.                                                                                      |
 
 SSTV modes: Robot 36 and 72, Martin M1 and M2, Scottie S1, S2 and DX, PD50,
 PD90, PD120 and PD180, Wraase SC2-180, from the VIS header or, when it was
@@ -52,4 +55,10 @@ satellite tracker.
 - The LoRa decoders search every spreading factor of their bandwidth at once but
   only that bandwidth: Meshtastic's 125 and 500 kHz presets, MeshCore's 125 and
   250 kHz presets, LoRaWAN downlinks and MeshCom are not decoded.
+- FT8, FT4 and WSPR read the slot timing from the computer clock, so keep it
+  synchronised (NTP). They decode a slot in small steps while the next one
+  arrives, so FT8 results appear 2–3 s into the next slot. Upside-down
+  (lower-sideband) signals are not searched for, as in WSJT-X. FT2, early
+  decodes, the JT65/JT9/Q65/FST4 family and spotting to PSK Reporter or WSPRnet
+  are not included.
 - Remote clients do not receive Digital Modes output yet.

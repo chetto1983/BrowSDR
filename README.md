@@ -42,7 +42,7 @@ Enjoy the power of a desktop SDR platform fully within your web browser.
   Decode amateur radio position reports, messages, weather and telemetry on
   1200-baud packet channels, with a live station map.
 - **📡 Digital Modes (ported from OnAir)**
-  Tools → Digital Modes: DSC on VHF channel 70, NAVTEX, VDL Mode 2 with ACARS, CubeSat
+  Tools → Digital Modes: DSC on VHF channel 70, NAVTEX, HF weather fax, VDL Mode 2 with ACARS, CubeSat
   AX.25 telemetry (1200 AFSK, 9600/4800 G3RUH), SSTV (ISS on FM, HF on USB) and tone
   signalling (CTCSS, DCS, DTMF, selcall, SELCAL) and Wireless M-Bus meters, in one log
   with pictures. See

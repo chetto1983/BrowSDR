@@ -39,7 +39,7 @@ describe('Meteor LRPT QPSK demodulator', () => {
 		const { demodulator, lockedAt } = demodulate(iq);
 		expect(lockedAt.slice(50).every(Boolean)).toBe(true);
 		expect(Math.abs(demodulator.freqOffsetHz - (-3500 + 600))).toBeLessThan(150);
-	});
+	}, 20_000); // 10 s of signal: slow when the whole suite runs in parallel
 	it('does not lock on noise', () => {
 		const { demodulator, lockedAt } = demodulate(noiseOnly(METEOR_CHANNEL_RATE * 2));
 		expect(lockedAt.some(Boolean)).toBe(false);

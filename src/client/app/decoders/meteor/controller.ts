@@ -55,14 +55,16 @@ export const meteorMethods = {
 	_onMeteorMessage(this: AppInstance, index: number, freq: number, message: MeteorMessage): void {
 		const vfo = this.vfos[index];
 		if (!vfo?.meteor || vfo.freq !== freq || message.freq !== freq) return;
-		const source = this.meteor.sources[index];
-		if (source?.freq !== freq) {
-			meteorImage(this, index).reset();
-			this.meteor.sources[index] = { freq };
+		// Per-run state (sources) is cleared when the stream stops; the picture survives a restart mid-pass.
+		const image = meteorImage(this, index);
+		if (image.freq !== freq) {
+			image.reset();
+			image.freq = freq;
 		}
+		if (this.meteor.sources[index]?.freq !== freq) this.meteor.sources[index] = { freq };
 		this.meteor.status[index] = message.status;
 		if (message.rows) {
-			meteorImage(this, index).append(message.rows);
+			image.append(message.rows);
 			this.meteor.imageVersion++;
 		}
 	},

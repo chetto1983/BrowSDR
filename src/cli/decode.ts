@@ -1,3 +1,4 @@
+import { flushDecoders } from './flush';
 import { RtlTcpDevice } from '@/devices/rtltcp/device';
 import { newRelayToken, withRelayClient } from '@/devices/rtltcp/relay-control';
 import { DspEngine } from './engine';
@@ -67,7 +68,7 @@ export async function runDecode(decoder: DecoderName, run: DecodeRun, io: CliIo)
 			);
 	}
 	await device.close();
-	await engine.drain();
+	await flushDecoders(engine);
 	const elapsed = (performance.now() - started) / 1000;
 	const png = decoder === 'meteor' ? writeMeteorPng(events.meteorImage, run.out ?? '.', startedAt, run.pngPrefix) : null;
 	const summary = {

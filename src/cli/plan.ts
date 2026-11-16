@@ -98,7 +98,8 @@ export function planDecode(decoder: DecoderName, options: DecodeOptions, status:
  */
 export function bandChange(plan: DecodePlan, status: RelayStatus, ownToken?: string): string | null {
 	if (plan.role === 'controller') {
-		if (ownToken === undefined) return null;
+		// Without our token, or on a relay too old to report tokens, control cannot be checked.
+		if (ownToken === undefined || !status.clients.some((client) => client.client)) return null;
 		const controller = status.clients.find((client) => client.controller);
 		return controller?.client === ownToken
 			? null

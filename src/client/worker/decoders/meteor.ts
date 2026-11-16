@@ -1,15 +1,15 @@
 import type { DspProcessor } from '/wasm/dsp/browsdr_dsp.js';
 import type { VfoParams } from '@/worker/runtime/types';
-import type { MeteorChannelIndex, MeteorDecoder, MeteorMessage, MeteorRows, MeteorStatus } from './meteor/types';
+import type { MeteorDecoder, MeteorMessage, MeteorRows, MeteorStatus } from './meteor/types';
 import { MeteorDemodulator, METEOR_CHANNEL_RATE } from './meteor/demodulator';
 import { createMeteorDecoder } from './meteor-init';
+import { selectRows } from './meteor/rows';
 import { errorMessage } from '@/platform/errors';
 
 export { METEOR_CHANNEL_RATE };
 const CHANNEL_WIDTH = 150000;
 /** Symbols kept while meteor_decode loads (about 2 s); older ones are dropped. */
 const PENDING_LIMIT = 2 * 2 * 72000;
-const CHANNELS: MeteorChannelIndex[] = [0, 1, 2];
 
 export const isMeteorFrequency = (frequency: number): boolean => Number.isFinite(frequency) && frequency >= 137 && frequency <= 138;
 
@@ -146,22 +146,6 @@ export class MeteorStream {
 		this.emit();
 	}
 
-	/** Rows every active channel has finished, so none is sent before it is final. */
-	private finalRows(decoder: MeteorDecoder): number {
-		const active = CHANNELS.filter((index) => decoder.apid(index) >= 0);
-		return active.length ? Math.min(...active.map((index) => decoder.channelRows(index))) : 0;
-	}
-
-	private newRows(decoder: MeteorDecoder): MeteorRows | undefined {
-		const to = this.finalRows(decoder);
-		if (to <= this.sentRows) return undefined;
-		const width = decoder.width();
-		const from = this.sentRows;
-		this.sentRows = to;
-		const slice = (index: MeteorChannelIndex) => decoder.channel(index).slice(from * width, to * width);
-		return { from, to, width, channels: [slice(0), slice(1), slice(2)] };
-	}
-
 	private emit(): void {
 		this.lastEmit = performance.now();
 		const status = this.status;
@@ -174,7 +158,8 @@ export class MeteorStream {
 			const stats = decoder.stats();
 			[status.rs, status.vit, status.mpdus] = [stats.rs, stats.vit, stats.mpdus];
 			status.apids = [decoder.apid(0), decoder.apid(1), decoder.apid(2)];
-			rows = this.newRows(decoder);
+			rows = selectRows(decoder, this.sentRows);
+			if (rows) this.sentRows = rows.to;
 			status.rows = this.sentRows;
 		}
 		if (status.state === 'receiving') status.message = this.receivingMessage();

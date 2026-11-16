@@ -75,6 +75,11 @@ describe('band watch during a run', () => {
 		const stillMine = { ...busyAt(433_700_000, 1_024_000), clients: [{ id: 1, kind: 'ws', remote: 'me', controller: true, client: 't1' }] };
 		expect(bandChange(controller, stillMine, 't1')).toBeNull();
 	});
+	it('keeps decoding as controller on a relay too old to report client tokens', () => {
+		const controller = planDecode('rtl433', {}, idle);
+		const oldRelay = { ...busyAt(433_700_000, 1_024_000), clients: [{ id: 1, kind: 'ws', remote: 'me', controller: true }] };
+		expect(bandChange(controller, oldRelay, 't1')).toBeNull();
+	});
 });
 
 describe('Meteor plans', () => {

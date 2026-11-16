@@ -61,6 +61,14 @@ describe('Meteor panel', () => {
 		wrapper.vm._onMeteorMessage(0, 137.1, { type: 'meteor', freq: 137.1, status, rows: rows(8, 16) });
 		expect(meteorImage(wrapper.vm, 0).rows).toBe(8);
 	});
+	it('keeps the picture when reception restarts mid-pass', async () => {
+		await mountPanel({ vfos: [{ ...makeDefaultVfo(137.9), meteor: true }] });
+		wrapper.vm._onMeteorMessage(0, 137.9, { type: 'meteor', freq: 137.9, status, rows: rows(0, 8) });
+		// Start after a dropped stream clears per-run decoder state, and the new decoder counts from 0.
+		await wrapper.setData({ meteor: { ...wrapper.vm.meteor, sources: [], status: [] } });
+		wrapper.vm._onMeteorMessage(0, 137.9, { type: 'meteor', freq: 137.9, status, rows: rows(0, 8) });
+		expect(meteorImage(wrapper.vm, 0).rows).toBe(24);
+	});
 	it('refuses to retune while another client controls the relay', async () => {
 		const relayConnection = vi.fn().mockResolvedValue({ url: 'wss://radiopi:8443/?client=me', token: 'me' });
 		vi.stubGlobal(

@@ -30,7 +30,9 @@ export function newRelayToken(): string {
 	return Array.from(bytes, (byte) => (byte % 36).toString(36)).join('');
 }
 
-export function relayRole(status: RelayClients, token: string): RelayRole {
+export function relayRole(status: RelayClients, token: string): RelayRole | 'unknown' {
+	// A relay built before client tokens reports none: nobody can be recognised.
+	if (status.clients.length && !status.clients.some((client) => client.client)) return 'unknown';
 	const me = status.clients.find((client) => client.client === token);
 	if (!me) return 'absent';
 	return me.controller ? 'controller' : 'listener';

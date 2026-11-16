@@ -3,6 +3,8 @@ import type { MeteorRows } from '@/worker/decoders/meteor/types';
 const WIDTH = 1568;
 const GREY = 128;
 const GROW_ROWS = 512;
+/** Grey rows between the picture so far and the rows of a decoder that started over. */
+const RESTART_GAP_ROWS = 8;
 
 /**
  * A Meteor AVHRR picture assembled from the worker's row ranges: three composite channels (red, green,
@@ -11,18 +13,28 @@ const GROW_ROWS = 512;
 export class MeteorImage {
 	rows = 0;
 	readonly width = WIDTH;
+	/** The downlink this picture was received on; the panel starts a new picture when it changes. */
+	freq: number | undefined;
 	private channels: [Uint8Array, Uint8Array, Uint8Array] = [new Uint8Array(0), new Uint8Array(0), new Uint8Array(0)];
+	/** Where the current decoder's row 0 sits in the picture. */
+	private offset = 0;
 
+	/**
+	 * Adds a decoder's row range. A range that starts before rows this decoder already sent means the
+	 * decoder started over (the stream restarted mid-pass): its rows go below the picture, after a grey band.
+	 */
 	append(rows: MeteorRows): void {
-		if (rows.width !== WIDTH || rows.to <= this.rows) return;
-		const from = Math.max(rows.from, this.rows);
-		this.reserve(rows.to);
+		if (rows.width !== WIDTH || rows.to <= rows.from) return;
+		if (rows.from < this.rows - this.offset) this.offset = this.rows + RESTART_GAP_ROWS;
+		const from = this.offset + rows.from;
+		const to = this.offset + rows.to;
+		this.reserve(to);
 		for (let c = 0; c < 3; c++) {
 			const channel = this.channels[c];
 			channel.fill(GREY, this.rows * WIDTH, from * WIDTH);
-			channel.set(rows.channels[c].subarray((from - rows.from) * WIDTH), from * WIDTH);
+			channel.set(rows.channels[c], from * WIDTH);
 		}
-		this.rows = rows.to;
+		this.rows = to;
 	}
 
 	/** RGBA pixels: the colour composite, or one channel (0-2) as grey levels. */
@@ -41,6 +53,7 @@ export class MeteorImage {
 
 	reset(): void {
 		this.rows = 0;
+		this.offset = 0;
 		this.channels = [new Uint8Array(0), new Uint8Array(0), new Uint8Array(0)];
 	}
 

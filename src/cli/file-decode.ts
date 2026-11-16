@@ -1,3 +1,4 @@
+import { flushDecoders } from './flush';
 import { closeSync, openSync, readSync, statSync } from 'node:fs';
 import { DspEngine } from './engine';
 import { DecodedEvents, formatEvent } from './events';
@@ -40,11 +41,7 @@ export async function runFileDecode(decoder: DecoderName, run: FileDecodeRun, io
 	} finally {
 		closeSync(fd);
 	}
-	await engine.drain();
-	// Decoders report on a timer; one more chunk after it elapses flushes their last rows.
-	await wait(600);
-	engine.process(new Int8Array(2048));
-	await engine.drain();
+	await flushDecoders(engine);
 	const png = decoder === 'meteor' ? writeMeteorPng(events.meteorImage, run.out ?? '.', new Date()) : null;
 	const summary = {
 		kind: 'summary',

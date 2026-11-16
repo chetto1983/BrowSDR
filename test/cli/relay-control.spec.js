@@ -28,4 +28,8 @@ describe('relay client identity', () => {
 		expect(relayRole({ clients }, 'other')).toBe('listener');
 		expect(relayRole({ clients }, 'gone')).toBe('absent');
 	});
+	it('cannot tell with a relay too old to report client tokens', () => {
+		const clients = [{ controller: true }, { controller: false }];
+		expect(relayRole({ clients }, 'me')).toBe('unknown');
+	});
 });

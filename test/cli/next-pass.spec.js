@@ -56,6 +56,42 @@ describe('waiting for passes', () => {
 		await runNextPass({ site: SITE, repeat: true, take: false, maxPasses: 3 }, run.io, run.deps);
 		expect(run.captured.map(([, aos]) => aos)).toEqual(['2026-11-16T09:05', '2026-11-16T13:10', '2026-11-16T14:51']);
 	});
+	it('survives a relay error with --repeat and goes on to the next pass', async () => {
+		const run = fakeRun('2026-11-16T07:00:00Z', { repeat: true });
+		const capture = run.deps.capture;
+		let calls = 0;
+		run.deps.capture = async (pass, plan) => {
+			if (calls++ === 0) throw new Error('relay unreachable'); // fails at once, without the pass going by
+			return capture(pass, plan);
+		};
+		await runNextPass({ site: SITE, repeat: true, take: false, maxPasses: 2 }, run.io, run.deps);
+		expect(run.captured.map(([, aos]) => aos)).toEqual(['2026-11-16T13:10']);
+		expect(run.logs.some((line) => /failed.*relay unreachable/.test(line))).toBe(true);
+	});
+	it('reports a failed capture without --repeat', async () => {
+		const run = fakeRun('2026-11-16T07:00:00Z');
+		run.deps.capture = async () => {
+			throw new Error('relay unreachable');
+		};
+		expect(await runNextPass({ site: SITE, repeat: false, take: false }, run.io, run.deps)).toBe(1);
+	});
+	it('skips the pass when the relay status cannot be read', async () => {
+		const run = fakeRun('2026-11-16T07:00:00Z');
+		let reads = 0;
+		run.deps.status = async () => {
+			if (reads++ === 0) throw new Error('fetch failed');
+			return idle;
+		};
+		await runNextPass({ site: SITE, repeat: true, take: false, maxPasses: 2 }, run.io, run.deps);
+		expect(run.captured.map(([, aos]) => aos)).toEqual(['2026-11-16T13:10']);
+		expect(run.logs.some((line) => /skipped.*fetch failed/.test(line))).toBe(true);
+	});
+	it('never captures the same pass twice when a capture ends early', async () => {
+		const run = fakeRun('2026-11-16T07:00:00Z');
+		run.deps.capture = async (pass, plan) => void run.captured.push([pass.satellite, pass.aos.toISOString().slice(0, 16), plan.role]);
+		await runNextPass({ site: SITE, repeat: true, take: false, maxPasses: 2 }, run.io, run.deps);
+		expect(run.captured.map(([, aos]) => aos)).toEqual(['2026-11-16T09:05', '2026-11-16T13:10']);
+	});
 	it('logs and moves on when the user holds the dongle elsewhere', async () => {
 		const run = fakeRun('2026-11-16T07:00:00Z', { status: busyAt(403_500_000, 1_024_000) });
 		const capture = vi.spyOn(run.deps, 'capture');

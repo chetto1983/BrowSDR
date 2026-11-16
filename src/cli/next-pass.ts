@@ -36,10 +36,35 @@ async function nextGoodPass(options: NextPassOptions, deps: NextPassDeps, io: Cl
 	}
 }
 
+/** Captures one pass (or logs why not), then waits until it is over; false when the capture failed. */
+async function handlePass(pass: Pass, options: NextPassOptions, deps: NextPassDeps, io: CliIo): Promise<boolean> {
+	let ok = true;
+	let status: RelayStatus | undefined;
+	try {
+		status = await deps.status();
+	} catch (error) {
+		io.err(`skipped ${describe(pass)}: relay status unavailable (${errorMessage(error)})`);
+		ok = false;
+	}
+	const plan = status ? planPassCapture(pass, status, options.take) : undefined;
+	if (plan && 'skip' in plan) io.err(`skipped ${describe(pass)}: ${plan.skip}`);
+	else if (plan) {
+		try {
+			await deps.capture(pass, plan);
+		} catch (error) {
+			io.err(`capture failed for ${describe(pass)}: ${errorMessage(error)}`);
+			ok = false;
+		}
+	}
+	// A capture that ended early must not pick the same pass up again.
+	await deps.sleep(Math.max(0, pass.los.getTime() + TAIL_MS - deps.now().getTime()));
+	return ok;
+}
+
 /**
  * Waits for the next good Meteor pass and captures it from AOS - 1 min to LOS + 30 s; with `repeat`, keeps
- * going pass after pass. A pass is skipped (never retuning anyone) when another client holds the dongle
- * on another band, unless `take` is set.
+ * going pass after pass, past relay errors. A pass is skipped (never retuning anyone) when another client
+ * holds the dongle on another band, unless `take` is set.
  */
 export async function runNextPass(options: NextPassOptions, io: CliIo, deps: NextPassDeps): Promise<number> {
 	for (let handled = 0; !options.maxPasses || handled < options.maxPasses;) {
@@ -52,15 +77,9 @@ export async function runNextPass(options: NextPassOptions, io: CliIo, deps: Nex
 		io.err(`next pass: ${describe(pass)}`);
 		const wait = pass.aos.getTime() - LEAD_MS - deps.now().getTime();
 		if (wait > 0) await deps.sleep(wait);
-		const plan = planPassCapture(pass, await deps.status(), options.take);
-		if ('skip' in plan) {
-			io.err(`skipped ${describe(pass)}: ${plan.skip}`);
-			await deps.sleep(Math.max(0, pass.los.getTime() + TAIL_MS - deps.now().getTime()));
-		} else {
-			await deps.capture(pass, plan);
-		}
+		const ok = await handlePass(pass, options, deps, io);
 		handled++;
-		if (!options.repeat) return 0;
+		if (!options.repeat) return ok ? 0 : 1;
 	}
 	return 0;
 }

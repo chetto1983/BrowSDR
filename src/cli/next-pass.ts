@@ -1,0 +1,66 @@
+import { METEOR_SATELLITES } from '@/satellites/catalog';
+import { predictPasses } from '@/satellites/passes';
+import type { Pass } from '@/satellites/types';
+import { errorMessage } from '@/platform/errors';
+import { planDecode } from './plan';
+import type { CliIo, DecodePlan, NextPassDeps, NextPassOptions, RelayStatus } from './types';
+
+const LEAD_MS = 60_000;
+const TAIL_MS = 30_000;
+const LOOKAHEAD_HOURS = 48;
+const RETRY_MS = 3600_000;
+
+/** The capture plan for a pass under the usual relay rules, or why this pass has to be skipped. */
+export function planPassCapture(pass: Pass, status: RelayStatus, take: boolean): DecodePlan | { skip: string } {
+	const freq = METEOR_SATELLITES.find((satellite) => satellite.norad === pass.norad)?.freqMHz;
+	try {
+		return planDecode('meteor', { ...(freq ? { freq } : {}), take }, status);
+	} catch (error) {
+		return { skip: errorMessage(error) };
+	}
+}
+
+function describe(pass: Pass): string {
+	return `${pass.satellite} ${pass.aos.toISOString().slice(0, 16)}Z max ${Math.round(pass.maxElevation)}°`;
+}
+
+/** The first pass worth capturing (20° or more) that has not ended by `now`. */
+async function nextGoodPass(options: NextPassOptions, deps: NextPassDeps, io: CliIo): Promise<Pass | null> {
+	const now = deps.now();
+	try {
+		const passes = predictPasses(await deps.tles(now), options.site, now, LOOKAHEAD_HOURS);
+		return passes.find((pass) => !pass.poor && pass.los.getTime() > now.getTime() + LEAD_MS) ?? null;
+	} catch (error) {
+		io.err(`no pass prediction: ${errorMessage(error)}`);
+		return null;
+	}
+}
+
+/**
+ * Waits for the next good Meteor pass and captures it from AOS - 1 min to LOS + 30 s; with `repeat`, keeps
+ * going pass after pass. A pass is skipped (never retuning anyone) when another client holds the dongle
+ * on another band, unless `take` is set.
+ */
+export async function runNextPass(options: NextPassOptions, io: CliIo, deps: NextPassDeps): Promise<number> {
+	for (let handled = 0; !options.maxPasses || handled < options.maxPasses;) {
+		const pass = await nextGoodPass(options, deps, io);
+		if (!pass) {
+			if (!options.repeat) return 1;
+			await deps.sleep(RETRY_MS);
+			continue;
+		}
+		io.err(`next pass: ${describe(pass)}`);
+		const wait = pass.aos.getTime() - LEAD_MS - deps.now().getTime();
+		if (wait > 0) await deps.sleep(wait);
+		const plan = planPassCapture(pass, await deps.status(), options.take);
+		if ('skip' in plan) {
+			io.err(`skipped ${describe(pass)}: ${plan.skip}`);
+			await deps.sleep(Math.max(0, pass.los.getTime() + TAIL_MS - deps.now().getTime()));
+		} else {
+			await deps.capture(pass, plan);
+		}
+		handled++;
+		if (!options.repeat) return 0;
+	}
+	return 0;
+}

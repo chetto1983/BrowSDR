@@ -76,3 +76,14 @@ describe('band watch during a run', () => {
 		expect(bandChange(controller, stillMine, 't1')).toBeNull();
 	});
 });
+
+describe('Meteor plans', () => {
+	it('tunes a free dongle 150 kHz below the downlink at 1.024 MS/s', () => {
+		const plan = planDecode('meteor', {}, idle);
+		expect(plan).toMatchObject({ role: 'controller', freqMHz: 137.9, centerMHz: 137.75, sampleRate: 1024000 });
+		expect(plan.params).toMatchObject({ freq: 137.9, meteor: true, bandwidth: 150000 });
+	});
+	it('refuses a narrow band centred too far from the downlink', () => {
+		expect(() => planDecode('meteor', {}, busyAt(137_600_000, 250_000))).toThrow(/outside that band/);
+	});
+});

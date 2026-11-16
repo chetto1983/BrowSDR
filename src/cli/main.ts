@@ -4,14 +4,19 @@ import { parseArgs } from 'node:util';
 import { STATION_BOOKMARKS } from '@/app/workspace/station-bookmarks';
 import { bookmarkDecode, describeBookmark } from './bookmarks';
 import { fetchRelayStatus, runDecode } from './decode';
-import type { CliIo, DecodeOptions, DecoderName } from './types';
+import { runFileDecode } from './file-decode';
+import { capturePasses, listPasses, stationFrom } from './passes';
+import type { CliIo, DecodeFlags, DecodeOptions, DecoderName } from './types';
 
 const USAGE = `browsdr-cli <command> [options]
 
   status                     show the relay: who is connected, who controls, current tuning
   bookmarks                  list the station bookmarks (stations/radiopi.json, shared with the app)
-  decode <adsb|rtl433|radiosonde>  decode for --seconds, one record per line
+  decode <adsb|rtl433|radiosonde|meteor>  decode for --seconds, one record per line
   decode --bookmark <id|name>      decode with a bookmark's decoder and tuning
+  decode meteor --next-pass [--repeat]   wait for the next Meteor pass (20°+) and save its image
+  decode <decoder> --iq-file <u8> --center <MHz> --rate <S/s>   decode a relay recording instead
+  passes                     next Meteor-M passes over --lat/--lon (or BROWSDR_LAT/BROWSDR_LON)
 
 Options:
   --relay <host:port|url>    relay address (default: $BROWSDR_RELAY)
@@ -23,6 +28,8 @@ Options:
   --bookmark <id|name>       a station bookmark (any unique part of its id or name);
                              explicit --freq/--center/--rate override it
   --json                     NDJSON records and a final summary on stdout
+  --out <dir>                where Meteor PNGs go (default: current directory)
+  --lat <deg> --lon <deg> --hours <n>   station location and look-ahead for passes
 
 Without --take the CLI only tunes a free dongle; otherwise it decodes inside the band the
 current controller chose, and refuses if the channel is outside it.`;
@@ -53,7 +60,7 @@ function decodeTarget(
 	decoder: string | undefined,
 	bookmark: string | undefined,
 ): { decoder: DecoderName; options: DecodeOptions } | undefined {
-	const named = decoder === 'adsb' || decoder === 'rtl433' || decoder === 'radiosonde' ? decoder : undefined;
+	const named = decoder === 'adsb' || decoder === 'rtl433' || decoder === 'radiosonde' || decoder === 'meteor' ? decoder : undefined;
 	if (!bookmark) return named ? { decoder: named, options: {} } : undefined;
 	const resolved = bookmarkDecode(STATION_BOOKMARKS, bookmark);
 	if (decoder !== undefined && named !== resolved.decoder)
@@ -61,22 +68,53 @@ function decodeTarget(
 	return resolved;
 }
 
+const OPTIONS = {
+	relay: { type: 'string', default: process.env.BROWSDR_RELAY },
+	seconds: { type: 'string', default: '60' },
+	freq: { type: 'string' },
+	center: { type: 'string' },
+	rate: { type: 'string' },
+	gain: { type: 'string' },
+	protocols: { type: 'string' },
+	bookmark: { type: 'string' },
+	take: { type: 'boolean', default: false },
+	'iq-file': { type: 'string' },
+	out: { type: 'string' },
+	'next-pass': { type: 'boolean', default: false },
+	repeat: { type: 'boolean', default: false },
+	lat: { type: 'string' },
+	lon: { type: 'string' },
+	hours: { type: 'string', default: '48' },
+	json: { type: 'boolean', default: false },
+} as const;
+
+/** `decode`: a fixed-length run, or Meteor passes as they come (--next-pass). */
+function decodeCommand(chosen: { decoder: DecoderName; options: DecodeOptions }, values: DecodeFlags, relay: string): Promise<number> {
+	const run = {
+		...chosen.options,
+		...defined({
+			freq: number(values.freq),
+			center: number(values.center),
+			rate: number(values.rate),
+			protocols: values.protocols,
+			out: values.out,
+		}),
+		relay,
+		seconds: number(values.seconds) ?? 60,
+		json: values.json,
+		take: values.take,
+		gain: number(values.gain),
+	};
+	if (values['next-pass'] && chosen.decoder === 'meteor')
+		return capturePasses(stationFrom(number(values.lat), number(values.lon)), run, values.repeat, io);
+	return runDecode(chosen.decoder, run, io);
+}
+
 async function main(argv: string[]): Promise<number> {
 	const { values, positionals } = parseArgs({
 		args: argv.filter((arg) => arg !== '--'),
 		allowPositionals: true,
-		options: {
-			relay: { type: 'string', default: process.env.BROWSDR_RELAY },
-			seconds: { type: 'string', default: '60' },
-			freq: { type: 'string' },
-			center: { type: 'string' },
-			rate: { type: 'string' },
-			gain: { type: 'string' },
-			protocols: { type: 'string' },
-			bookmark: { type: 'string' },
-			take: { type: 'boolean', default: false },
-			json: { type: 'boolean', default: false },
-		},
+		options: OPTIONS,
 	});
 	const [command, decoder] = positionals;
 	if (!command || command === 'help') {
@@ -92,6 +130,21 @@ async function main(argv: string[]): Promise<number> {
 			);
 		return 0;
 	}
+	if (command === 'passes')
+		return listPasses(stationFrom(number(values.lat), number(values.lon)), number(values.hours) ?? 48, values.json, io);
+	const target = command === 'decode' && values['iq-file'] ? decodeTarget(decoder, values.bookmark) : undefined;
+	if (target && values['iq-file']) {
+		return runFileDecode(
+			target.decoder,
+			{
+				...target.options,
+				...defined({ freq: number(values.freq), center: number(values.center), rate: number(values.rate), out: values.out }),
+				iqFile: values['iq-file'],
+				json: values.json,
+			},
+			io,
+		);
+	}
 	if (!values.relay) throw new Error('Set --relay or BROWSDR_RELAY to the relay address, e.g. 192.168.250.2:8765.');
 	if (command === 'status') {
 		const status = await fetchRelayStatus(values.relay);
@@ -99,26 +152,7 @@ async function main(argv: string[]): Promise<number> {
 		return 0;
 	}
 	const chosen = command === 'decode' ? decodeTarget(decoder, values.bookmark) : undefined;
-	if (chosen) {
-		return runDecode(
-			chosen.decoder,
-			{
-				...chosen.options,
-				...defined({
-					freq: number(values.freq),
-					center: number(values.center),
-					rate: number(values.rate),
-					protocols: values.protocols,
-				}),
-				relay: values.relay,
-				seconds: number(values.seconds) ?? 60,
-				json: values.json,
-				take: values.take,
-				gain: number(values.gain),
-			},
-			io,
-		);
-	}
+	if (chosen) return decodeCommand(chosen, values, values.relay);
 	io.err(USAGE);
 	return 2;
 }

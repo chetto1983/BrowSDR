@@ -3,6 +3,7 @@ import { newRelayToken, withRelayClient } from '@/devices/rtltcp/relay-control';
 import { DspEngine } from './engine';
 import { DecodedEvents, formatEvent } from './events';
 import { bandChange, planDecode, relayEndpoints } from './plan';
+import { registerMeteorWasm, writeMeteorPng } from './meteor';
 import type { CliIo, DecodePlan, DecodeRun, DecoderName, RelayStatus } from './types';
 
 export async function fetchRelayStatus(relay: string): Promise<RelayStatus> {
@@ -40,7 +41,9 @@ export async function runDecode(decoder: DecoderName, run: DecodeRun, io: CliIo)
 	io.err(
 		`${decoder}: ${plan.role} at ${plan.centerMHz.toFixed(3)} MHz, ${(plan.sampleRate / 1e6).toFixed(3)} MS/s, channel ${plan.freqMHz} MHz`,
 	);
+	if (decoder === 'meteor') await registerMeteorWasm();
 	const events = new DecodedEvents();
+	const startedAt = new Date();
 	const engine = await DspEngine.start(plan.sampleRate, plan.centerMHz, plan.params, (message) => {
 		if (message.type === 'error') io.err(`dsp error: ${message.error}`);
 		for (const record of events.accept(message)) io.out(run.json ? JSON.stringify(record) : formatEvent(record));
@@ -66,6 +69,7 @@ export async function runDecode(decoder: DecoderName, run: DecodeRun, io: CliIo)
 	await device.close();
 	await engine.drain();
 	const elapsed = (performance.now() - started) / 1000;
+	const png = decoder === 'meteor' ? writeMeteorPng(events.meteorImage, run.out ?? '.', startedAt, run.pngPrefix) : null;
 	const summary = {
 		kind: 'summary',
 		decoder,
@@ -79,6 +83,7 @@ export async function runDecode(decoder: DecoderName, run: DecodeRun, io: CliIo)
 		dsp_load: +(engine.busyMs / 1000 / elapsed).toFixed(3),
 		records: events.count,
 		aircraft: events.aircraft,
+		...(decoder === 'meteor' ? { lines: events.meteorImage.rows, png } : {}),
 		...(error ? { error } : {}),
 	};
 	io.out(

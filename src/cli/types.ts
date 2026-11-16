@@ -1,4 +1,5 @@
 import type { VfoParams } from '@/worker/runtime/types';
+import type { Pass, Site, Tle } from '@/satellites/types';
 import type { DspInput, DspOutput } from '@/worker/runtime/dsp-messages.types';
 
 export type DecoderName = 'adsb' | 'rtl433' | 'radiosonde' | 'meteor';
@@ -33,7 +34,7 @@ export interface DecodePlan {
 
 /** One line of NDJSON output: `kind` is ours, because decoder payloads carry their own `type`. */
 export interface OutputRecord {
-	kind: 'rtl433' | 'aircraft' | 'radiosonde';
+	kind: 'rtl433' | 'aircraft' | 'radiosonde' | 'meteor';
 	time: string;
 	freq_mhz: number;
 	[field: string]: unknown;
@@ -49,6 +50,17 @@ export interface DecodeRun extends DecodeOptions {
 	relay: string;
 	seconds: number;
 	json: boolean;
+	/** Directory for decoded images (Meteor PNGs); default the current directory. */
+	out?: string;
+	/** File name prefix of the Meteor PNG (default "meteor"). */
+	pngPrefix?: string;
+}
+
+/** Decoding a recording instead of the relay: --center and --rate describe the file. */
+export interface FileDecodeRun extends DecodeOptions {
+	iqFile: string;
+	json: boolean;
+	out?: string;
 }
 
 /** What a decoder bookmark from the station file stands for on the command line. */
@@ -79,4 +91,38 @@ export interface DecoderProfile {
 	halfBandHz: number;
 	minSampleRate: number;
 	params(freqMHz: number, options: DecodeOptions): VfoParams;
+}
+
+export interface NextPassOptions {
+	site: Site;
+	repeat: boolean;
+	take: boolean;
+	/** Stop after this many passes (tests); unlimited when absent. */
+	maxPasses?: number;
+}
+
+/** What --next-pass needs from the outside world, so tests can run it on a fake clock. */
+export interface NextPassDeps {
+	now(): Date;
+	sleep(ms: number): Promise<void>;
+	tles(now: Date): Promise<Tle[]>;
+	status(): Promise<RelayStatus>;
+	capture(pass: Pass, plan: DecodePlan): Promise<void>;
+}
+
+/** The command-line flags `decode` reads (as parseArgs returns them). */
+export interface DecodeFlags {
+	freq?: string;
+	center?: string;
+	rate?: string;
+	gain?: string;
+	protocols?: string;
+	out?: string;
+	seconds?: string;
+	lat?: string;
+	lon?: string;
+	json: boolean;
+	take: boolean;
+	'next-pass': boolean;
+	repeat: boolean;
 }

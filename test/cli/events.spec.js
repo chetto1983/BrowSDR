@@ -77,3 +77,33 @@ describe('human formatting', () => {
 		expect(line).toMatch(/^16:46:03Z +400E5A EZY79DX +37950 ft +44\.6000,7\.9000/);
 	});
 });
+
+describe('Meteor records', () => {
+	const status = {
+		state: 'receiving',
+		message: 'Locked',
+		locked: true,
+		quality: 0.8,
+		freqOffsetHz: 900,
+		rs: 1,
+		vit: 900,
+		mpdus: 4,
+		rows: 8,
+		apids: [66, 65, 64],
+	};
+	const rows = { from: 0, to: 8, width: 1568, channels: [0, 1, 2].map((c) => new Uint8Array(8 * 1568).fill(c)) };
+	it('reports the decoder status every ten seconds and keeps the image', () => {
+		const events = new DecodedEvents();
+		const first = events.accept({ type: 'meteor', freq: 137.9, status, rows }, at);
+		expect(first).toEqual([{ kind: 'meteor', time: at.toISOString(), freq_mhz: 137.9, ...status }]);
+		expect(events.accept({ type: 'meteor', freq: 137.9, status }, new Date(at.getTime() + 5000))).toEqual([]);
+		expect(events.accept({ type: 'meteor', freq: 137.9, status }, new Date(at.getTime() + 10000))).toHaveLength(1);
+		expect(events.meteorImage.rows).toBe(8);
+		expect(events.count).toBe(0);
+	});
+	it('prints a readable status line', () => {
+		expect(formatEvent({ kind: 'meteor', time: at.toISOString(), freq_mhz: 137.9, ...status })).toBe(
+			'16:46:03Z  Meteor 137.900 MHz  Locked  lines 8  MPDUs 4  Viterbi 900  RS 1  offset 900 Hz',
+		);
+	});
+});

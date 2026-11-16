@@ -1,11 +1,17 @@
 import type { DspOutput } from '@/worker/runtime/dsp-messages.types';
 import type { OutputRecord } from './types';
+import { MeteorImage } from '@/app/decoders/meteor/image';
+
+const METEOR_RECORD_MS = 10_000;
 
 /** Turns DSP worker output into decoded records, reporting each aircraft only when it has news. */
 export class DecodedEvents {
 	private messagesByIcao = new Map<string, number>();
 	private frameBySonde = new Map<string, number>();
+	private lastMeteorRecord = -Infinity;
 	count = 0;
+	/** The Meteor picture assembled from the decoder's rows (written as PNG at the end of a run). */
+	readonly meteorImage = new MeteorImage();
 
 	get aircraft(): number {
 		return this.messagesByIcao.size;
@@ -16,6 +22,12 @@ export class DecodedEvents {
 		if (message.type === 'rtl433_event') {
 			this.count++;
 			return [{ kind: 'rtl433', time, freq_mhz: message.freq, ...message.event }];
+		}
+		if (message.type === 'meteor') {
+			if (message.rows) this.meteorImage.append(message.rows);
+			if (now.getTime() - this.lastMeteorRecord < METEOR_RECORD_MS) return [];
+			this.lastMeteorRecord = now.getTime();
+			return [{ kind: 'meteor', time, freq_mhz: message.freq, ...message.status }];
 		}
 		if (message.type === 'radiosonde') {
 			const records: OutputRecord[] = [];
@@ -67,6 +79,10 @@ export function formatEvent(record: OutputRecord): string {
 		typeof record.latitude === 'number' && typeof record.longitude === 'number'
 			? `${record.latitude.toFixed(4)},${record.longitude.toFixed(4)}`
 			: 'no position';
+	if (record.kind === 'meteor') {
+		const offset = typeof record.freqOffsetHz === 'number' ? Math.round(record.freqOffsetHz) : 0;
+		return `${clock}  Meteor ${record.freq_mhz.toFixed(3)} MHz  ${compact(record.message)}  lines ${compact(record.rows)}  MPDUs ${compact(record.mpdus)}  Viterbi ${compact(record.vit)}  RS ${compact(record.rs)}  offset ${offset} Hz`;
+	}
 	if (record.kind === 'radiosonde') {
 		const altitude = typeof record.altitude === 'number' ? `${Math.round(record.altitude)} m` : '— m';
 		return `${clock}  ${compact(record.model)} ${compact(record.id)} frame ${compact(record.frame)}  ${altitude}  ${position}`;

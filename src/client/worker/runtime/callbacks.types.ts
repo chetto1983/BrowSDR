@@ -8,6 +8,7 @@ import type { AprsMessage } from '@/worker/decoders/aprs/types';
 import type { TetraMessage } from '@/worker/decoders/tetra/types';
 import type { MeteorMessage } from '@/worker/decoders/meteor/types';
 import type { DigimodeMessage } from '@/worker/decoders/digimode/types';
+import type { DabMessage } from '@/worker/decoders/dabplus/types';
 import type { AdsbMessage } from '@/worker/decoders/adsb/types';
 import type { DSDStatus } from '@/worker/decoders/dsd/types';
 import type {
@@ -54,6 +55,7 @@ export type AprsCallback = DecoderCallback<AprsMessage>;
 export type TetraCallback = DecoderCallback<TetraMessage>;
 export type MeteorCallback = DecoderCallback<MeteorMessage>;
 export type DigimodeCallback = DecoderCallback<DigimodeMessage>;
+export type DabCallback = DecoderCallback<DabMessage>;
 export type AdsbCallback = DecoderCallback<AdsbMessage>;
 export type Rtl433Callback = DecoderCallback<Rtl433Message>;
 export type HdRadioCallback = DecoderCallback<HdMessage>;

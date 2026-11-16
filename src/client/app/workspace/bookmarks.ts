@@ -61,6 +61,7 @@ export const bookmarkMethods = {
 				tetra: vfo.tetra,
 				meteor: vfo.meteor,
 				digimode: vfo.digimode,
+				dabService: vfo.dabService,
 				rtl433: vfo.rtl433,
 				rtl433SampleRate: vfo.rtl433SampleRate,
 				rtl433Protocols: vfo.rtl433Protocols,
@@ -121,7 +122,7 @@ export const bookmarkMethods = {
 			bm.freq = Number(e.freq) || bm.freq;
 			bm.mode = e.mode;
 			bm.hdProgram = e.hdProgram ?? 0;
-			bm.bandwidth = e.mode === 'hdradio' ? 400000 : e.bandwidth;
+			bm.bandwidth = e.mode === 'hdradio' ? 400000 : e.mode === 'dab' ? 1536000 : e.bandwidth;
 			bm.snapInterval = e.snapInterval;
 			bm.deEmphasis = e.deEmphasis;
 			bm.squelchEnabled = e.squelchEnabled;
@@ -297,6 +298,7 @@ function bookmarkPacketDecoders(bm: Bookmark) {
 		tetra: bm.tetra ?? false,
 		meteor: bm.meteor ?? false,
 		digimode: bm.digimode ?? '',
+		dabService: bm.dabService ?? 0,
 	};
 }
 

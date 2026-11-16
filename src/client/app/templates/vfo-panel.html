@@ -17,12 +17,12 @@
 	</UiPanelHeader>
 	<div class="panel-body panel-condensed" v-show="!receiver.collapsedPanels['vfo-' + i]">
 		<div class="mode-grid">
-			<UiRadio v-for="m in ['nfm','am','usb','lsb','wfm','dsb','cw','raw','dsd','hdradio']" :key="m" :value="m" v-model="vfo.mode" :name="receiver.receiverId + '-mode-' + i" @change="receiver.applyModeDefaults(i)">{{ m === 'hdradio' ? 'HD Radio' : m.toUpperCase() }}</UiRadio>
+			<UiRadio v-for="m in ['nfm','am','usb','lsb','wfm','dsb','cw','raw','dsd','hdradio','dab']" :key="m" :value="m" v-model="vfo.mode" :name="receiver.receiverId + '-mode-' + i" @change="receiver.applyModeDefaults(i)">{{ m === 'hdradio' ? 'HD Radio' : m === 'dab' ? 'DAB+' : m.toUpperCase() }}</UiRadio>
 		</div>
 
 		<UiFormRow>
 			<label style="flex: 0 0 90px;">Bandwidth</label>
-			<UiSpinbox v-model="vfo.bandwidth" :step="1000" input-label="Bandwidth" :disabled="vfo.mode === 'raw' || vfo.mode === 'hdradio'"></UiSpinbox>
+			<UiSpinbox v-model="vfo.bandwidth" :step="1000" input-label="Bandwidth" :disabled="vfo.mode === 'raw' || vfo.mode === 'hdradio' || vfo.mode === 'dab'"></UiSpinbox>
 		</UiFormRow>
 
 		<UiFormRow>
@@ -41,8 +41,9 @@
 		</UiFormRow>
 
 		<HdRadioPanel v-if="vfo.mode === 'hdradio'" :vfo="vfo" :status="receiver.hdRadioStatus[i]" @program="receiver.setHdRadioProgram(i, $event)"></HdRadioPanel>
+		<DabPanel v-if="vfo.mode === 'dab'" :vfo="vfo" :status="receiver.dabStatus[i]" @service="receiver.setDabService(i, $event)" @channel="receiver.tuneDabChannel(i, $event)"></DabPanel>
 
-		<UiFormRow class="squelch-row" v-if="vfo.mode !== 'hdradio'">
+		<UiFormRow class="squelch-row" v-if="vfo.mode !== 'hdradio' && vfo.mode !== 'dab'">
 			<UiCheckbox v-model="vfo.squelchEnabled" label="Squelch"></UiCheckbox>
 			<UiSlider v-model="vfo.squelchLevel" min="-100" max="0" step="0.1" :disabled="!vfo.squelchEnabled" compact style="margin-left: 8px;">{{ vfo.squelchLevel.toFixed(1) }}dB</UiSlider>
 			<UiButton variant="auto-squelch" @click="receiver.autoSquelch(i)" :disabled="!receiver.running || receiver.autoSquelchActive[i]" title="Sample noise floor and set squelch level automatically">Auto</UiButton>

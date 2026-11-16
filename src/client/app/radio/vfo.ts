@@ -131,6 +131,7 @@ export const vfoMethods = {
 				rtkScanStart: vfo.rtkScanStart,
 				rtkScanEnd: vfo.rtkScanEnd,
 				digimode: inBandwidth ? (vfo.digimode ?? '') : '',
+				dabService: vfo.dabService ?? 0,
 				rtl433: vfo.rtl433 && inBandwidth,
 				rtl433SampleRate: vfo.rtl433SampleRate,
 				rtl433Protocols: vfo.rtl433Protocols,

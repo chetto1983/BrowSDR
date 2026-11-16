@@ -9,6 +9,7 @@ export function needsVfoInput(params: VfoParams): boolean {
 	return (
 		params.enabled ||
 		params.mode === 'hdradio' ||
+		params.mode === 'dab' ||
 		params.pocsag ||
 		(params.rds && params.mode === 'wfm') ||
 		!!params.tetraear ||
@@ -37,6 +38,7 @@ export function planSharedBands(sampleRate: number, centerFreq: number, params: 
 			({ value }) =>
 				value.enabled ||
 				value.mode === 'hdradio' ||
+				value.mode === 'dab' ||
 				value.pocsag ||
 				value.gsc ||
 				value.flex ||

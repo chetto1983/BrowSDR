@@ -8,6 +8,7 @@ import { AprsStream } from './decoders/aprs';
 import { TetraStream } from './decoders/tetra';
 import { MeteorStream } from './decoders/meteor';
 import { DigimodeStream } from './decoders/digimode/stream';
+import { DabStream } from './decoders/dabplus/stream';
 import { TetraEarStream } from './decoders/tetraear/stream';
 import { SharedBandPool } from './streams/shared-band-pool';
 import { errorMessage } from '@/platform/errors';
@@ -89,6 +90,7 @@ let channelChunkId: number | undefined;
 let configuredParams = '';
 const bandPool = typeof SharedArrayBuffer === 'undefined' ? undefined : new SharedBandPool();
 let hdRadio: HdRadioStream;
+let dab: DabStream;
 let rtl433: Rtl433Stream;
 let adsb: AdsbStream;
 let ais: AisStream;
@@ -106,6 +108,7 @@ async function startup(): Promise<void> {
 			.then((w) => {
 				_wasm = w;
 				hdRadio = new HdRadioStream(DspProcessor, _wasm.memory, (message) => self.postMessage(message));
+				dab = new DabStream(DspProcessor, _wasm.memory, (message) => self.postMessage(message));
 				rtl433 = new Rtl433Stream(DspProcessor, _wasm.memory, (message) => self.postMessage(message));
 				adsb = new AdsbStream(DspProcessor, _wasm.memory, (message) => self.postMessage(message));
 				ble = new BleStream(DspProcessor, _wasm.memory, (message) => self.postMessage(message));
@@ -493,7 +496,8 @@ function handleDspChannelize(msg: Extract<DspInput, { type: 'channelize' }>) {
 }
 
 function handleDspInit(msg: Extract<DspInput, { type: 'init' }>) {
-	for (const decoder of [hdRadio, rtl433, adsb, ais, radiosonde, rtk, ble, acars, aprs, tetra, meteor, digimode, tetraear]) decoder.reset();
+	for (const decoder of [hdRadio, dab, rtl433, adsb, ais, radiosonde, rtk, ble, acars, aprs, tetra, meteor, digimode, tetraear])
+		decoder.reset();
 	inputIsFloat = false;
 	inputUsesBandCenter = false;
 	dsdStatus.reset();
@@ -657,19 +661,24 @@ function decodeDigitalAudio(iq: Float32Array, squelched: boolean, count: number)
 }
 
 function configurePacketDecoders(params: VfoParams, center: number): void {
-	for (const decoder of [hdRadio, rtl433, adsb, ais, radiosonde, rtk, ble, acars, aprs, tetra, meteor, digimode, tetraear])
+	for (const decoder of [hdRadio, dab, rtl433, adsb, ais, radiosonde, rtk, ble, acars, aprs, tetra, meteor, digimode, tetraear])
 		decoder.configure(params, systemSampleRate, center);
 }
 
 function processReceiveAudio(input: number, msg: Extract<DspInput, { type: 'process' }>, sequence: number): Float32Array | null {
 	const audio = hdRadio.process(input, msg.chunkLen, inputIsFloat, sequence);
+	if (msg.params.mode === 'dab') {
+		const dabAudio = dab.process(input, msg.chunkLen, inputIsFloat, sequence);
+		vfoState.squelchOpen = dab.audioActive;
+		return msg.params.enabled ? dabAudio : null;
+	}
 	if (msg.params.mode !== 'hdradio') return decodeVfoAudio(msg.chunkLen, msg.params);
 	vfoState.squelchOpen = hdRadio.audioActive;
 	return msg.params.enabled ? audio : null;
 }
 
 function vfoAudioChannels(params: VfoParams): 1 | 2 {
-	return params.mode === 'hdradio' || (params.mode === 'wfm' && params.stereo) ? 2 : 1;
+	return params.mode === 'hdradio' || params.mode === 'dab' || (params.mode === 'wfm' && params.stereo) ? 2 : 1;
 }
 
 function decodeVfoAudio(length: number, params: VfoParams): Float32Array | null {

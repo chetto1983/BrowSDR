@@ -5,6 +5,7 @@ import { resetDiscoveryFollowers } from '@/app/decoders/rtk/discovery/followers'
 export function clearDecoderSources(receiver: AppInstance): void {
 	resetDiscoveryFollowers(receiver);
 	receiver.hdRadioStatus = [];
+	receiver.dabStatus = [];
 	receiver.adsb.sources = [];
 	receiver.adsb.status = [];
 	receiver.ais.sources = [];

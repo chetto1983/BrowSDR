@@ -48,6 +48,8 @@ export interface VfoParams {
 	tetra?: boolean;
 	/** Meteor-M LRPT weather satellite images. */
 	meteor?: boolean;
+	/** DAB+ service (SId) to play in mode 'dab'; 0 = the first DAB+ service. */
+	dabService?: number;
 	/** Digital Modes decoder id (DSC, VDL2 ...), '' or absent when off. */
 	digimode?: string;
 	rtl433?: boolean;

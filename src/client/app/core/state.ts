@@ -9,6 +9,7 @@ import type { TetraCell, TetraStatus } from '@/worker/decoders/tetra/types';
 import { meteorPanelState } from '@/app/decoders/meteor/station';
 import { satellitesPanelState } from '@/app/satellites/controller';
 import { digimodePanelState } from '@/app/decoders/digimode/controller';
+import type { DabStatus } from '@/worker/decoders/dabplus/types';
 import { loadStation } from '@/satellites/station';
 import type { AdsbStatus, Aircraft } from '@/worker/decoders/adsb/types';
 import type { POCSAGStatus } from '@/worker/decoders/types';
@@ -186,6 +187,7 @@ function createDecoderAndBookmarkState() {
 		rdsStatus: [] as Array<RdsStatus | null>,
 		_gscPriorMute: new Map<number, { enabled: boolean; squelchEnabled: boolean }>(),
 		hdRadioStatus: [] as Array<HdStatus | null>,
+		dabStatus: [] as Array<DabStatus | null>,
 		dsdStatus: [] as Array<DSDStatus | null>,
 		ble: {
 			panelOpen: false,

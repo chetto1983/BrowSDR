@@ -51,6 +51,7 @@ export const makeDefaultVfo = (freq = 100.0) => ({
 	tetra: false,
 	meteor: false,
 	digimode: '',
+	dabService: 0,
 	rtl433: false,
 	rtl433SampleRate: 250000,
 	rtl433Protocols: '',
@@ -80,6 +81,7 @@ export const BOOKMARK_CATEGORIES: BookmarkCategory[] = [
 // SDR++ mode defaults
 export const MODE_DEFAULTS: Record<string, { bandwidth: number; snapInterval: number; deEmphasis: string; lowPass: boolean }> = {
 	hdradio: { bandwidth: 400000, snapInterval: 100000, deEmphasis: 'none', lowPass: false },
+	dab: { bandwidth: 1536000, snapInterval: 16000, deEmphasis: 'none', lowPass: false },
 	wfm: { bandwidth: 150000, snapInterval: 100000, deEmphasis: '50us', lowPass: true },
 	nfm: { bandwidth: 12500, snapInterval: 2500, deEmphasis: 'none', lowPass: true },
 	am: { bandwidth: 10000, snapInterval: 1000, deEmphasis: 'none', lowPass: false },

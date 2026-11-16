@@ -4,12 +4,13 @@ import type { Vfo } from '@/app/core/types';
 import template from '@/app/templates/vfo-panel.html?raw';
 import * as components from '@/ui';
 import HdRadioPanel from '@/app/decoders/hd-radio/panel';
+import DabPanel from '@/app/decoders/dab/panel';
 
 /** Keep decoder telemetry in the affected panel's render effect. */
 export default defineComponent({
 	name: 'VfoPanel',
 	template,
-	components: { ...components, HdRadioPanel },
+	components: { ...components, HdRadioPanel, DabPanel },
 	props: { vfo: { type: Object as PropType<Vfo>, required: true }, i: { type: Number, required: true } },
 	setup() {
 		const receiver = inject<AppInstance>('receiver');

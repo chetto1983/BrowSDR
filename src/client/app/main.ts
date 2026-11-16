@@ -18,6 +18,7 @@ import { meteorMethods } from '@/app/decoders/meteor/controller';
 import SatellitesPanel from '@/app/satellites/panel';
 import DigimodePanel from '@/app/decoders/digimode/panel';
 import { digimodeMethods } from '@/app/decoders/digimode/controller';
+import { dabMethods } from '@/app/decoders/dab/controller';
 import { satelliteMethods } from '@/app/satellites/controller';
 import { isRecord } from '@/platform/data';
 import type { AppInstance } from '@/app/core/receiver.types';
@@ -140,6 +141,7 @@ const Receiver = {
 		...meteorMethods,
 		...satelliteMethods,
 		...digimodeMethods,
+		...dabMethods,
 	},
 	created: async function (this: AppInstance) {
 		this._cleanup = [];

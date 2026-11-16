@@ -4,8 +4,10 @@ const AUDIO_RATE = 48000;
 const START_FRAMES = AUDIO_RATE * 0.1;
 const MAX_FRAMES = AUDIO_RATE * 0.5;
 
-/** Convert nrsc5's 93ms PCM bursts to the cadence of the incoming IQ. */
+/** Convert decoded PCM bursts (nrsc5's 93 ms, DAB+'s 120 ms superframes) to the cadence of the incoming IQ. */
 export class HdAudioPacer {
+	constructor(private readonly iqRate = HD_IQ_RATE) {}
+
 	private blocks: Float32Array[] = [];
 	private offset = 0;
 	private frames = 0;
@@ -22,7 +24,7 @@ export class HdAudioPacer {
 	read(iqSamples: number): Float32Array | null {
 		if (!this.playing && this.frames >= START_FRAMES) this.playing = true;
 		if (!this.playing) return null;
-		const desired = (iqSamples * AUDIO_RATE) / HD_IQ_RATE + this.fraction;
+		const desired = (iqSamples * AUDIO_RATE) / this.iqRate + this.fraction;
 		const frames = Math.min(Math.floor(desired), this.frames);
 		this.fraction = desired - Math.floor(desired);
 		if (!frames) {

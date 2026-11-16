@@ -15,6 +15,7 @@ import { meteorMethods } from '@/app/decoders/meteor/controller';
 import SatellitesPanel from '@/app/satellites/panel';
 import DigimodePanel from '@/app/decoders/digimode/panel';
 import { digimodeMethods } from '@/app/decoders/digimode/controller';
+import { dabMethods } from '@/app/decoders/dab/controller';
 import { satelliteMethods } from '@/app/satellites/controller';
 import { defineComponent } from 'vue';
 import template from '@/app/templates/receiver';
@@ -99,6 +100,7 @@ export const ReceiverView = defineComponent({
 		...meteorMethods,
 		...satelliteMethods,
 		...digimodeMethods,
+		...dabMethods,
 		...bookmarkMethods,
 		...zoomMethods,
 		...audioMethods,

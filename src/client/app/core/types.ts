@@ -19,6 +19,8 @@ export interface Vfo {
 	aprs?: boolean;
 	tetra?: boolean;
 	meteor?: boolean;
+	/** DAB+ service (SId) in mode 'dab'; 0 = the first one. */
+	dabService?: number;
 	/** Digital Modes decoder id, '' when off. */
 	digimode?: string;
 	rtl433?: boolean;

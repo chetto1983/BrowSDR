@@ -151,8 +151,12 @@ function validVfoParams(value: unknown): boolean {
 		isRecord(value) &&
 		typedFields(value, ['mode', 'deEmphasis', 'rdsRegion'], 'string') &&
 		typedFields(value, ['enabled', 'squelchEnabled', 'lowPass', 'highPass', 'pocsag', 'rds'], 'boolean') &&
-		optionalFields(value, ['rtl433', 'audioMuted', 'adsb', 'ais', 'radiosonde', 'ble', 'acars', 'aprs', 'tetra', 'gsc', 'flex'], 'boolean') &&
-		optionalFields(value, ['rtl433SampleRate'], 'number') &&
+		optionalFields(
+			value,
+			['rtl433', 'audioMuted', 'adsb', 'ais', 'radiosonde', 'ble', 'acars', 'aprs', 'tetra', 'gsc', 'flex'],
+			'boolean',
+		) &&
+		optionalFields(value, ['rtl433SampleRate', 'dabService'], 'number') &&
 		optionalFields(value, ['rtl433Protocols', 'digimode'], 'string') &&
 		(value.pocsagCharset === undefined ||
 			(isRecord(value.pocsagCharset) && typedFields(value.pocsagCharset, ['vendor', 'model', 'codepage'], 'string'))) &&

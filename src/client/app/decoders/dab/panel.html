@@ -1,0 +1,29 @@
+<div class="hd-radio-panel dab-panel">
+	<UiFormRow label="Block">
+		<UiSelect :model-value="channel" @update:model-value="$emit('channel', Number($event))" aria-label="DAB block">
+			<option value="0" disabled>{{ channel ? '' : 'Choose a block' }}</option>
+			<option v-for="[name, mhz] in channels" :key="name" :value="mhz">{{ name }} · {{ mhz.toFixed(3) }} MHz</option>
+		</UiSelect>
+	</UiFormRow>
+	<UiFormRow v-if="audioServices.length" label="Service">
+		<UiSelect :model-value="status?.service ?? 0" @update:model-value="$emit('service', Number($event))" aria-label="DAB service">
+			<option v-for="service in audioServices" :key="service.sid" :value="service.sid">{{ service.label || hex(service.sid) }}</option>
+		</UiSelect>
+	</UiFormRow>
+	<div class="hd-radio-status" role="status">
+		<span class="hd-radio-indicator" :class="{ locked: status?.state === 'synced', error: status?.state === 'error' }"></span>
+		{{ status?.message || 'Start reception to decode DAB+' }}
+	</div>
+	<div v-if="status?.ensemble" class="hd-radio-station">{{ status.ensemble }}</div>
+	<div v-if="status?.serviceLabel" class="hd-radio-title">{{ status.serviceLabel }}</div>
+	<div v-if="status?.label" class="hd-radio-message">{{ status.label }}</div>
+	<div v-if="status?.codec" class="hd-radio-details">
+		{{ status.codec }} · {{ status.bitrate }} kbit/s · {{ status.audioUnits }} audio units<span v-if="status.audioErrors">
+			· {{ status.audioErrors }} lost</span
+		>
+	</div>
+	<div v-if="otherServices" class="hd-radio-details">
+		{{ otherServices }} service(s) without DAB+ audio (classic DAB MP2 or data) are not played.
+	</div>
+	<div class="hd-radio-details">DAB+ (Band III, mode I) · needs 2.048 MSPS or more. Allow a few seconds to lock.</div>
+</div>

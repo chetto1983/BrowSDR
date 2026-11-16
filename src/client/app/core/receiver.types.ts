@@ -10,6 +10,7 @@ import type { AprsMessage } from '@/worker/decoders/aprs/types';
 import type { TetraMessage } from '@/worker/decoders/tetra/types';
 import type { MeteorMessage } from '@/worker/decoders/meteor/types';
 import type { DigimodeMessage } from '@/worker/decoders/digimode/types';
+import type { DabMessage } from '@/worker/decoders/dabplus/types';
 import type { Pass } from '@/satellites/types';
 import type { AdsbMessage } from '@/worker/decoders/adsb/types';
 import type { WhisperChunkMeta, WhisperVfoState } from '@/app/decoders/whisper.types';
@@ -308,6 +309,9 @@ export interface ReceiverMethods {
 	meteorTune(pass?: Pass): Promise<boolean>;
 	meteorArm(pass: Pass): void;
 	meteorDisarm(): void;
+	setDabService(index: number, sid: number): void;
+	tuneDabChannel(index: number, mhz: number): void;
+	_onDabMessage(index: number, freq: number, msg: DabMessage): void;
 	toggleDigimodePanel(): void;
 	_onDigimodeMessage(index: number, freq: number, msg: DigimodeMessage): void;
 	digimodeStatusText(index: number): string;

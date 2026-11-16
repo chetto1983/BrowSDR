@@ -64,3 +64,46 @@ export interface DabMessage {
 	freq: number;
 	status: DabStatus;
 }
+
+/** Receiver lock, a few times per second. */
+export interface DabSyncStatus {
+	state: 'searching' | 'synced';
+	snrDb: number;
+	freqOffsetHz: number;
+	ficOkRatio: number;
+	frames: number;
+}
+
+/** How to open faad2 for the selected DAB+ sub-channel. */
+export interface DabAudioParams {
+	sampleRate: 32000 | 48000;
+	sbr: boolean;
+	ps: boolean;
+	stereo: boolean;
+	/** AudioSpecificConfig for NeAACDecInit2 (960-sample frames, SBR / PS signalled). */
+	asc: Uint8Array;
+}
+
+export interface DabEnsembleInfo {
+	eid: number;
+	label: string;
+	services: DabServiceInfo[];
+}
+
+/** What the DAB receiver core reports. */
+export interface DabEvents {
+	status(status: DabSyncStatus): void;
+	ensemble(info: DabEnsembleInfo): void;
+	/** One access unit of the selected sub-channel; ok false when its CRC failed (conceal it). */
+	audioUnit(au: Uint8Array, params: DabAudioParams, ok: boolean): void;
+	label(text: string): void;
+}
+
+/** The DAB receiver core (complex baseband at 2.048 MS/s in, events out). */
+export interface DabReceiverCore {
+	process(iq: Float32Array): void;
+	select(subchannel: number | null): void;
+	reset(): void;
+}
+
+export type DabReceiverFactory = (events: DabEvents) => DabReceiverCore;

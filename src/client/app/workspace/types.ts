@@ -109,6 +109,7 @@ export interface Bookmark {
 	tetra?: boolean;
 	meteor?: boolean;
 	digimode?: string;
+	dabService?: number;
 	rtl433?: boolean;
 	rtl433SampleRate?: number;
 	rtl433Protocols?: string;

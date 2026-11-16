@@ -355,6 +355,7 @@ export const connectionMethods = {
 			await prepareReceiverAudio(this, usbOnly);
 			await this.backend.setMeteorCallback(Comlink.proxy(this._onMeteorMessage.bind(this)));
 			await this.backend.setDigimodeCallback(Comlink.proxy(this._onDigimodeMessage.bind(this)));
+			await this.backend.setDabCallback(Comlink.proxy(this._onDabMessage.bind(this)));
 			await this.backend.startRxStream(
 				opts,
 				Comlink.proxy((spectrumData: Float32Array) => this.drawSpectrum(spectrumData)),

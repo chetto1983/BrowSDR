@@ -193,6 +193,7 @@ function needsIq(params: VfoParams): boolean {
 	return (
 		params.enabled ||
 		params.mode === 'hdradio' ||
+		params.mode === 'dab' ||
 		params.pocsag ||
 		params.gsc === true ||
 		params.flex === true ||
@@ -215,7 +216,7 @@ function needsIq(params: VfoParams): boolean {
 function disabledDecoders(params: VfoParams): VfoParams {
 	return {
 		...params,
-		mode: params.mode === 'hdradio' ? 'raw' : params.mode,
+		mode: params.mode === 'hdradio' || params.mode === 'dab' ? 'raw' : params.mode,
 		enabled: false,
 		pocsag: false,
 		gsc: false,

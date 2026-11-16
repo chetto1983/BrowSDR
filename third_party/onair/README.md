@@ -94,3 +94,33 @@ file). Algorithms and protocol tables follow the OnAir source.
 | `src/client/worker/decoders/digimode/wefax/stations.ts` | `core/src/marine/marine_wefax_stations.cpp`, `core/include/dect2/marine/marine_wefax_stations.h` |
 | `src/client/worker/decoders/digimode/wefax/index.ts` | after `core/src/marine/marine_rx.cpp` (fax path: FaxAudio into the decoder, one message per chart) |
 | `test/digimode/wefax/fixtures.js` | `core/src/marine/marine_fax.cpp` (FaxAudioSource), `core/src/marine/marine_gen.cpp` (FaxSource) |
+| `src/client/worker/decoders/dab/constants.ts` | `core/include/dect2/dab/dab.h` (mode I geometry) |
+| `src/client/worker/decoders/dab/receiver.ts` | `core/src/dab/dab_rx.cpp` (DabReceiver: feed, run, processFrame, decodeFic, CIF gaps, applySelection, decodeMain, publish, reset) |
+| `src/client/worker/decoders/dab/ofdm/buffer.ts` | `core/src/dab/dab_rx.cpp` (sample buffer, input conditioning, impulse blanker) |
+| `src/client/worker/decoders/dab/ofdm/demod.ts` | `core/src/dab/dab_rx.cpp` (processFrame: DQPSK cells, common phase error, soft bits, SNR) |
+| `src/client/worker/decoders/dab/ofdm/fft.ts` | `core/include/dect2/dsp/fftutil.h` (Fft) |
+| `src/client/worker/decoders/dab/ofdm/spectrum.ts` | `core/src/dab/dab_rx.cpp` (windowFft, cirFast, cirOf, placeWindow) |
+| `src/client/worker/decoders/dab/ofdm/sync.ts` | `core/src/dab/dab_rx.cpp` (searchSync, processFrame timing, clock and carrier tracking) |
+| `src/client/worker/decoders/dab/ofdm/tables.ts` | `core/src/dab/dab_fec.cpp` (freqInterleaver, phaseReference) |
+| `src/client/worker/decoders/dab/ofdm/types.ts` | `core/src/dab/dab_rx.cpp` (search and frame outcomes) |
+| `src/client/worker/decoders/dab/fec/crc.ts` | `core/src/dab/dab_fec.cpp` (crc16, fireCode, descramble), `rust/onair_dab/src/crc.rs` |
+| `src/client/worker/decoders/dab/fec/puncture.ts` | `core/src/dab/dab_fec.cpp` (puncturing vectors, FIC, EEP and UEP profiles, table 6) |
+| `src/client/worker/decoders/dab/fec/rs.ts` | `rust/onair_fec/src/rs.rs`, `gf.rs` (RS(120,110)), `core/src/dab/dab_fec.cpp` |
+| `src/client/worker/decoders/dab/fec/types.ts` | `core/src/dab/dab_fec.cpp`, `core/include/dect2/dab/dab.h` (puncturing geometry) |
+| `src/client/worker/decoders/dab/fec/viterbi.ts` | `core/src/dab/dab_fec.cpp` (Trellis, vitForwardBody, viterbiDecode, convEncode) |
+| `src/client/worker/decoders/dab/fic/charset.ts` | `rust/onair_dvbsi/src/charset.rs`, `tables.rs` (DAB charsets, EBU Latin, clean) |
+| `src/client/worker/decoders/dab/fic/ensemble.ts` | `core/src/dab/dab_rx.cpp` (parseFib, parseFig0 0/0 to 0/2, parseFig1) |
+| `src/client/worker/decoders/dab/fic/fic.ts` | `core/src/dab/dab_rx.cpp` (decodeFic) |
+| `src/client/worker/decoders/dab/fic/figs.ts` | `rust/onair_dab/src/fig.rs` (FIB walk, FIG 0/0, 0/1, 0/2, 1), `core/src/dab/dab_fig_0a.cpp`, `dab_fig_label.cpp` |
+| `src/client/worker/decoders/dab/fic/types.ts` | `core/include/dect2/dab/dab_proto.h` (FIG records), `dab_tel.h` |
+| `src/client/worker/decoders/dab/msc/subchannel.ts` | `core/src/dab/dab_rx.cpp` (SubDec: time de-interleaver and sub-channel decoding) |
+| `src/client/worker/decoders/dab/msc/types.ts` | `core/src/dab/dab_rx.cpp` (SubDec output) |
+| `src/client/worker/decoders/dab/audio/pad.ts` | `rust/onair_dab/src/pad.rs`, `core/src/dab/dab_pad.cpp` (PAD split, dynamic label) |
+| `src/client/worker/decoders/dab/audio/superframe.ts` | `core/src/dab/dab_audio.cpp` (dabAacParams, makeAsc, DAB+ superframe) |
+| `src/client/worker/decoders/dab/audio/types.ts` | `core/include/dect2/dab/dab_proto.h` (PadSub, DlsStep, DlSegment) |
+| `test/dab/transmitter.js` | `core/src/dab/dab_gen.cpp` (test transmitter) |
+| `test/dab/gen-coding.js` | `core/src/dab/dab_gen_coding.cpp` (test transmitter channel coding) |
+| `test/dab/gen-pad.js` | `core/src/dab/dab_gen_pad.cpp` (dynamic label in the PAD) |
+| `test/dab/aac-encoder.js` | `core/src/dab/dab_gen_aac.cpp` (AAC-LC 960 encoder, DAB+ superframe) |
+| `test/dab/aac-tables.js` | `core/src/drm/drm_aactab.cpp` (AAC Huffman tables, from FFmpeg), `drm_aac.cpp` (cbInfo, cbIndex) |
+| `test/dab/drm-fft.js` | `core/src/drm/drm_fft.cpp` (DrmFft) |

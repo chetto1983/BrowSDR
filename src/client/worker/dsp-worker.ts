@@ -8,7 +8,8 @@ import { AprsStream } from './decoders/aprs';
 import { TetraStream } from './decoders/tetra';
 import { MeteorStream } from './decoders/meteor';
 import { DigimodeStream } from './decoders/digimode/stream';
-import { DabStream } from './decoders/dabplus/stream';
+import { DabStream, provideDabReceiver } from './decoders/dabplus/stream';
+import { DabReceiver } from './decoders/dab/receiver';
 import { TetraEarStream } from './decoders/tetraear/stream';
 import { SharedBandPool } from './streams/shared-band-pool';
 import { errorMessage } from '@/platform/errors';
@@ -36,6 +37,9 @@ import type { DspInput } from './runtime/dsp-messages.types';
 import type { VfoParams } from './runtime/types';
 import { PagerLegs } from './streams/pager-legs';
 import { needsVfoInput } from './streams/channel-plan';
+
+// DAB+ on a VFO: OnAir's receiver core, ported in decoders/dab
+provideDabReceiver((events) => new DabReceiver(events));
 
 if (import.meta.env.DEV) {
 	for (const level of ['log', 'warn', 'error'] as const) {
@@ -505,9 +509,7 @@ function handleDspInit(msg: Extract<DspInput, { type: 'init' }>) {
 	systemSampleRate = msg.sampleRate;
 	inputCenterFreq = msg.centerFreq;
 	// Initialize the DDC and VFO state
-	if (ddc) {
-		ddc.free();
-	}
+	ddc?.free();
 	ddc = new DspProcessor(msg.sampleRate, 0.0, msg.params.bandwidth || 150000);
 
 	vfoState = {

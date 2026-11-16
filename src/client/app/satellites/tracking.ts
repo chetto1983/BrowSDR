@@ -44,7 +44,7 @@ function prepareVfo(receiver: AppInstance, index: number, downlink: Downlink): v
 	const vfo = receiver.vfos[index];
 	for (const decoder of DECODERS) vfo[decoder] = false;
 	vfo.aprs = downlink.decoder === 'aprs';
-	vfo.digimode = '';
+	vfo.digimode = downlink.digimode ?? '';
 	vfo.mode = downlink.mode;
 	receiver.applyModeDefaults(index);
 	if (downlink.bandwidthHz) vfo.bandwidth = downlink.bandwidthHz;
@@ -105,7 +105,7 @@ export function startTracking(receiver: AppInstance, satellite: TrackedSatellite
 	if (!downlink || !receiver.vfos[vfoIndex]) return 'Choose a downlink and a VFO.';
 	const tle = receiver.satellites.tles.find((item) => item.norad === satellite.norad);
 	const look = tle && receiver.station ? orbitState(tle, receiver.station, new Date())?.look : null;
-	const doppler = !downlink.decoder && !!look;
+	const doppler = !downlink.decoder && !downlink.digimode && !!look;
 	const freq = doppler && look ? round6(receivedMHz(downlink.freqMHz, look.rangeRateKmS)) : downlink.freqMHz;
 	prepareVfo(receiver, vfoIndex, downlink);
 	tuneVfo(receiver, vfoIndex, freq);
@@ -113,6 +113,8 @@ export function startTracking(receiver: AppInstance, satellite: TrackedSatellite
 	receiver.toggleVfoCheckbox(vfoIndex);
 	if (downlink.decoder === 'aprs')
 		return `APRS decoding on VFO ${vfoIndex + 1} (Tools → APRS). Not Doppler-corrected: the decoder restarts on every retune, and ±3.5 kHz fits its channel.`;
+	if (downlink.digimode)
+		return `${downlink.label} decoding on VFO ${vfoIndex + 1} (Tools → Digital Modes). Not Doppler-corrected: the decoder restarts on every retune.`;
 	if (!look) return 'Set the station location for Doppler correction; tuned to the nominal downlink.';
 	if (receiver.vfos[vfoIndex].freq !== freq) return 'Fit the VFOs in the dialog, then press Track again.';
 	receiver.satellites.tracking = {

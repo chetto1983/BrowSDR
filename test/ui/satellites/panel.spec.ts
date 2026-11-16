@@ -147,6 +147,13 @@ describe('Satellites panel', () => {
 		expect(wrapper.vm.satellites.tracking).toBeNull();
 		expect(wrapper.vm.satellites.notice).toContain('Doppler tracking stopped');
 	});
+	it('hands ISS SSTV to the Digital Modes decoder', async () => {
+		await openPanel();
+		await wrapper.vm.satelliteTrack(25544, 3);
+		expect(wrapper.vm.vfos[0]).toMatchObject({ freq: 145.8, mode: 'nfm', digimode: 'sstv-fm', aprs: false });
+		expect(wrapper.vm.satellites.tracking).toBeNull();
+		expect(wrapper.vm.satellites.notice).toContain('SSTV pictures decoding on VFO 1');
+	});
 	it('decodes the ISS APRS digipeater without retuning it', async () => {
 		await openPanel({ vfos: [{ ...makeDefaultVfo(137.9), meteor: true }] });
 		await wrapper.vm.satelliteTrack(25544, 2);

@@ -47,12 +47,13 @@ export class DigimodeStream {
 		this.reset();
 		this.key = key;
 		this.mode = info.id;
-		if (inputRate < info.rate || Math.abs(params.freq - centerFreq) * 1e6 + info.bandwidth / 2 > inputRate / 2) {
+		const shiftHz = (params.freq - centerFreq) * 1e6 + (info.offsetHz ?? 0);
+		if (inputRate < info.rate || Math.abs(shiftHz) + info.bandwidth / 2 > inputRate / 2) {
 			this.fail(`${info.label} needs a ${info.bandwidth / 1000} kHz channel inside the received band. Center the radio near the VFO.`);
 			return;
 		}
 		try {
-			this.ddc = new this.Processor(inputRate, (params.freq - centerFreq) * 1e6, info.bandwidth);
+			this.ddc = new this.Processor(inputRate, shiftHz, info.bandwidth);
 			this.ddc.set_if_sample_rate(info.rate);
 			this.ddc.set_bandwidth(info.bandwidth);
 			this.decoder = DIGIMODE_DECODERS[info.id]({

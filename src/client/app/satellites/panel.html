@@ -75,7 +75,9 @@
 						<dt>Heard now</dt>
 						<dd v-if="heard">{{ formatMHz(heard.freq) }}<small>Doppler {{ formatKHz(heard.shiftHz) }}</small></dd>
 						<dd v-else>
-							{{ formatMHz(downlink.freqMHz) }}<small>{{ downlink.decoder ? 'Decoder handles Doppler' : 'Needs station and orbit' }}</small>
+							{{ formatMHz(downlink.freqMHz) }}<small
+								>{{ downlink.decoder || downlink.digimode ? 'Decoder handles Doppler' : 'Needs station and orbit' }}</small
+							>
 						</dd>
 					</div>
 					<div>

@@ -74,6 +74,8 @@ export interface DigimodeInfo {
 	rate: number;
 	/** Channel filter width, Hz. */
 	bandwidth: number;
+	/** Channel centre above the VFO (dial) frequency, Hz; an upper-sideband mode sets half its audio band. */
+	offsetHz?: number;
 	presets: DigimodePreset[];
 	/** Produces pictures. */
 	image?: boolean;

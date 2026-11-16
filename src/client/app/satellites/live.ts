@@ -55,7 +55,7 @@ export function useSatelliteLive(receiver: AppInstance, now: Ref<Date>, trackFro
 	const downlink = computed(() => selected.value.satellite.downlinks[state.downlink] ?? selected.value.satellite.downlinks[0]);
 	const heard = computed(() => {
 		const look = selected.value.state?.look;
-		if (!look || downlink.value.decoder) return null;
+		if (!look || downlink.value.decoder || downlink.value.digimode) return null;
 		const freq = receivedMHz(downlink.value.freqMHz, look.rangeRateKmS);
 		return { freq, shiftHz: (freq - downlink.value.freqMHz) * 1e6 };
 	});

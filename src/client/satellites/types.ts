@@ -71,6 +71,8 @@ export interface Downlink {
 	band?: [number, number];
 	/** A decoder that takes the downlink instead of Doppler tracking (its decoder restarts when the frequency changes). */
 	decoder?: 'aprs' | 'meteor';
+	/** A Digital Modes decoder (Tools → Digital Modes) that takes the downlink, also without Doppler tracking. */
+	digimode?: string;
 }
 
 /** A satellite on the tracking map, with what it transmits and how to work it. */

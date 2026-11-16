@@ -48,8 +48,8 @@ Enjoy the power of a desktop SDR platform fully within your web browser.
 - **📡 Digital Modes (ported from OnAir)**
   Tools → Digital Modes: DSC on VHF channel 70, NAVTEX, HF weather fax, VDL Mode 2 with ACARS, CubeSat
   AX.25 telemetry (1200 AFSK, 9600/4800 G3RUH), SSTV (ISS on FM, HF on USB) and tone
-  signalling (CTCSS, DCS, DTMF, selcall, SELCAL) and Wireless M-Bus meters, in one log
-  with pictures. See
+  signalling (CTCSS, DCS, DTMF, selcall, SELCAL), Wireless M-Bus meters and LoRa
+  (Meshtastic, MeshCore, LoRaWAN headers, LoRa APRS), in one log with pictures. See
   [the guide](docs/digital-modes.md).
 - **🌍 Satellite Map and Doppler Tracking**
   Tools → Satellites shows the ISS, SO-50, AO-123, RS-44, FO-29, AO-7, JO-97 and

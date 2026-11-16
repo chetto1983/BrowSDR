@@ -133,6 +133,25 @@ export const DIGIMODES: readonly DigimodeInfo[] = [
 		],
 		source: 'core/src/wmbus/wmbus_live.cpp, wmbus_proto.cpp',
 	},
+	{
+		id: 'meshtastic',
+		label: 'Meshtastic',
+		family: 'LoRa & mesh',
+		description:
+			'Meshtastic LoRa mesh packets on a 250 kHz channel: every 250 kHz modem preset at once (LongFast SF11, MediumSlow SF10, MediumFast SF9, ShortSlow SF8, ShortFast SF7; sync word 0x2B). Sender, destination, channel hash, hop limit and port of every packet; text messages, positions, node info, telemetry, traceroutes and neighbours when the packet uses the default channel key. Packets on private channels stay encrypted.',
+		rate: 500000,
+		bandwidth: 300000,
+		presets: [
+			{ label: 'EU_868 (LongFast and every 250 kHz preset)', freqMHz: 869.525 },
+			{ label: 'US LongFast', freqMHz: 906.875 },
+			{ label: 'US MediumFast', freqMHz: 913.125 },
+			{ label: 'US ShortFast', freqMHz: 918.875 },
+			{ label: 'ANZ LongFast', freqMHz: 919.875 },
+			{ label: 'EU_433 LongFast', freqMHz: 433.875 },
+			{ label: 'IN LongFast', freqMHz: 865.875 },
+		],
+		source: 'core/src/mesh/mesh_lora_demod.cpp, mesh_lora_code.cpp, mesh_proto_rs.cpp, rust/onair_mesh',
+	},
 ];
 
 export const digimodeInfo = (id: string | undefined): DigimodeInfo | undefined => DIGIMODES.find((mode) => mode.id === id);

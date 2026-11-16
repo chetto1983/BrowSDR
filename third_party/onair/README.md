@@ -124,3 +124,26 @@ file). Algorithms and protocol tables follow the OnAir source.
 | `test/dab/aac-encoder.js` | `core/src/dab/dab_gen_aac.cpp` (AAC-LC 960 encoder, DAB+ superframe) |
 | `test/dab/aac-tables.js` | `core/src/drm/drm_aactab.cpp` (AAC Huffman tables, from FFmpeg), `drm_aac.cpp` (cbInfo, cbIndex) |
 | `test/dab/drm-fft.js` | `core/src/drm/drm_fft.cpp` (DrmFft) |
+| `src/client/worker/decoders/digimode/lora/types.ts` | `core/include/dect2/mesh/mesh_lora.h` (Params, Header, RxFrame, DemodStats), `core/include/dect2/lorawan/lora_bank.h` (Channel, Decoded), `core/include/dect2/mesh/mesh_proto.h` (MeshLoraSettings), `core/src/mesh/mesh_lora_demod.cpp` (SFD candidates), `mesh_crypto_ed25519.cpp` (Fe, Point) |
+| `src/client/worker/decoders/digimode/lora/code.ts` | `core/src/mesh/mesh_lora_code.cpp` (whitening, Hamming code, header checksum, CRC, Gray mapping, interleaver, encode, dataSymbols, airSeconds), `core/include/dect2/mesh/mesh_lora.h` |
+| `src/client/worker/decoders/digimode/lora/frame.ts` | `core/src/mesh/mesh_lora_code.cpp` (FrameDecoder: header, hard and soft Hamming decoding, list decoding on the CRC) |
+| `src/client/worker/decoders/digimode/lora/jumps.ts` | `core/src/mesh/mesh_lora_code.cpp` (JumpSearch, recoverJumps) |
+| `src/client/worker/decoders/digimode/lora/chips.ts` | `core/src/mesh/mesh_lora_demod.cpp` (ChanBuf, ChipStream) |
+| `src/client/worker/decoders/digimode/lora/demod.ts` | `core/src/mesh/mesh_lora_demod.cpp` (Demod: preamble search, resampler, soft symbols, timing loop, CRC retries) |
+| `src/client/worker/decoders/digimode/lora/sfd.ts` | `core/src/mesh/mesh_lora_demod.cpp` (Demod::Impl::sfd: down-chirp, sync word, carrier and timing estimates) |
+| `src/client/worker/decoders/digimode/lora/bank.ts` | `core/src/lorawan/lora_bank.cpp` (Bank: one chip stream, a demodulator per spreading factor, duplicate frames), `core/src/mesh/mesh_rx.cpp` |
+| `src/client/worker/decoders/digimode/lora/crypto.ts` | `core/src/mesh/mesh_crypto.cpp` (AES ECB / CTR, SHA-256, HMAC-SHA256, base64, hex), `mesh_crypto_tables.cpp` |
+| `src/client/worker/decoders/digimode/lora/ed25519.ts` | `core/src/mesh/mesh_crypto_ed25519.cpp` (Ed25519 sign and verify), `mesh_crypto.cpp` (SHA-512), `mesh_crypto_tables.cpp` |
+| `src/client/worker/decoders/digimode/lora/presets.ts` | `core/src/mesh/mesh_proto.cpp` (Meshtastic presets, regions and slots, default keys), `mesh_presets.cpp`, `mesh_presets_data.cpp` (MeshCore presets), `mesh_proto_aprs.cpp` (loraAprsPresets), `mesh_proto_lorawan.cpp` (lorawanPresets) |
+| `src/client/worker/decoders/digimode/lora/mesh.types.ts` | `core/include/dect2/mesh/mesh_proto.h` (MeshPacketInfo, MeshNodeUpdate, MeshTextMessage, MeshDecodeResult), `rust/onair_mesh/src/abi.rs` |
+| `src/client/worker/decoders/digimode/lora/mesh.ts` | `rust/onair_mesh/src/abi.rs` (record defaults), `rust/onair_mesh/src/meshtastic.rs` (clean_text, clip), `core/src/mesh/mesh_report.cpp` (packet, node and message columns) |
+| `src/client/worker/decoders/digimode/lora/decoder.ts` | `core/src/mesh/mesh_rx.cpp` (MeshReceiver::onFrame: packet row, radio fields, CRC notes), `rust/onair_mesh/src/aprs.rs` (printable) |
+| `src/client/worker/decoders/digimode/meshtastic/pb.ts` | `rust/onair_mesh/src/pb.rs` (protobuf reader) |
+| `src/client/worker/decoders/digimode/meshtastic/names.ts` | `rust/onair_mesh/src/names.rs` (hardware models, ports, roles, routing errors), `rust/onair_mesh/src/tables.rs` (channel hash) |
+| `src/client/worker/decoders/digimode/meshtastic/types.ts` | `rust/onair_mesh/src/pb.rs` (Field), `rust/onair_mesh/src/meshtastic.rs` (Header, Data, Ctx, Decoded) |
+| `src/client/worker/decoders/digimode/meshtastic/ports.ts` | `rust/onair_mesh/src/meshtastic.rs` (decode_port and the port payloads) |
+| `src/client/worker/decoders/digimode/meshtastic/proto.ts` | `core/src/mesh/mesh_proto_rs.cpp` (decodeMeshtastic), `core/src/mesh/mesh_proto.cpp` (default channels), `rust/onair_mesh/src/meshtastic.rs` (parse_header, parse_data) |
+| `src/client/worker/decoders/digimode/meshtastic/index.ts` | `core/src/mesh/mesh_rx.cpp` (Meshtastic decoders with the preset search, packet row) |
+| `test/digimode/lora/phy.js` | `core/src/mesh/mesh_lora_code.cpp` (TxFrame: the LoRa frame waveform), `core/include/dect2/dsp/gen_util.h` (noise) |
+| `test/digimode/lora/builders.js` | `core/src/mesh/mesh_pb.cpp` (Writer), `mesh_proto_meshtastic.cpp`, `mesh_proto_meshcore.cpp`, `mesh_proto_aprs.cpp`, `mesh_proto_lorawan.cpp` (packet builders) |
+| `test/digimode/lora/scene.js` | `core/src/mesh/mesh_gen.cpp` (the mesh test scene), `core/src/lorawan/lorawan_gen.cpp` (lorawanTestSchedule) |

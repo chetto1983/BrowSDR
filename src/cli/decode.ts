@@ -1,4 +1,5 @@
 import { RtlTcpDevice } from '@/devices/rtltcp/device';
+import { newRelayToken, withRelayClient } from '@/devices/rtltcp/relay-control';
 import { DspEngine } from './engine';
 import { DecodedEvents, formatEvent } from './events';
 import { bandChange, planDecode, relayEndpoints } from './plan';
@@ -10,8 +11,8 @@ export async function fetchRelayStatus(relay: string): Promise<RelayStatus> {
 	return (await response.json()) as RelayStatus;
 }
 
-async function openSource(relay: string, plan: DecodePlan): Promise<RtlTcpDevice> {
-	const device = new RtlTcpDevice(relayEndpoints(relay).ws + (plan.take ? '?control=take' : ''));
+async function openSource(relay: string, plan: DecodePlan, token: string): Promise<RtlTcpDevice> {
+	const device = new RtlTcpDevice(withRelayClient(relayEndpoints(relay).ws, token, plan.take));
 	await device.open();
 	// A listener's commands are dropped by the relay; the call still sizes the device's IQ chunks.
 	await device.setSampleRate(plan.sampleRate);
@@ -25,9 +26,9 @@ async function openSource(relay: string, plan: DecodePlan): Promise<RtlTcpDevice
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /** A failed status read is not a reason to stop; a changed band is. */
-async function watchBand(relay: string, plan: DecodePlan, ownClientId: number): Promise<string> {
+async function watchBand(relay: string, plan: DecodePlan, token: string): Promise<string> {
 	try {
-		return bandChange(plan, await fetchRelayStatus(relay), ownClientId) ?? '';
+		return bandChange(plan, await fetchRelayStatus(relay), token) ?? '';
 	} catch {
 		return '';
 	}
@@ -44,9 +45,8 @@ export async function runDecode(decoder: DecoderName, run: DecodeRun, io: CliIo)
 		if (message.type === 'error') io.err(`dsp error: ${message.error}`);
 		for (const record of events.accept(message)) io.out(run.json ? JSON.stringify(record) : formatEvent(record));
 	});
-	const device = await openSource(run.relay, plan);
-	// The relay numbers clients in join order, so the newest one right after joining is this run.
-	const ownClientId = Math.max(...(await fetchRelayStatus(run.relay)).clients.map((client) => client.id));
+	const token = newRelayToken();
+	const device = await openSource(run.relay, plan, token);
 	let samples = 0;
 	await device.startRx((view) => {
 		samples += view.byteLength / 2;
@@ -57,7 +57,7 @@ export async function runDecode(decoder: DecoderName, run: DecodeRun, io: CliIo)
 	for (let second = 1; second <= run.seconds && !error; second++) {
 		await wait(1000);
 		error = device.getRxStreamStats().sourceError ?? engine.failure ?? '';
-		if (!error && second % 5 === 0) error = await watchBand(run.relay, plan, ownClientId);
+		if (!error && second % 5 === 0) error = await watchBand(run.relay, plan, token);
 		if (second % 10 === 0)
 			io.err(
 				`t=${second}s  ${(samples / second / 1e6).toFixed(3)} MS/s  dsp ${((engine.busyMs / (performance.now() - started)) * 100).toFixed(0)}%  records ${events.count}`,

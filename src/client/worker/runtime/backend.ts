@@ -104,7 +104,7 @@ import { selectUsbDevice } from '@/radio/usb-device-selection';
 import { transfer } from 'comlink';
 import { IqCapture } from '@/worker/recording/iq-capture';
 import { openIqReplay, replaceIqReplay, getIqReplayProgress, rewindIqReplay } from '@/worker/recording/replay';
-import { openRtlTcp } from './rtl-tcp';
+import { openRtlTcp, relayConnection } from './rtl-tcp';
 
 import type { RecordingFormat } from '@/radio/iq/types';
 
@@ -115,6 +115,7 @@ export class Backend {
 	getIqReplayProgress = getIqReplayProgress.bind(this);
 	rewindIqReplay = rewindIqReplay.bind(this);
 	openRtlTcp = openRtlTcp.bind(this);
+	relayConnection = relayConnection.bind(this);
 	_replayPending?: () => boolean;
 	readonly iqCapture = new IqCapture();
 

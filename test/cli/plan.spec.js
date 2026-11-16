@@ -70,9 +70,9 @@ describe('band watch during a run', () => {
 
 	it('reports a controller that lost control to another client', () => {
 		const controller = planDecode('rtl433', {}, idle);
-		const takenOver = { ...busyAt(433_700_000, 1_024_000), clients: [{ id: 2, kind: 'ws', remote: 'b', controller: true }] };
-		expect(bandChange(controller, takenOver, 1)).toMatch(/control/);
-		const stillMine = { ...busyAt(433_700_000, 1_024_000), clients: [{ id: 1, kind: 'ws', remote: 'me', controller: true }] };
-		expect(bandChange(controller, stillMine, 1)).toBeNull();
+		const takenOver = { ...busyAt(433_700_000, 1_024_000), clients: [{ id: 2, kind: 'ws', remote: 'b', controller: true, client: 't2' }] };
+		expect(bandChange(controller, takenOver, 't1')).toMatch(/Another client took control/);
+		const stillMine = { ...busyAt(433_700_000, 1_024_000), clients: [{ id: 1, kind: 'ws', remote: 'me', controller: true, client: 't1' }] };
+		expect(bandChange(controller, stillMine, 't1')).toBeNull();
 	});
 });

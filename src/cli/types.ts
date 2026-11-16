@@ -7,7 +7,7 @@ export type DecoderName = 'adsb' | 'rtl433' | 'radiosonde';
 export interface RelayStatus {
 	connected: boolean;
 	state: { frequency_hz: number; sample_rate: number; gain_index: number };
-	clients: Array<{ id: number; kind: string; remote: string; controller: boolean }>;
+	clients: Array<{ id: number; kind: string; remote: string; controller: boolean; client?: string }>;
 }
 
 export interface DecodeOptions {

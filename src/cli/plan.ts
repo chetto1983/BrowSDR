@@ -87,11 +87,11 @@ export function planDecode(decoder: DecoderName, options: DecodeOptions, status:
  * During a run: returns why decoding must stop, or null. A listener stops when the controller retunes
  * (its records would come from a band it did not ask for); a controller stops when it lost control.
  */
-export function bandChange(plan: DecodePlan, status: RelayStatus, ownClientId?: number): string | null {
+export function bandChange(plan: DecodePlan, status: RelayStatus, ownToken?: string): string | null {
 	if (plan.role === 'controller') {
-		if (ownClientId === undefined) return null;
+		if (ownToken === undefined) return null;
 		const controller = status.clients.find((client) => client.controller);
-		return controller?.id === ownClientId
+		return controller?.client === ownToken
 			? null
 			: `Another client took control of the dongle (client ${controller?.id ?? 'none'}); stopping.`;
 	}

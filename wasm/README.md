@@ -6,6 +6,7 @@ All native decoder sources, build adapters, and committed browser bundles live h
 | --- | --- | --- | --- |
 | `dsp/` | Shared Rust DSP for every SDR device | `dsp/pkg/` | `npm run build:dsp` |
 | `mbelib/` | Digital voice codec | `mbelib/pkg/` | `npm run build:mbelib` |
+| `meteor/` | Meteor-M LRPT image decoder | `meteor/pkg/` | `npm run build:meteor` |
 | `rtl433/` | Device protocol decoder | `rtl433/pkg/` | `npm run build:rtl433` |
 | `nrsc5/` | FM HD Radio and HDC audio | `nrsc5/pkg/` | `npm run build:nrsc5` |
 

@@ -41,6 +41,11 @@ Enjoy the power of a desktop SDR platform fully within your web browser.
 - **📍 APRS Stations and Live Map**
   Decode amateur radio position reports, messages, weather and telemetry on
   1200-baud packet channels, with a live station map.
+- **🛰️ Meteor-M Weather Satellite Images**
+  Receive LRPT pictures from Meteor-M2 3 and M2 4 on 137.9 MHz: a QPSK demodulator
+  in the DSP worker feeds [meteor_decode](wasm/meteor/README.md), and the picture
+  builds up line by line. Tools → Meteor lists the next passes for your location,
+  tunes or arms a pass, and saves the image as PNG.
 - **📊 Frequency Activity**
   Visually spot active signals and quickly jump to transmissions using the dynamic frequency activity scanner and interactive waterfall display.
 - **🔖 Advanced Bookmarking System**

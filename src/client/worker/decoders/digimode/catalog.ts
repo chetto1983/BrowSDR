@@ -100,6 +100,20 @@ export const DIGIMODES: readonly DigimodeInfo[] = [
 		],
 		source: 'core/src/tones/tones_rx.cpp, tones_proto.cpp',
 	},
+	{
+		id: 'wmbus',
+		label: 'Wireless M-Bus (meters)',
+		family: 'IoT & meters',
+		description:
+			'Utility meters (water, heat, gas, electricity) sending their readings by radio, EN 13757-4 modes T1 and C1 on 868.95 MHz and S1 on 868.3 MHz. Encrypted payloads are shown as encrypted.',
+		rate: 400000,
+		bandwidth: 240000,
+		presets: [
+			{ label: 'T1 / C1', freqMHz: 868.95 },
+			{ label: 'S1', freqMHz: 868.3 },
+		],
+		source: 'core/src/wmbus/wmbus_live.cpp, wmbus_proto.cpp',
+	},
 ];
 
 export const digimodeInfo = (id: string | undefined): DigimodeInfo | undefined => DIGIMODES.find((mode) => mode.id === id);

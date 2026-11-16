@@ -75,3 +75,10 @@ file). Algorithms and protocol tables follow the OnAir source.
 | `src/client/worker/decoders/digimode/tones/receiver.ts` | `core/src/tones/tones_rx.cpp` (TonesReceiver: audio stream and hop schedule) |
 | `src/client/worker/decoders/digimode/tones/index.ts` | `core/src/tones/tones_rx.cpp` (FM path, events), `core/include/dect2/tones/tones_tel.h` (kind names, summary) |
 | `test/digimode/tones/fixtures.js` | `core/src/tones/tones_gen.cpp` (ToneScene, toneSceneFm) |
+| `src/client/worker/decoders/digimode/wmbus/types.ts` | `core/include/dect2/wmbus/wmbus_proto.h` (Phy, Coding, PhySpec, Record, Frame) |
+| `src/client/worker/decoders/digimode/wmbus/proto.ts` | `core/src/wmbus/wmbus_proto.cpp` (CRC, 3-out-of-6 code, frame formats A and B, link layer, application header, phySpec) |
+| `src/client/worker/decoders/digimode/wmbus/records.ts` | `core/src/wmbus/wmbus_proto.cpp` (parseRecords, VIF tables, data lengths, number formatting) |
+| `src/client/worker/decoders/digimode/wmbus/receiver.ts` | `core/src/wmbus/wmbus_live.cpp` (channel filter, FM discriminator, chip clock recovery, sync search, T / C format marker, Manchester, 3-out-of-6 and NRZ symbols) |
+| `src/client/worker/decoders/digimode/wmbus/report.ts` | `core/src/wmbus/wmbus_live.cpp` (WmbusLiveReceiver::finish: frame summary and log) |
+| `src/client/worker/decoders/digimode/wmbus/index.ts` | `core/src/wmbus/wmbus_live.cpp` (WmbusLiveReceiver: the 868 MHz channels) |
+| `test/digimode/wmbus/fixtures.js` | `core/src/wmbus/wmbus_gen.cpp` (simulated meters, GFSK bursts), `core/src/wmbus/wmbus_proto.cpp` (buildFrame, encodeChips) |

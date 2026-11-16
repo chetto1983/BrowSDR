@@ -156,3 +156,24 @@ file). Algorithms and protocol tables follow the OnAir source.
 | `src/client/worker/decoders/digimode/lorawan/index.ts` | `core/src/lorawan/lorawan_rx.cpp` (LoRaWAN monitor channel and frame row), `core/src/mesh/mesh_rx.cpp` (onLorawan) |
 | `src/client/worker/decoders/digimode/lora-aprs/proto.ts` | `rust/onair_mesh/src/aprs.rs` (lora_aprs: prefix, TNC2 split, call checks), `core/src/mesh/mesh_proto_lora_rs.cpp` (meshDecodeLoraAprs) |
 | `src/client/worker/decoders/digimode/lora-aprs/index.ts` | `core/src/mesh/mesh_rx.cpp` (LoRa APRS decoders, onAprs), `core/src/mesh/mesh_proto_lora_rs.cpp` |
+| `src/client/worker/decoders/digimode/ftx/tables.ts` | `core/src/hfdig/hfdig_ftx_tables.cpp` (LDPC generator and checks, Costas arrays, Gray maps, FT4 scrambling, WSPR sync vector, ARRL sections, RTTY multipliers; the FT8 / FT4 tables are ft8_lib's, MIT) |
+| `src/client/worker/decoders/digimode/ftx/ldpc.ts` | `core/src/hfdig/hfdig_ftx_tables.cpp` (crc14, encode174, ldpcDecode, osdDecode) |
+| `src/client/worker/decoders/digimode/ftx/pack.ts` | `core/src/hfdig/hfdig_ftx_msg.cpp` (pack77 and its message types, CallHash) |
+| `src/client/worker/decoders/digimode/ftx/unpack.ts` | `core/src/hfdig/hfdig_ftx_msg.cpp` (unpack77, callAndGrid, gridToLatLon) |
+| `src/client/worker/decoders/digimode/ftx/wave.ts` | `core/src/hfdig/hfdig_ftx.cpp` (spec, ftxTones, addWaveIQ) |
+| `src/client/worker/decoders/digimode/ftx/layout.ts` | `core/src/hfdig/hfdig_ftx.cpp` (Resampler, streams, layoutOf, logI0), `hfdig_usb.h` (lowpass) |
+| `src/client/worker/decoders/digimode/ftx/memory.ts` | `core/src/hfdig/hfdig_ftx.cpp` (XMem, SlotDecoder::buildAp) |
+| `src/client/worker/decoders/digimode/ftx/search.ts` | `core/src/hfdig/hfdig_ftx.cpp` (SlotDecoder: bigFft, spectrogram, toneSums, score, candidates, nearDecoded) |
+| `src/client/worker/decoders/digimode/ftx/fit.ts` | `core/src/hfdig/hfdig_ftx.cpp` (SlotDecoder: baseband, symbol, twiddles, syncMetric, fine fit, tone amplitudes) |
+| `src/client/worker/decoders/digimode/ftx/soft.ts` | `core/src/hfdig/hfdig_ftx.cpp` (SlotDecoder: soft bits, coherentLlr, OSD, a-priori CQ and QSO, soft bits across slots) |
+| `src/client/worker/decoders/digimode/ftx/slot.ts` | `core/src/hfdig/hfdig_ftx.cpp` (SlotDecoder: run, tryCandidate, subtract, wsprCallGrid) |
+| `src/client/worker/decoders/digimode/ftx/clock.ts` | `core/src/hfdig/hfdig_ftx.cpp` (HfdigFtx::Impl: feed, schedule, window), `core/include/dect2/hfdig/clock_comp.h` (ClockComp) |
+| `src/client/worker/decoders/digimode/ftx/types.ts` | `core/src/hfdig/hfdig_ftx_int.h` (Spec, OsdStats), `core/include/dect2/hfdig/hfdig_ftx.h` (FtxDecode), `hfdig_ftx.cpp` (Layout, Job, XMem) |
+| `src/client/worker/decoders/digimode/ftx/index.ts` | after `core/src/hfdig/hfdig_ftx.cpp` (HfdigFtx: slot queue, decodes per slot, clock statistics), `hfdig_rx.cpp` (USB audio) |
+| `src/client/worker/decoders/digimode/wspr/codec.ts` | `core/src/hfdig/hfdig_wspr.cpp` (nhash, wsprPack, wsprUnpack, convolutional code, interleaver, wsprSymbols) |
+| `src/client/worker/decoders/digimode/wspr/fano.ts` | `core/src/hfdig/hfdig_wspr.cpp` (wsprFano) |
+| `src/client/worker/decoders/digimode/wspr/index.ts` | after `core/src/hfdig/hfdig_ftx.cpp` (the WSPR mode of the slot decoder, decode records) |
+| `test/digimode/ftx/fixtures.js` | `core/src/hfdig/hfdig_ftx_gen.cpp` (ftxTestStations), `hfdig_ftx.cpp` (addWave), `hfdig_gen.cpp` (USB test signal), `tests/hfdig/hfdig_ftx_testutil.h` (ampFor) |
+| `test/digimode/ftx/messages.spec.js` | `tests/hfdig/test_hfdig_ftx_tables.cpp` |
+| `test/digimode/ftx/ft8.spec.js` | `tests/hfdig/test_hfdig_ft8.cpp` |
+| `test/digimode/ftx/modes.spec.js` | `tests/hfdig/test_hfdig_ft4.cpp`, `test_hfdig_wspr.cpp` |

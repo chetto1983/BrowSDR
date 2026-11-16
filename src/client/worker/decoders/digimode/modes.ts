@@ -11,6 +11,8 @@ import { MeshtasticDecoder } from './meshtastic';
 import { MeshCoreDecoder } from './meshcore';
 import { LorawanDecoder } from './lorawan';
 import { LoraAprsDecoder } from './lora-aprs';
+import { Ft4Decoder, Ft8Decoder } from './ftx';
+import { WsprDecoder } from './wspr';
 
 /** Worker-side constructors of the catalog's decoders. */
 export const DIGIMODE_DECODERS: Record<string, (sink: DigimodeSink) => DigimodeDecoder> = {
@@ -27,4 +29,7 @@ export const DIGIMODE_DECODERS: Record<string, (sink: DigimodeSink) => DigimodeD
 	meshcore: (sink) => new MeshCoreDecoder(sink),
 	lorawan: (sink) => new LorawanDecoder(sink),
 	'lora-aprs': (sink) => new LoraAprsDecoder(sink),
+	ft8: (sink) => new Ft8Decoder(sink),
+	ft4: (sink) => new Ft4Decoder(sink),
+	wspr: (sink) => new WsprDecoder(sink),
 };

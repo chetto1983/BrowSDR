@@ -13,6 +13,8 @@ import { aprsMethods } from '@/app/decoders/aprs/controller';
 import MeteorPanel from '@/app/decoders/meteor/panel';
 import { meteorMethods } from '@/app/decoders/meteor/controller';
 import SatellitesPanel from '@/app/satellites/panel';
+import DigimodePanel from '@/app/decoders/digimode/panel';
+import { digimodeMethods } from '@/app/decoders/digimode/controller';
 import { satelliteMethods } from '@/app/satellites/controller';
 import { defineComponent } from 'vue';
 import template from '@/app/templates/receiver';
@@ -65,6 +67,7 @@ export const ReceiverView = defineComponent({
 		AprsPanel,
 		MeteorPanel,
 		SatellitesPanel,
+		DigimodePanel,
 		HeaderTools,
 		DiscoveryPanel,
 		IqCapturePanel,
@@ -95,6 +98,7 @@ export const ReceiverView = defineComponent({
 		...aprsMethods,
 		...meteorMethods,
 		...satelliteMethods,
+		...digimodeMethods,
 		...bookmarkMethods,
 		...zoomMethods,
 		...audioMethods,

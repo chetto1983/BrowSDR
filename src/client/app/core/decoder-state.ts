@@ -24,4 +24,5 @@ export function clearDecoderSources(receiver: AppInstance): void {
 	receiver.tetra.sources = [];
 	receiver.meteor.status = [];
 	receiver.meteor.sources = [];
+	receiver.digimodes.status = [];
 }

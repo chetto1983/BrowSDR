@@ -16,7 +16,7 @@ export default [
 	part1,
 	part2,
 	part3,
-	'<AdsbPanel /><AisPanel /><RadiosondePanel /><RtkPanel /><BlePanel /><AcarsPanel /><AprsPanel /><TetraPanel /><TetraEarPanel /><MeteorPanel /><SatellitesPanel /><DiscoveryPanel /><IqCapturePanel />',
+	'<AdsbPanel /><AisPanel /><RadiosondePanel /><RtkPanel /><BlePanel /><AcarsPanel /><AprsPanel /><TetraPanel /><TetraEarPanel /><MeteorPanel /><SatellitesPanel /><DigimodePanel /><DiscoveryPanel /><IqCapturePanel />',
 	part4,
 	part5,
 	part6,

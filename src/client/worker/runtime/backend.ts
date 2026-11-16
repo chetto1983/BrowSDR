@@ -27,6 +27,7 @@ import type {
 import { setRemoteHostHdRadioCallback } from '@/worker/decoders/hd-radio/routing';
 import { setTetraEarCallback } from '@/worker/decoders/tetraear/routing';
 import { setMeteorCallback } from '@/worker/decoders/meteor/routing';
+import { setDigimodeCallback } from '@/worker/decoders/digimode/routing';
 import { hdAudioChanged } from '@/worker/decoders/hd-radio/types';
 import type { DspAudio } from '@/worker/runtime/dsp-messages.types';
 import type { IqDispatcher } from '@/worker/streams/iq-dispatch';
@@ -112,6 +113,7 @@ import type { RecordingFormat } from '@/radio/iq/types';
 export class Backend {
 	setTetraEarCallback = setTetraEarCallback.bind(this);
 	setMeteorCallback = setMeteorCallback.bind(this);
+	setDigimodeCallback = setDigimodeCallback.bind(this);
 	openIqReplay = openIqReplay.bind(this);
 	replaceIqReplay = replaceIqReplay.bind(this);
 	getIqReplayProgress = getIqReplayProgress.bind(this);

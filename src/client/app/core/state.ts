@@ -8,6 +8,7 @@ import type { AprsPacket, AprsStation, AprsStatus } from '@/worker/decoders/aprs
 import type { TetraCell, TetraStatus } from '@/worker/decoders/tetra/types';
 import { meteorPanelState } from '@/app/decoders/meteor/station';
 import { satellitesPanelState } from '@/app/satellites/controller';
+import { digimodePanelState } from '@/app/decoders/digimode/controller';
 import { loadStation } from '@/satellites/station';
 import type { AdsbStatus, Aircraft } from '@/worker/decoders/adsb/types';
 import type { POCSAGStatus } from '@/worker/decoders/types';
@@ -215,6 +216,7 @@ function createDecoderAndBookmarkState() {
 		station: loadStation(),
 		meteor: meteorPanelState(),
 		satellites: satellitesPanelState(),
+		digimodes: digimodePanelState(),
 		ais: { panelOpen: false, status: [] as Array<AisStatus | null>, sources: [] as Vessel[][] },
 		radiosonde: { panelOpen: false, status: [] as Array<RadiosondeStatus | null>, sources: [] as Radiosonde[][] },
 		rtk: {

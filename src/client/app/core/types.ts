@@ -19,6 +19,8 @@ export interface Vfo {
 	aprs?: boolean;
 	tetra?: boolean;
 	meteor?: boolean;
+	/** Digital Modes decoder id, '' when off. */
+	digimode?: string;
 	rtl433?: boolean;
 	rtl433SampleRate?: number;
 	rtl433Protocols?: string;

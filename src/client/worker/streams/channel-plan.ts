@@ -3,6 +3,7 @@ import { IF_RATES } from '@/worker/runtime/constants';
 import type { VfoParams } from '@/worker/runtime/types';
 import { sidebandOffsetHz } from '@/worker/decoders/ssb';
 import { rtl433SampleRate } from '@/worker/decoders/rtl433';
+import { digimodeInfo } from '@/worker/decoders/digimode/catalog';
 
 export function needsVfoInput(params: VfoParams): boolean {
 	return (
@@ -11,6 +12,7 @@ export function needsVfoInput(params: VfoParams): boolean {
 		params.pocsag ||
 		(params.rds && params.mode === 'wfm') ||
 		!!params.tetraear ||
+		!!params.digimode ||
 		[
 			params.gsc,
 			params.flex,
@@ -47,6 +49,7 @@ export function planSharedBands(sampleRate: number, centerFreq: number, params: 
 				value.aprs ||
 				value.tetra ||
 				value.meteor ||
+				!!value.digimode ||
 				value.tetraear ||
 				value.rtl433 ||
 				(value.rds && value.mode === 'wfm'),
@@ -99,6 +102,7 @@ function channelWidth(value: VfoParams, sampleRate: number): number {
 		value.aprs ? 48000 : 0,
 		value.tetra ? 72000 : 0,
 		value.meteor ? 150000 : 0,
+		digimodeInfo(value.digimode)?.bandwidth ?? 0,
 		value.tetraear ? 72000 : 0,
 	);
 }

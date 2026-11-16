@@ -60,6 +60,7 @@ export const bookmarkMethods = {
 				aprs: vfo.aprs,
 				tetra: vfo.tetra,
 				meteor: vfo.meteor,
+				digimode: vfo.digimode,
 				rtl433: vfo.rtl433,
 				rtl433SampleRate: vfo.rtl433SampleRate,
 				rtl433Protocols: vfo.rtl433Protocols,
@@ -295,6 +296,7 @@ function bookmarkPacketDecoders(bm: Bookmark) {
 		aprs: bm.aprs ?? false,
 		tetra: bm.tetra ?? false,
 		meteor: bm.meteor ?? false,
+		digimode: bm.digimode ?? '',
 	};
 }
 

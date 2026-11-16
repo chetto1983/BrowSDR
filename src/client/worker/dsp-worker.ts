@@ -1,5 +1,4 @@
 import { HdRadioStream } from './decoders/hd-radio/stream';
-import { HD_IQ_RATE } from './decoders/hd-radio/types';
 import { BleStream } from './decoders/ble/stream';
 import { AisStream } from './decoders/ais';
 import { RadiosondeStream } from './decoders/radiosonde';
@@ -8,6 +7,7 @@ import { AcarsStream } from './decoders/acars';
 import { AprsStream } from './decoders/aprs';
 import { TetraStream } from './decoders/tetra';
 import { MeteorStream } from './decoders/meteor';
+import { DigimodeStream } from './decoders/digimode/stream';
 import { TetraEarStream } from './decoders/tetraear/stream';
 import { SharedBandPool } from './streams/shared-band-pool';
 import { errorMessage } from '@/platform/errors';
@@ -23,7 +23,7 @@ import { RationalResampler } from './streams/dsp-pipeline';
 import { sidebandOffsetHz } from './decoders/ssb';
 import { measureSquelch, demodulateAnalogAudio } from './streams/analog-demod';
 import { DSDStream } from './decoders/dsd/dsd-stream';
-import { DSD_IF_RATE } from '@/worker/decoders/dsd/constants';
+import { IF_RATES } from '@/worker/runtime/constants';
 import type { DSDStatus } from './decoders/dsd/types';
 import { RDSDecoder } from './decoders/rds';
 import type { RdsStatus } from './decoders/types';
@@ -95,21 +95,9 @@ let ais: AisStream;
 let radiosonde: RadiosondeStream;
 let rtk: RtkStream;
 let ble: BleStream;
-let acars: AcarsStream, aprs: AprsStream, tetra: TetraStream, meteor: MeteorStream;
+let acars: AcarsStream, aprs: AprsStream, tetra: TetraStream, meteor: MeteorStream, digimode: DigimodeStream;
 let tetraear: TetraEarStream;
 
-const IF_RATES: Record<string, number> = {
-	nfm: 50000,
-	wfm: 250000,
-	hdradio: HD_IQ_RATE,
-	am: 15000,
-	usb: 24000,
-	lsb: 24000,
-	dsb: 24000,
-	cw: 3000,
-	raw: 48000,
-	dsd: DSD_IF_RATE,
-};
 const AUDIO_RATE = 48000;
 
 async function startup(): Promise<void> {
@@ -129,6 +117,9 @@ async function startup(): Promise<void> {
 				tetra = new TetraStream(DspProcessor, _wasm.memory, (message) => self.postMessage(message));
 				meteor = new MeteorStream(DspProcessor, _wasm.memory, (message) =>
 					self.postMessage(message, { transfer: message.rows ? message.rows.channels.map((channel) => channel.buffer) : [] }),
+				);
+				digimode = new DigimodeStream(DspProcessor, _wasm.memory, (message) =>
+					self.postMessage(message, { transfer: message.image ? [message.image.rgb.buffer] : [] }),
 				);
 				tetraear = new TetraEarStream(DspProcessor, _wasm.memory, (message) =>
 					self.postMessage(message, { transfer: message.bits ? [message.bits] : [] }),
@@ -502,7 +493,7 @@ function handleDspChannelize(msg: Extract<DspInput, { type: 'channelize' }>) {
 }
 
 function handleDspInit(msg: Extract<DspInput, { type: 'init' }>) {
-	for (const decoder of [hdRadio, rtl433, adsb, ais, radiosonde, rtk, ble, acars, aprs, tetra, meteor, tetraear]) decoder.reset();
+	for (const decoder of [hdRadio, rtl433, adsb, ais, radiosonde, rtk, ble, acars, aprs, tetra, meteor, digimode, tetraear]) decoder.reset();
 	inputIsFloat = false;
 	inputUsesBandCenter = false;
 	dsdStatus.reset();
@@ -560,7 +551,7 @@ function handleDspProcess(msg: Extract<DspInput, { type: 'process' }>) {
 		const input = inputIsFloat ? sharedFloatPtr : sharedIqPtr;
 		rtl433.process(input, msg.chunkLen, inputIsFloat);
 		const sequence = msg.sequence ?? msg.chunkId;
-		for (const decoder of [adsb, ais, radiosonde, rtk, ble, acars, aprs, tetra, meteor, tetraear])
+		for (const decoder of [adsb, ais, radiosonde, rtk, ble, acars, aprs, tetra, meteor, digimode, tetraear])
 			decoder.process(input, msg.chunkLen, inputIsFloat, sequence);
 		const audioOut = processReceiveAudio(input, msg, sequence);
 		// Complete decoder work before acknowledging the input. Otherwise replies
@@ -666,7 +657,7 @@ function decodeDigitalAudio(iq: Float32Array, squelched: boolean, count: number)
 }
 
 function configurePacketDecoders(params: VfoParams, center: number): void {
-	for (const decoder of [hdRadio, rtl433, adsb, ais, radiosonde, rtk, ble, acars, aprs, tetra, meteor, tetraear])
+	for (const decoder of [hdRadio, rtl433, adsb, ais, radiosonde, rtk, ble, acars, aprs, tetra, meteor, digimode, tetraear])
 		decoder.configure(params, systemSampleRate, center);
 }
 

@@ -92,6 +92,7 @@ function decoderTools(receiver: AppInstance): UiMenuItem[] {
 		},
 		tetraTool(receiver),
 		meteorTool(receiver),
+		digimodeTool(receiver),
 		tetraEarTool(receiver),
 		{
 			id: 'rtl433',
@@ -123,6 +124,17 @@ function meteorTool(receiver: AppInstance): UiMenuItem {
 		icon: 'radio',
 		active: receiver.vfos.some((vfo) => vfo.meteor),
 		open: receiver.meteor.panelOpen,
+	};
+}
+
+function digimodeTool(receiver: AppInstance): UiMenuItem {
+	return {
+		id: 'digimode',
+		label: 'Digital Modes',
+		description: 'DSC and more · ported from OnAir',
+		icon: 'radio',
+		active: receiver.vfos.some((vfo) => !!vfo.digimode),
+		open: receiver.digimodes.panelOpen,
 	};
 }
 
@@ -206,6 +218,7 @@ function selectTool(receiver: AppInstance, id: string, openOnly = false): void {
 			aprs: receiver.aprs,
 			tetra: receiver.tetra,
 			meteor: receiver.meteor,
+			digimode: receiver.digimodes,
 			tetraear: receiver.tetraear,
 		};
 		const panel = panels[id as keyof typeof panels];

@@ -48,6 +48,8 @@ export interface VfoParams {
 	tetra?: boolean;
 	/** Meteor-M LRPT weather satellite images. */
 	meteor?: boolean;
+	/** Digital Modes decoder id (DSC, VDL2 ...), '' or absent when off. */
+	digimode?: string;
 	rtl433?: boolean;
 	rtl433SampleRate?: number;
 	rtl433Protocols?: string;

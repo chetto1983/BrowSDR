@@ -1,0 +1,63 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import MeteorModule from '../../wasm/meteor/pkg/meteor.js';
+import { validDigimodeMessage } from '@/worker/decoders/digimode/validation';
+import { dscBuildDistress, dscFrameBits } from '@/worker/decoders/digimode/dsc/symbols';
+import { vhfDscSignal } from './fixtures';
+
+const binary = readFileSync(new URL('../../wasm/dsp/pkg/browsdr_dsp_bg.wasm', import.meta.url));
+vi.mock('/wasm/dsp/browsdr_dsp.js', async () => {
+	const dsp = await vi.importActual('../../wasm/dsp/pkg/browsdr_dsp.js');
+	const wasm = dsp.initSync({ module: binary });
+	return { ...dsp, default: async () => wasm };
+});
+const pkg = (file) => fileURLToPath(new URL(`../../wasm/meteor/pkg/${file}`, import.meta.url));
+afterEach(() => {
+	vi.unstubAllGlobals();
+	vi.restoreAllMocks();
+});
+
+async function startWorker() {
+	vi.resetModules();
+	const messages = [];
+	vi.stubGlobal('self', { postMessage: (message) => messages.push(message) });
+	const { provideMeteorFactory } = await import('@/worker/decoders/meteor-init');
+	provideMeteorFactory((options) => MeteorModule({ ...options, locateFile: pkg }));
+	await import('@/worker/dsp-worker');
+	return { messages, send: (data) => self.onmessage({ data }) };
+}
+
+const digimodeMessages = (messages) => messages.filter((message) => message.type === 'digimode');
+
+describe('Digital Modes through the production DSP worker', () => {
+	it('decodes a channel 70 distress alert 50 kHz from the centre at 240 kS/s', async () => {
+		const { messages, send } = await startWorker();
+		const params = { freq: 156.525, mode: 'nfm', bandwidth: 12500, enabled: false, digimode: 'dsc-vhf' };
+		await send({ type: 'init', sampleRate: 240000, centerFreq: 156.475, params });
+		const bits = dscFrameBits(dscBuildDistress('247123450', 101, 43.7, 10.3, 21, 15, 100), 127, 200);
+		const iq = vhfDscSignal(bits, { rate: 240000, offsetHz: 50000 + 700, noiseLevel: 0.3 });
+		const input = Int8Array.from(iq, (value) => Math.max(-127, Math.min(127, Math.round(value * 90))));
+		let clock = performance.now();
+		vi.spyOn(performance, 'now').mockImplementation(() => (clock += 300));
+		for (let i = 0, chunkId = 1; i < input.length; i += 48000, chunkId++) {
+			const block = input.slice(i, i + 48000);
+			await send({ type: 'process', params, chunk: block.buffer, chunkLen: block.length, floatIq: false, chunkId });
+		}
+		const output = digimodeMessages(messages);
+		expect(output.every(validDigimodeMessage)).toBe(true);
+		expect(output.at(-1).status.state).toBe('receiving');
+		const records = output.flatMap((message) => message.records);
+		expect(records).toHaveLength(1);
+		expect(records[0]).toMatchObject({ mode: 'dsc-vhf', alert: true, damaged: false });
+		expect(records[0].text).toBe("Distress alert: 247123450 → all stations - Flooding at 43°42'N 010°18'E");
+	}, 20_000);
+	it('reports a channel that does not fit the received band', async () => {
+		const { messages, send } = await startWorker();
+		const params = { freq: 156.525, mode: 'nfm', bandwidth: 12500, enabled: false, digimode: 'dsc-vhf' };
+		await send({ type: 'init', sampleRate: 240000, centerFreq: 155, params });
+		const block = new Int8Array(4800);
+		await send({ type: 'process', params, chunk: block.buffer, chunkLen: block.length, floatIq: false, chunkId: 1 });
+		expect(digimodeMessages(messages).at(-1).status).toMatchObject({ state: 'error' });
+	});
+});

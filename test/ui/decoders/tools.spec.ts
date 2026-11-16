@@ -31,6 +31,7 @@ describe('decoder tools menu', () => {
 			'RTK',
 			'TETRA',
 			'Meteor',
+			'Digital Modes',
 			'TetraEar',
 			'Wireless Sensors',
 		]);

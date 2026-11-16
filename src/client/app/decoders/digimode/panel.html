@@ -1,0 +1,92 @@
+<section v-if="receiver.digimodes.panelOpen" class="adsb-panel digimode-panel" aria-label="Digital modes">
+	<UiToolHeader variant="msgcenter" closable close-label="Close digital modes panel" @close="receiver.toggleDigimodePanel">
+		Digital Modes <span class="msgcenter-count">{{ log.length }} decoded</span>
+		<template #actions>
+			<UiSelect v-model.number="receiver.activeVfoIndex" aria-label="Digital modes VFO" class="decoder-vfo-select">
+				<option v-for="(vfo, i) in receiver.vfos" :key="i" :value="i">VFO {{ i + 1 }} · {{ vfo.freq.toFixed(3) }} MHz</option>
+			</UiSelect>
+			<UiSelect
+				v-if="selectedVfo"
+				:model-value="selectedVfo.digimode || ''"
+				aria-label="Decoder"
+				@update:model-value="receiver.setVfoDigimode(receiver.activeVfoIndex, $event)"
+			>
+				<option value="">Decoder off</option>
+				<optgroup v-for="group in families" :key="group.family" :label="group.family">
+					<option v-for="mode in group.modes" :key="mode.id" :value="mode.id">{{ mode.label }}</option>
+				</optgroup>
+			</UiSelect>
+			<template v-if="selectedMode?.presets.length">
+				<UiSelect v-model.number="preset" aria-label="Frequency">
+					<option v-for="item in selectedMode.presets" :key="item.freqMHz" :value="item.freqMHz">
+						{{ item.label }} · {{ item.freqMHz.toFixed(3) }} MHz
+					</option>
+				</UiSelect>
+				<UiButton variant="transcript" @click="receiver.tuneDigimodeVfo(preset)">Tune</UiButton>
+			</template>
+		</template>
+	</UiToolHeader>
+	<div class="adsb-summary">
+		<span v-if="!receiver.running">Reception stopped</span>
+		<template v-for="(vfo, i) in receiver.vfos" :key="i">
+			<span v-if="vfo.digimode" :class="{ 'rtl433-error': receiver.digimodes.status[i]?.state === 'error' }"
+				>VFO {{ i + 1 }} · {{ receiver.digimodeStatusText(i) }}</span
+			>
+		</template>
+		<span v-if="!active"
+			>Choose a decoder for the VFO, tune it (Tune uses the usual frequency), then start reception. Audio can stay muted.</span
+		>
+		<span v-else-if="selectedMode">{{ selectedMode.description }}</span>
+	</div>
+	<div class="adsb-content" :class="{ 'adsb-list-only': !imageRows }">
+		<div v-if="imageRows" class="digimode-image">
+			<div class="meteor-image-tools">
+				<strong>{{ picture.title }}</strong>
+				<UiButton @click="savePicture">Save PNG</UiButton>
+			</div>
+			<canvas ref="canvas" class="meteor-canvas" aria-label="Decoded picture"></canvas>
+		</div>
+		<div class="adsb-list">
+			<div class="digimode-tools">
+				<UiInput v-model="query" aria-label="Search decoded messages" placeholder="Search"></UiInput>
+				<UiButton variant="transcript" :disabled="!log.length" @click="exportLog">Export</UiButton>
+				<UiButton variant="transcript" :disabled="!log.length" @click="receiver.clearDigimodeLog()">Clear</UiButton>
+			</div>
+			<UiEmptyState v-if="!log.length" variant="msgcenter">Decoded calls, messages and frames appear here.</UiEmptyState>
+			<div v-else class="adsb-table-wrap">
+				<table class="adsb-table digimode-log" aria-label="Decoded messages">
+					<thead>
+						<tr>
+							<th>Time</th>
+							<th>Decoded</th>
+						</tr>
+					</thead>
+					<tbody>
+						<template v-for="entry in filtered" :key="entry.vfo + '-' + entry.mode + '-' + entry.id">
+							<tr
+								:class="{ 'digimode-damaged': entry.damaged, 'digimode-alert': entry.alert, selected: open === entry }"
+								@click="open = open === entry ? null : entry"
+							>
+								<td>{{ clock(entry.time) }}<small>VFO {{ entry.vfo + 1 }} · {{ modeLabel(entry.mode) }}</small></td>
+								<td>{{ entry.text }}</td>
+							</tr>
+							<tr v-if="open === entry && entry.fields?.length" class="digimode-fields">
+								<td colspan="2">
+									<dl class="adsb-detail-grid">
+										<div v-for="[label, value] in entry.fields" :key="label">
+											<dt>{{ label }}</dt>
+											<dd>{{ value }}</dd>
+										</div>
+									</dl>
+								</td>
+							</tr>
+						</template>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+	<div class="adsb-footer">
+		<span>Decoders ported from OnAir (GPL-3.0-or-later): see About for credits.</span>
+	</div>
+</section>

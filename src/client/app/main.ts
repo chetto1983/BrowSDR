@@ -16,6 +16,8 @@ import { tetraMethods } from '@/app/decoders/tetra/controller';
 import MeteorPanel from '@/app/decoders/meteor/panel';
 import { meteorMethods } from '@/app/decoders/meteor/controller';
 import SatellitesPanel from '@/app/satellites/panel';
+import DigimodePanel from '@/app/decoders/digimode/panel';
+import { digimodeMethods } from '@/app/decoders/digimode/controller';
 import { satelliteMethods } from '@/app/satellites/controller';
 import { isRecord } from '@/platform/data';
 import type { AppInstance } from '@/app/core/receiver.types';
@@ -90,6 +92,7 @@ const Receiver = {
 		TetraEarPanel,
 		MeteorPanel,
 		SatellitesPanel,
+		DigimodePanel,
 		HeaderTools,
 		DiscoveryPanel,
 		IqCapturePanel,
@@ -136,6 +139,7 @@ const Receiver = {
 		...tetraMethods,
 		...meteorMethods,
 		...satelliteMethods,
+		...digimodeMethods,
 	},
 	created: async function (this: AppInstance) {
 		this._cleanup = [];

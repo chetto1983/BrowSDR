@@ -19,6 +19,7 @@ import type { VfoParams, VfoState } from '@/worker/runtime/types';
 import type { Backend } from '@/worker/runtime/backend';
 import { routeTetraEar } from '@/worker/decoders/tetraear/routing';
 import { routeMeteor } from '@/worker/decoders/meteor/routing';
+import { routeDigimode } from '@/worker/decoders/digimode/routing';
 import { AUDIO_QUEUE_CAPACITY } from './audio-queue';
 import { deviceIqFormat, iqComponentBytes } from '@/radio/iq/format';
 import { IqDispatcher } from './iq-dispatch';
@@ -185,6 +186,10 @@ function routeTetraMessages(backend: Backend, worker: Worker, msg: DspOutput, ca
 	}
 	if (msg.type === 'tetraear_symbols') {
 		routeTetraEar(backend, worker, msg);
+		return true;
+	}
+	if (msg.type === 'digimode') {
+		routeDigimode(backend, worker, msg);
 		return true;
 	}
 	if (msg.type === 'meteor') {

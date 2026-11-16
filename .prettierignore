@@ -21,3 +21,6 @@ radio-proxy/
 src/client/app/templates/*.html
 AGENTS.md
 types/worker.d.ts
+
+# Verbatim third-party notices
+third_party/

@@ -1,0 +1,44 @@
+.digimode-panel .adsb-content {
+	grid-template-columns: minmax(0, 1fr) minmax(330px, 45%);
+}
+.digimode-panel .adsb-content.adsb-list-only {
+	grid-template-columns: 1fr;
+}
+.digimode-image {
+	min-width: 0;
+	min-height: 0;
+	overflow: auto;
+	padding: 8px;
+}
+.digimode-tools {
+	display: flex;
+	gap: 6px;
+	padding: 8px;
+	align-items: center;
+}
+.digimode-tools > :first-child {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+.digimode-log th:first-child {
+	width: 120px;
+}
+.digimode-log td {
+	white-space: normal;
+	overflow-wrap: anywhere;
+	cursor: pointer;
+}
+.digimode-log td:first-child {
+	white-space: nowrap;
+}
+.digimode-damaged {
+	opacity: 0.55;
+}
+.digimode-alert td {
+	color: #ff8a80;
+	font-weight: 600;
+}
+.digimode-fields td {
+	cursor: default;
+	background: var(--bg-header);
+}

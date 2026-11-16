@@ -44,6 +44,7 @@ function prepareVfo(receiver: AppInstance, index: number, downlink: Downlink): v
 	const vfo = receiver.vfos[index];
 	for (const decoder of DECODERS) vfo[decoder] = false;
 	vfo.aprs = downlink.decoder === 'aprs';
+	vfo.digimode = '';
 	vfo.mode = downlink.mode;
 	receiver.applyModeDefaults(index);
 	if (downlink.bandwidthHz) vfo.bandwidth = downlink.bandwidthHz;

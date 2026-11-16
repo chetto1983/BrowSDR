@@ -1,7 +1,8 @@
 // SPDX-FileCopyrightText: Copyright (C) 2026 Kristijonas Adomaitis and OnAir contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Ported to TypeScript for BrowSDR from OnAir core/src/marine/marine_dsp.cpp (ToneSlicer, VhfSlicer),
-// https://github.com/adswill/OnAir; see third_party/onair. Changes: complex values as separate re/im numbers.
+// Ported to TypeScript for BrowSDR from OnAir core/src/marine/marine_dsp.cpp (ToneSlicer, VhfSlicer, FskSlicer,
+// lowpass), https://github.com/adswill/OnAir; see third_party/onair. Changes: complex values as separate re/im numbers;
+// the FskSlicer oscillator phase wraps both ways.
 
 const TWO_PI = 2 * Math.PI;
 
@@ -206,5 +207,96 @@ export class VhfSlicer {
 		this.lp1 += 0.5 * (hz - this.lp1);
 		this.lp2 += 0.5 * (this.lp1 - this.lp2);
 		return this.lp2 * 0.0003; // about ±1 for a deviation of ±3 kHz
+	}
+}
+
+function besselI0(x: number): number {
+	let sum = 1;
+	let term = 1;
+	for (let k = 1; k < 40; k++) {
+		term *= (x / (2 * k)) ** 2;
+		sum += term;
+		if (term < 1e-12 * sum) break;
+	}
+	return sum;
+}
+
+/** Symmetric low-pass of odd length `n`, cut-off `fc` (cycles per sample), Kaiser window over ±(n / 2 + 1), unity gain. */
+export function marineLowpass(n: number, fc: number, beta: number): Float64Array {
+	const h = new Float64Array(n);
+	const m = Math.floor(n / 2);
+	let sum = 0;
+	for (let i = 0; i < n; i++) {
+		const t = i - m;
+		const x = 2 * fc * t;
+		const sinc = Math.abs(x) < 1e-9 ? 1 : Math.sin(Math.PI * x) / (Math.PI * x);
+		const r = t / (m + 1);
+		h[i] = 2 * fc * sinc * (besselI0(beta * Math.sqrt(1 - r * r)) / besselI0(beta));
+		sum += h[i];
+	}
+	return h.map((v) => v / sum);
+}
+
+const FSK_TAPS = 257;
+const FSK_DECIMATION = 10;
+const FSK_LOWPASS = marineLowpass(FSK_TAPS, 260 / 24000, 6);
+
+/**
+ * FSK on 100 baud, ±85 Hz (NAVTEX, MF/HF DSC): centre the channel (NCO), low-pass and decimate to 2400 Hz, then the
+ * tone slicer. Input: complex samples at 24 kHz with the FSK centre near 0 Hz; positive decisions are the higher tone.
+ */
+export class FskSlicer {
+	static readonly RATE = 24000;
+	private centre = 0;
+	private centreTarget = 0;
+	private phase = 0;
+	private readonly ringR = new Float64Array(FSK_TAPS);
+	private readonly ringI = new Float64Array(FSK_TAPS);
+	private pos = 0;
+	private phaseDec = 0;
+	private readonly slicer = new ToneSlicer(FskSlicer.RATE / FSK_DECIMATION, 85, -85, 24);
+
+	/** Where the FSK centre is, Hz; the oscillator moves there slowly. */
+	setCentreHz(hz: number): void {
+		this.centreTarget = hz;
+	}
+
+	get centreHz(): number {
+		return this.centre;
+	}
+
+	get symbolRate(): number {
+		return this.slicer.symbolRate;
+	}
+
+	reset(): void {
+		this.centre = this.centreTarget = this.phase = 0;
+		this.pos = this.phaseDec = 0;
+		this.ringR.fill(0);
+		this.ringI.fill(0);
+		this.slicer.reset();
+	}
+
+	process(iq: Float32Array, onBit: (soft: number) => void): void {
+		for (let i = 0; i + 1 < iq.length; i += 2) {
+			this.centre += 0.0005 * (this.centreTarget - this.centre);
+			this.phase = wrap(this.phase - (TWO_PI * this.centre) / FskSlicer.RATE);
+			const [c, s] = [Math.cos(this.phase), Math.sin(this.phase)];
+			this.ringR[this.pos] = iq[i] * c - iq[i + 1] * s;
+			this.ringI[this.pos] = iq[i] * s + iq[i + 1] * c;
+			if (++this.pos >= FSK_TAPS) this.pos = 0;
+			if (++this.phaseDec < FSK_DECIMATION) continue;
+			this.phaseDec = 0;
+			let ar = 0;
+			let ai = 0;
+			let idx = this.pos; // oldest sample
+			for (let k = 0; k < FSK_TAPS; k++) {
+				ar += FSK_LOWPASS[k] * this.ringR[idx];
+				ai += FSK_LOWPASS[k] * this.ringI[idx];
+				if (++idx >= FSK_TAPS) idx = 0;
+			}
+			const soft = this.slicer.push(ar, ai);
+			if (soft !== null) onBit(soft);
+		}
 	}
 }

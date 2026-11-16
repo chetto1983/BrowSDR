@@ -13,6 +13,21 @@ export const DIGIMODES: readonly DigimodeInfo[] = [
 		source: 'core/src/marine/marine_dsc.cpp, marine_dsp.cpp',
 	},
 	{
+		id: 'navtex',
+		label: 'NAVTEX',
+		family: 'Maritime',
+		description:
+			'Maritime safety broadcasts (ITU-R M.540): navigational and gale warnings, forecasts, search and rescue. SITOR-B, 100 bd FSK ±85 Hz. Tune the VFO to the assigned frequency itself, the centre between the tones (not 1 kHz below as for a USB receiver); tones within ±600 Hz of it are found. Needs LF/MF/HF reception, e.g. an RTL-SDR in direct sampling mode or behind an upconverter.',
+		rate: 24000,
+		bandwidth: 8000,
+		presets: [
+			{ label: '518 kHz international', freqMHz: 0.518 },
+			{ label: '490 kHz national', freqMHz: 0.49 },
+			{ label: '4209.5 kHz HF', freqMHz: 4.2095 },
+		],
+		source: 'core/src/marine/marine_navtex.cpp, marine_dsp.cpp, marine_rx.cpp',
+	},
+	{
 		id: 'ax25-sat',
 		label: 'CubeSat AX.25 telemetry',
 		family: 'Satellite',

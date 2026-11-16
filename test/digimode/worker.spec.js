@@ -5,6 +5,7 @@ import MeteorModule from '../../wasm/meteor/pkg/meteor.js';
 import { validDigimodeMessage } from '@/worker/decoders/digimode/validation';
 import { dscBuildDistress, dscFrameBits } from '@/worker/decoders/digimode/dsc/symbols';
 import { vhfDscSignal } from './fixtures';
+import { navtexBits, navtexSignal } from './marine-fixtures';
 
 const binary = readFileSync(new URL('../../wasm/dsp/pkg/browsdr_dsp_bg.wasm', import.meta.url));
 vi.mock('/wasm/dsp/browsdr_dsp.js', async () => {
@@ -51,6 +52,24 @@ describe('Digital Modes through the production DSP worker', () => {
 		expect(records).toHaveLength(1);
 		expect(records[0]).toMatchObject({ mode: 'dsc-vhf', alert: true, damaged: false });
 		expect(records[0].text).toBe("Distress alert: 247123450 → all stations - Flooding at 43°42'N 010°18'E");
+	}, 20_000);
+	it('decodes NAVTEX on 518 kHz 18 kHz from the centre at 240 kS/s', async () => {
+		const { messages, send } = await startWorker();
+		const params = { freq: 0.518, mode: 'usb', bandwidth: 2400, enabled: false, digimode: 'navtex' };
+		await send({ type: 'init', sampleRate: 240000, centerFreq: 0.5, params });
+		const bits = navtexBits('ZCZC GA01\nWIND SW 5 TO 6.\nNNNN\n', { idle: 24 });
+		const iq = navtexSignal(bits, { rate: 240000, offsetHz: 18000 - 70, noiseLevel: 0.3, lead: 0.5 });
+		const input = Int8Array.from(iq, (value) => Math.max(-127, Math.min(127, Math.round(value * 90))));
+		let clock = performance.now();
+		vi.spyOn(performance, 'now').mockImplementation(() => (clock += 300));
+		for (let i = 0, chunkId = 1; i < input.length; i += 48000, chunkId++) {
+			const block = input.slice(i, i + 48000);
+			await send({ type: 'process', params, chunk: block.buffer, chunkLen: block.length, floatIq: false, chunkId });
+		}
+		const output = digimodeMessages(messages);
+		expect(output.every(validDigimodeMessage)).toBe(true);
+		const records = output.flatMap((message) => message.records);
+		expect(records.map((record) => record.text)).toEqual(['NAVTEX G Navigational warning 01: WIND SW 5 TO 6.']);
 	}, 20_000);
 	it('reports a channel that does not fit the received band', async () => {
 		const { messages, send } = await startWorker();

@@ -174,6 +174,27 @@ export const DIGIMODES: readonly DigimodeInfo[] = [
 		],
 		source: 'core/src/mesh/mesh_lora_demod.cpp, mesh_proto_rs.cpp, mesh_crypto.cpp, rust/onair_mesh',
 	},
+	{
+		id: 'lorawan',
+		label: 'LoRaWAN (headers)',
+		family: 'LoRa & mesh',
+		description:
+			'LoRaWAN uplinks on a 125 kHz channel, SF7 to SF12 at once (public sync word 0x34): message type, DevAddr and its network, frame counter, flags, MAC commands, FPort and payload length, MIC; join requests with JoinEUI, DevEUI and its maker. Payloads are encrypted and never decrypted.',
+		rate: 250000,
+		bandwidth: 175000,
+		presets: [
+			{ label: 'EU868 868.1', freqMHz: 868.1 },
+			{ label: 'EU868 868.3', freqMHz: 868.3 },
+			{ label: 'EU868 868.5', freqMHz: 868.5 },
+			{ label: 'EU868 867.1', freqMHz: 867.1 },
+			{ label: 'EU868 867.3', freqMHz: 867.3 },
+			{ label: 'EU868 867.5', freqMHz: 867.5 },
+			{ label: 'EU868 867.7', freqMHz: 867.7 },
+			{ label: 'EU868 867.9', freqMHz: 867.9 },
+			{ label: 'US915 903.9 (sub-band 2)', freqMHz: 903.9 },
+		],
+		source: 'core/src/lorawan/lora_bank.cpp, lorawan_rx.cpp, core/src/mesh/mesh_proto_lorawan.cpp, rust/onair_mesh',
+	},
 ];
 
 export const digimodeInfo = (id: string | undefined): DigimodeInfo | undefined => DIGIMODES.find((mode) => mode.id === id);

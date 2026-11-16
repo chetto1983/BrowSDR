@@ -150,3 +150,7 @@ file). Algorithms and protocol tables follow the OnAir source.
 | `src/client/worker/decoders/digimode/meshcore/types.ts` | `rust/onair_mesh/src/meshcore.rs` (Parsed, Out, GroupOut), `core/src/mesh/mesh_proto_internal.h` (MeshCoreChannel) |
 | `src/client/worker/decoders/digimode/meshcore/proto.ts` | `rust/onair_mesh/src/meshcore.rs` (header, key-free payloads, group text), `core/src/mesh/mesh_proto_rs.cpp` (decodeMeshCore), `mesh_proto_meshcore.cpp` (meshcoreMacThenDecrypt), `mesh_proto.cpp` (meshcoreMakeChannel) |
 | `src/client/worker/decoders/digimode/meshcore/index.ts` | `core/src/mesh/mesh_rx.cpp` (MeshCore decoders of the region plan, packet row) |
+| `src/client/worker/decoders/digimode/lorawan/types.ts` | `rust/onair_mesh/src/lorawan.rs` (Lorawan), `rust/onair_mesh/src/lorawan_names.rs` (MacDef, Network) |
+| `src/client/worker/decoders/digimode/lorawan/names.ts` | `rust/onair_mesh/src/lorawan_names.rs` (MAC commands, MType names, networks, OUIs, EUI text) |
+| `src/client/worker/decoders/digimode/lorawan/proto.ts` | `rust/onair_mesh/src/lorawan.rs` (MHDR, FHDR, MAC commands, join and rejoin requests), `core/src/mesh/mesh_proto_lora_rs.cpp` (meshDecodeLorawan) |
+| `src/client/worker/decoders/digimode/lorawan/index.ts` | `core/src/lorawan/lorawan_rx.cpp` (LoRaWAN monitor channel and frame row), `core/src/mesh/mesh_rx.cpp` (onLorawan) |

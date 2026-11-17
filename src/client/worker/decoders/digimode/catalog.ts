@@ -475,6 +475,26 @@ export const DIGIMODES: readonly DigimodeInfo[] = [
 		source: 'core/src/avroad/avroad_air.cpp, avroad_dec.cpp, core/src/loraraw/loraraw_rx.cpp, core/src/mesh/mesh_lora_demod.cpp',
 	},
 	{
+		id: 'aero',
+		label: 'Inmarsat Aero (data)',
+		family: 'Aviation',
+		description:
+			"Classic Inmarsat Aero data link at 1.5 GHz: the P channels from the ground earth stations to the aircraft at 600 and 1200 bit/s (MSK) and 10500 bit/s (OQPSK). Up to four carriers within 18 kHz of the VFO are found on their own, with their bit rate, enough for an RTL-SDR's error at 1.5 GHz; unique word, deinterleaving, Viterbi decoding and the signal units follow. One record per log-on and log-off (aircraft ICAO address and ground earth station), per ACARS message (read as in the VDL2 mode), with its ADS-C reports and contract requests, positions (with the distance once the station location is set) and CPDLC envelopes (their ASN.1 body shown as hex), and per system table fact naming the satellite. C-channel voice and the aircraft's own R and T channels at 1.6 GHz are not decoded. Needs an L-band patch antenna with an LNA and a view of the satellite.",
+		rate: 48000,
+		bandwidth: 40000,
+		presets: [
+			{ label: 'Alphasat 25E 1545.115 + 1545.130 (600 / 1200 bit/s)', freqMHz: 1545.1225 },
+			{ label: 'Alphasat 25E 1545.315 + 1545.3275 (10500 bit/s)', freqMHz: 1545.32125 },
+			{ label: 'Alphasat 25E 1546.0125 + 1546.0275 (10500 bit/s, list)', freqMHz: 1546.02 },
+			{ label: 'Inmarsat-3 F5 54W 1545.025 + 1545.040 (600 bit/s)', freqMHz: 1545.0325 },
+			{ label: 'Inmarsat-3 F5 54W 1546.055 + 1546.070 (10500 bit/s)', freqMHz: 1546.0625 },
+			{ label: 'Inmarsat-6 F1 83.5E 1545.160 (600 bit/s)', freqMHz: 1545.16 },
+			{ label: 'Inmarsat-6 F1 83.5E 1546.0425 (10500 bit/s)', freqMHz: 1546.0425 },
+		],
+		source:
+			'core/src/aero/aero_rx.cpp, aero_demod.cpp, aero_phy.cpp, aero_su.cpp, aero_acars.cpp, aero_adsc.cpp, aero_cpdlc.cpp, aero_pos.cpp',
+	},
+	{
 		id: 'tones',
 		label: 'Tone signalling (CTCSS, DCS, DTMF, selcall)',
 		family: 'Two-way radio',

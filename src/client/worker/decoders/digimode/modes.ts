@@ -23,6 +23,7 @@ import { FANET_125, FANET_250, FANET_500, FanetDecoder } from './fanet';
 import { Mpt1327Decoder } from './mpt1327';
 import { OrbcommReceiver } from './orbcomm/receiver';
 import { InmarsatCDecoder } from './inmarsat-c';
+import { AeroDecoder } from './aero';
 
 /** Worker-side constructors of the catalog's decoders. */
 export const DIGIMODE_DECODERS: Record<string, (sink: DigimodeSink) => DigimodeDecoder> = {
@@ -61,4 +62,5 @@ export const DIGIMODE_DECODERS: Record<string, (sink: DigimodeSink) => DigimodeD
 	'fanet-125': (sink) => new FanetDecoder(sink, FANET_125),
 	mpt1327: (sink) => new Mpt1327Decoder(sink),
 	'inmarsat-c': (sink) => new InmarsatCDecoder(sink),
+	aero: (sink) => new AeroDecoder(sink),
 };

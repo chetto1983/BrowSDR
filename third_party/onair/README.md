@@ -355,3 +355,23 @@ file). Algorithms and protocol tables follow the OnAir source.
 | `test/digimode/inmarsat-c/packets.spec.js` | `tests/inmc/test_inmc_pkt.cpp`, `test_inmc_egc.cpp` |
 | `test/digimode/inmarsat-c/receiver.spec.js` | `tests/inmc/test_inmc_rx.cpp`, `test_inmc_impair.cpp`, `test_inmc_basic.cpp` |
 | `test/digimode/inmarsat-c/worker.spec.js` | `tests/inmc/test_inmc_engine.cpp` |
+| `src/client/worker/decoders/digimode/aero/types.ts` | `core/include/dect2/aero/aero_phy.h`, `aero_demod.h`, `aero_su.h`, `aero_acars.h`, `aero_adsc.h`, `aero_cpdlc.h`, `aero_pos.h` (frame, SU, ACARS, ADS-C, CPDLC and position shapes), `core/include/dect2/inmsat/inmsat_satid.h` (SatDef) |
+| `src/client/worker/decoders/digimode/aero/phy.ts` | `core/src/aero/aero_phy.cpp` (frame formats, unique word, header, scrambler, interleaver, convolutional code, continuous soft Viterbi, SU CRC, frame encoder and decoder; constants from JAERO, Jonti Olds, MIT) |
+| `src/client/worker/decoders/digimode/aero/framer.ts` | `core/src/aero/aero_demod.cpp` (AeroFramer: unique word search on one or both arms, flywheel, false syncs, data carrier detect) |
+| `src/client/worker/decoders/digimode/aero/demod.ts` | `core/src/aero/aero_demod.cpp` (AeroDemod: squared-signal carrier search, MSK and OQPSK matched filters, carrier and timing loops, soft bits; no 8400 bit/s C channel) |
+| `src/client/worker/decoders/digimode/aero/search.ts` | `core/src/aero/aero_rx.cpp` (band search: spectra, carrier regions), limited to the VFO's channel |
+| `src/client/worker/decoders/digimode/aero/su.ts` | `core/src/aero/aero_su.cpp` (SU types, split, system table reading, description; after JAERO) |
+| `src/client/worker/decoders/digimode/aero/isu.ts` | `core/src/aero/aero_su.cpp` (AeroSuDecoder: ISU / SSU assembly, ACARS reassembly, log-ons), `core/src/aero/aero_acars.cpp` (block framing, parity, label names); the block fields by BrowSDR's VDL2 ACARS parser |
+| `src/client/worker/decoders/digimode/aero/arinc.ts` | `core/src/aero/aero_adsc.cpp` (ARINC 622 CRC, ground address), `core/src/aero/aero_cpdlc.cpp` (CPDLC envelope; the libacars ASN.1 body decoder is not ported) |
+| `src/client/worker/decoders/digimode/aero/adsc.ts` | `core/src/aero/aero_adsc.cpp` (ADS-C downlink groups, contract requests, descriptions; layouts after libacars, Tomasz Lemiech, MIT) |
+| `src/client/worker/decoders/digimode/aero/pos.ts` | `core/src/aero/aero_pos.cpp` (positions from ADS-C and text reports; no general ACARS text interpreter) |
+| `src/client/worker/decoders/digimode/aero/satellites.ts` | `core/src/inmsat/inmsat_satid.cpp` (satellite table, geoLook, the satellite named by the system table) |
+| `src/client/worker/decoders/digimode/aero/receiver.ts` | `core/src/aero/aero_rx.cpp` (carrier table, rate per carrier, frames into the SU layer, system table facts), `core/include/dect2/aero/aero_front.h` (mixer) |
+| `src/client/worker/decoders/digimode/aero/report.ts` | `core/src/aero/aero_rx.cpp` (what a message, log-on and position say), `app/aero/aero_ui.cpp` (the message detail) |
+| `src/client/worker/decoders/digimode/aero/index.ts` | `core/src/aero/aero_rx.cpp` (AeroReceiver reports, aircraft names), `core/include/dect2/aero/aero_tel.h` (aeroSummary) |
+| `test/digimode/aero/fixtures.js` | `core/src/aero/aero_su.cpp`, `aero_acars.cpp`, `aero_adsc.cpp`, `aero_cpdlc.cpp` (the builders of the test signal) |
+| `test/digimode/aero/signal.js` | `core/src/aero/aero_demod.cpp` (AeroModulator), `core/src/aero/aero_gen.cpp` (AeroSynth: aircraft, script, positions, schedule, interpolator) |
+| `test/digimode/aero/phy.spec.js` | `tests/aero/test_aero_phy.cpp`, `test_aero_demod.cpp` |
+| `test/digimode/aero/su.spec.js` | `tests/aero/test_aero_su_layers.cpp`, `test_aero_acars_real.cpp`, `test_aero_adsc.cpp`, `test_aero_cpdlc.cpp` |
+| `test/digimode/aero/receiver.spec.js` | `tests/aero/test_aero_rx.cpp`, `test_aero_rates.cpp`, `test_aero_map.cpp`, `test_aero_basic.cpp` |
+| `test/digimode/aero/worker.spec.js` | `tests/aero/test_aero_engine.cpp` |

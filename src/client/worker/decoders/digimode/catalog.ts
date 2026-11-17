@@ -308,6 +308,39 @@ export const DIGIMODES: readonly DigimodeInfo[] = [
 		source: 'core/src/psk/psk_rx.cpp, psk_varicode.cpp',
 	},
 	{
+		id: 'meshcom',
+		label: 'MeshCom (Europe and others: 250 kHz)',
+		family: 'Amateur',
+		description:
+			"MeshCom 4 (icssw.org), the amateur LoRa mesh of text messages and APRS-style positions: SF11, 250 kHz, sync word 0x2B, 4/6, on 433.175 MHz in Europe and the firmware's other 250 kHz profiles. Text messages to all, to a call or to a group, positions with their battery, altitude and comment, HEY beacons, acknowledgements; the relays, the message ID, the hop limit and the sender's hardware, firmware and flags. On 869.525 MHz MeshCom shares Meshtastic LongFast's settings: Meshtastic frames show as not MeshCom.",
+		rate: 500000,
+		bandwidth: 300000,
+		presets: [
+			{ label: 'EU 433.175', freqMHz: 433.175 },
+			{ label: '868 (869.525)', freqMHz: 869.525 },
+			{ label: '915 (906.875)', freqMHz: 906.875 },
+			{ label: 'VR2 435.775', freqMHz: 435.775 },
+			{ label: '435.750', freqMHz: 435.75 },
+			{ label: '436.250', freqMHz: 436.25 },
+			{ label: '442.000', freqMHz: 442 },
+		],
+		source: 'core/src/mesh/mesh_proto_aprs.cpp, mesh_proto_lora_rs.cpp, mesh_rx.cpp, rust/onair_mesh/src/aprs.rs',
+	},
+	{
+		id: 'meshcom-125',
+		label: 'MeshCom (UK, LA: 125 kHz)',
+		family: 'Amateur',
+		description:
+			"MeshCom's 125 kHz profiles, SF10: UK on 439.9125 MHz and LA on 433.925 MHz. The same frames and records as MeshCom at 250 kHz.",
+		rate: 250000,
+		bandwidth: 175000,
+		presets: [
+			{ label: 'UK 439.9125', freqMHz: 439.9125 },
+			{ label: 'LA 433.925', freqMHz: 433.925 },
+		],
+		source: 'core/src/mesh/mesh_proto_aprs.cpp, mesh_proto_lora_rs.cpp, mesh_rx.cpp, rust/onair_mesh/src/aprs.rs',
+	},
+	{
 		id: 'vdl2',
 		label: 'VDL Mode 2',
 		family: 'Aviation',

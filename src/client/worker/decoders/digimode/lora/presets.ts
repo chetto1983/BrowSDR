@@ -3,11 +3,12 @@
 // Ported to TypeScript for BrowSDR from OnAir core/src/mesh/mesh_proto.cpp (Meshtastic modem presets and regions, slot
 // frequency, default channel key, MeshCore Public secret and defaults, meshLoraLdro), core/src/mesh/mesh_presets.cpp and
 // mesh_presets_data.cpp (the MeshCore community presets of api.meshcore.nz, fetched 2026-10-13; meshCorePresetToLora),
-// core/src/mesh/mesh_proto_aprs.cpp (loraAprsPresets) and core/src/mesh/mesh_proto_lorawan.cpp (lorawanPresets),
-// https://github.com/adswill/OnAir; see third_party/onair. Facts as credited there: Meshtastic firmware RadioInterface.cpp,
-// MeshRadio.h, Channels.cpp (Meshtastic contributors, GPL-3.0); MeshCore companion_radio and radiolib helpers (MeshCore
-// contributors, MIT); LoRa_APRS_iGate and LoRa_APRS_Tracker configurations (Ricardo Guzman, GPL-3.0); LoRaWAN RP002-1.0.4.
-// Changes: tables only (no saved preset file, no MeshCom presets); names as in OnAir.
+// core/src/mesh/mesh_proto_aprs.cpp (loraAprsPresets, meshcomPresets) and core/src/mesh/mesh_proto_lorawan.cpp
+// (lorawanPresets), https://github.com/adswill/OnAir; see third_party/onair. Facts as credited there: Meshtastic firmware
+// RadioInterface.cpp, MeshRadio.h, Channels.cpp (Meshtastic contributors, GPL-3.0); MeshCore companion_radio and radiolib
+// helpers (MeshCore contributors, MIT); LoRa_APRS_iGate and LoRa_APRS_Tracker configurations (Ricardo Guzman, GPL-3.0);
+// MeshCom firmware country_profile.cpp, configuration_default.h and configuration_global.h (icssw-org/MeshCom-Firmware,
+// MIT); LoRaWAN RP002-1.0.4. Changes: tables only (no saved preset file); names as in OnAir.
 
 import type { LoraSettings } from './types';
 
@@ -175,6 +176,34 @@ export function loraAprsPresets(): LoraSettings[] {
 		preamble: 8,
 		syncWord: 0x12,
 		ldro: meshLoraLdro(sf, 125000),
+	}));
+}
+
+/**
+ * MeshCom 4 (icssw-org/MeshCom-Firmware country_profile.cpp, the ESP32 columns): frequency, bandwidth, SF; 4/6 everywhere,
+ * sync word 0x2B; preamble 32 for the default (EU), 8 in the country table.
+ */
+export function meshcomPresets(): LoraSettings[] {
+	const rows: Array<[string, number, number, number, number]> = [
+		['MeshCom EU', 433.175, 250, 11, 32],
+		['MeshCom UK', 439.9125, 125, 10, 8],
+		['MeshCom LA', 433.925, 125, 10, 8],
+		['MeshCom 868', 869.525, 250, 11, 8],
+		['MeshCom 915', 906.875, 250, 11, 8],
+		['MeshCom VR2', 435.775, 250, 11, 8],
+		['MeshCom 435', 435.75, 250, 11, 8],
+		['MeshCom 436', 436.25, 250, 11, 8],
+		['MeshCom 442', 442.0, 250, 11, 8],
+	];
+	return rows.map(([name, mhz, bwKHz, sf, preamble]) => ({
+		name,
+		freqHz: mhz * 1e6,
+		sf,
+		bwHz: bwKHz * 1000,
+		cr: 6,
+		preamble,
+		syncWord: 0x2b,
+		ldro: meshLoraLdro(sf, bwKHz * 1000),
 	}));
 }
 

@@ -143,7 +143,7 @@ file). Algorithms and protocol tables follow the OnAir source.
 | `src/client/worker/decoders/digimode/lora/bank.ts` | `core/src/lorawan/lora_bank.cpp` (Bank: one chip stream, a demodulator per spreading factor, duplicate frames), `core/src/mesh/mesh_rx.cpp` |
 | `src/client/worker/decoders/digimode/lora/crypto.ts` | `core/src/mesh/mesh_crypto.cpp` (AES ECB / CTR, SHA-256, HMAC-SHA256, base64, hex), `mesh_crypto_tables.cpp` |
 | `src/client/worker/decoders/digimode/lora/ed25519.ts` | `core/src/mesh/mesh_crypto_ed25519.cpp` (Ed25519 sign and verify), `mesh_crypto.cpp` (SHA-512), `mesh_crypto_tables.cpp` |
-| `src/client/worker/decoders/digimode/lora/presets.ts` | `core/src/mesh/mesh_proto.cpp` (Meshtastic presets, regions and slots, default keys), `mesh_presets.cpp`, `mesh_presets_data.cpp` (MeshCore presets), `mesh_proto_aprs.cpp` (loraAprsPresets), `mesh_proto_lorawan.cpp` (lorawanPresets) |
+| `src/client/worker/decoders/digimode/lora/presets.ts` | `core/src/mesh/mesh_proto.cpp` (Meshtastic presets, regions and slots, default keys), `mesh_presets.cpp`, `mesh_presets_data.cpp` (MeshCore presets), `mesh_proto_aprs.cpp` (loraAprsPresets, meshcomPresets), `mesh_proto_lorawan.cpp` (lorawanPresets) |
 | `src/client/worker/decoders/digimode/lora/mesh.types.ts` | `core/include/dect2/mesh/mesh_proto.h` (MeshPacketInfo, MeshNodeUpdate, MeshTextMessage, MeshDecodeResult), `rust/onair_mesh/src/abi.rs` |
 | `src/client/worker/decoders/digimode/lora/mesh.ts` | `rust/onair_mesh/src/abi.rs` (record defaults), `rust/onair_mesh/src/meshtastic.rs` (clean_text, clip), `core/src/mesh/mesh_report.cpp` (packet, node and message columns) |
 | `src/client/worker/decoders/digimode/lora/decoder.ts` | `core/src/mesh/mesh_rx.cpp` (MeshReceiver::onFrame: packet row, radio fields, CRC notes), `rust/onair_mesh/src/aprs.rs` (printable) |
@@ -165,6 +165,13 @@ file). Algorithms and protocol tables follow the OnAir source.
 | `src/client/worker/decoders/digimode/lorawan/index.ts` | `core/src/lorawan/lorawan_rx.cpp` (LoRaWAN monitor channel and frame row), `core/src/mesh/mesh_rx.cpp` (onLorawan) |
 | `src/client/worker/decoders/digimode/lora-aprs/proto.ts` | `rust/onair_mesh/src/aprs.rs` (lora_aprs: prefix, TNC2 split, call checks), `core/src/mesh/mesh_proto_lora_rs.cpp` (meshDecodeLoraAprs) |
 | `src/client/worker/decoders/digimode/lora-aprs/index.ts` | `core/src/mesh/mesh_rx.cpp` (LoRa APRS decoders, onAprs), `core/src/mesh/mesh_proto_lora_rs.cpp` |
+| `src/client/worker/decoders/digimode/meshcom/types.ts` | `rust/onair_mesh/src/aprs.rs` (MeshCom), `core/include/dect2/mesh/mesh_proto.h` (MeshCom fields of MeshDecodeResult); protocol facts as credited there: [MeshCom firmware](https://github.com/icssw-org/MeshCom-Firmware) (icssw-org, MIT) |
+| `src/client/worker/decoders/digimode/meshcom/proto.ts` | `rust/onair_mesh/src/aprs.rs` (clean_text, battery, meshcom: ack, frame split, byte sum, trailer and flags) |
+| `src/client/worker/decoders/digimode/meshcom/index.ts` | `core/src/mesh/mesh_proto_lora_rs.cpp` (meshDecodeMeshCom), `core/src/mesh/mesh_rx.cpp` (MeshCom decoders, onAprs) |
+| `test/digimode/meshcom/fixtures.js` | `core/src/mesh/mesh_proto_aprs.cpp` (meshcomBuild), `core/src/mesh/mesh_gen.cpp` (kMcom: the 70 cm scene's MeshCom nodes) |
+| `test/digimode/meshcom/proto.spec.js` | `tests/mesh/test_mesh_loraaprs.cpp` (packetLayer: MeshCom), `rust/onair_mesh/src/tests.rs` (lora_aprs_and_meshcom) |
+| `test/digimode/meshcom/meshcom.spec.js` | `tests/mesh/test_mesh_loraaprs.cpp` (scene: MeshCom at -15 dB, +22 kHz, +100 ppm), `core/src/mesh/mesh_gen.cpp` |
+| `test/digimode/meshcom/worker.spec.js` | `tests/mesh/test_mesh_loraaprs.cpp` (scene), `core/src/mesh/mesh_gen.cpp` (kMcom) |
 | `src/client/worker/decoders/digimode/ftx/tables.ts` | `core/src/hfdig/hfdig_ftx_tables.cpp` (LDPC generator and checks, Costas arrays, Gray maps, FT4 scrambling, WSPR sync vector, ARRL sections, RTTY multipliers; the FT8 / FT4 tables are ft8_lib's, MIT) |
 | `src/client/worker/decoders/digimode/ftx/ldpc.ts` | `core/src/hfdig/hfdig_ftx_tables.cpp` (crc14, encode174, ldpcDecode, osdDecode) |
 | `src/client/worker/decoders/digimode/ftx/pack.ts` | `core/src/hfdig/hfdig_ftx_msg.cpp` (pack77 and its message types, CallHash) |

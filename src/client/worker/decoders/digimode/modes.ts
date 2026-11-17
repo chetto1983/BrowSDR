@@ -11,6 +11,7 @@ import { MeshtasticDecoder } from './meshtastic';
 import { MeshCoreDecoder } from './meshcore';
 import { LorawanDecoder } from './lorawan';
 import { LoraAprsDecoder } from './lora-aprs';
+import { MESHCOM_125_MODE, MeshComDecoder } from './meshcom';
 import { Ft4Decoder, Ft8Decoder } from './ftx';
 import { WsprDecoder } from './wspr';
 import { RTTY_AMATEUR, RttyReceiver } from './rtty';
@@ -37,6 +38,8 @@ export const DIGIMODE_DECODERS: Record<string, (sink: DigimodeSink) => DigimodeD
 	meshcore: (sink) => new MeshCoreDecoder(sink),
 	lorawan: (sink) => new LorawanDecoder(sink),
 	'lora-aprs': (sink) => new LoraAprsDecoder(sink),
+	meshcom: (sink) => new MeshComDecoder(sink),
+	'meshcom-125': (sink) => new MeshComDecoder(sink, MESHCOM_125_MODE),
 	ft8: (sink) => new Ft8Decoder(sink),
 	ft4: (sink) => new Ft4Decoder(sink),
 	wspr: (sink) => new WsprDecoder(sink),

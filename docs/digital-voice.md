@@ -12,7 +12,7 @@ protocol carries:
 | DMR      | Colour code, slot, burst types, talkgroup or unit call (also when joined late), emergency, privacy; talker alias; GPS, LRRP and NMEA positions; short data and Motorola TMS texts; Tier III, Capacity Plus, Connect Plus and Hytera XPT grants and site; CACH slot activity; the 20 latest events | 12.5 kHz          |
 | P25      | NAC, data unit, source, talkgroup, emergency, encryption algorithm                                                                                                                                                                                                                                | 12.5 kHz          |
 | P25 Ph2  | Both time slots: source, talkgroup or unit, call state, emergency, encryption algorithm; WACN, system ID and NAC; last grant and site                                                                                                                                                             | 12.5 kHz          |
-| D-STAR   | Callsign from the header                                                                                                                                                                                                                                                                          | 6.25–12.5 kHz     |
+| D-STAR   | MY with suffix, YOUR, RPT1, RPT2, flags, 20-character message, D-PRS / NMEA position, code squelch, how the call ended; the 20 latest events                                                                                                                                                      | 6.25–12.5 kHz     |
 | NXDN     | Frame type                                                                                                                                                                                                                                                                                        | 12.5 kHz (NXDN96) |
 | YSF      | Source, destination, uplink and downlink callsigns, DG-ID, DN / VW / data mode, slow-data text, GPS position. Voice in DN and VW modes.                                                                                                                                                           | 12.5 kHz          |
 | dPMR     | Own and called IDs, call type, colour code, communication mode, emergency flag, status and short messages, packet data, how the call ended                                                                                                                                                        | 6.25–8 kHz        |
@@ -20,7 +20,7 @@ protocol carries:
 M17 shows source and destination callsigns, CAN, stream type, encryption flag,
 text and CRC-checked packet messages. It plays clear Codec2 voice.
 
-YSF, dPMR, M17, P25 Phase 2 and the DMR link layer are ported from
+D-STAR, YSF, dPMR, M17, P25 Phase 2 and the DMR link layer are ported from
 [OnAir](https://github.com/adswill/OnAir) (GPL-3.0-or-later, see
 `third_party/onair`).
 
@@ -59,8 +59,13 @@ need no seed.
 
 - Tune within about 1.5 kHz of the channel; apart from P25 Phase 2 there is no
   automatic frequency correction.
-- Only the latest transmission is shown; there is no call log and no PMR446
-  channel scan.
+- Only the latest transmission is shown, with a short list of recent events
+  (D-STAR); there is no call log and no PMR446 channel scan.
+- D-STAR positions (D-PRS and NMEA) are shown in the panel, not on the APRS
+  map: the map takes the stations of a VFO's own APRS decoder only.
+- D-STAR voice uses the AMBE 3600x2400 codec, which BrowSDR's mbelib build
+  does not include: its voice frames reach the AMBE+2 decoder and do not sound
+  right. D-STAR fast data is not decoded.
 - Encrypted voice is not decrypted.
 - YSF and dPMR were tested on signals from OnAir's generators, not yet on
   off-air recordings.

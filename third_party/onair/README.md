@@ -229,6 +229,13 @@ file). Algorithms and protocol tables follow the OnAir source.
 | `test/decoders/dsd/ysf/proto.spec.js` | `tests/fusion/test_fusion_proto.cpp` |
 | `test/decoders/dsd/ysf/interop.spec.js` | `tests/fusion/test_fusion_interop.cpp` (MMDVMHost frames as data), `tests/fusion/test_fusion_gps.cpp` |
 | `test/decoders/dsd/ysf/stream.spec.js` | `tests/fusion/test_fusion_rx.cpp`, `test_fusion_codec.cpp`, `test_fusion_sweep.cpp` |
+| `src/client/worker/decoders/dsd/dstar/types.ts` | `core/include/dect2/dstar/dstar_proto.h` (Header, Fix), `core/include/dect2/dstar/dstar_tel.h` (DstarPosition, DstarCall) |
+| `src/client/worker/decoders/dsd/dstar/header.ts` | `rust/onair_dstar/src/header.rs` (CRC, header fields, flag text), `rust/onair_dstar/src/fec.rs` (convolutional code, Viterbi, interleaver, scrambler, header FEC), `core/src/dstar/dstar_proto.cpp` (sync and end patterns, slow data scrambler) |
+| `src/client/worker/decoders/dsd/dstar/gps.ts` | `rust/onair_dstar/src/gps.rs` (NMEA and D-PRS parsers, checksums) |
+| `src/client/worker/decoders/dsd/dstar/call.ts` | `core/src/dstar/dstar_rx.cpp` (level fit and tracking, header, frames, weak frames, data sync, slow data, GPS lines, call state) |
+| `test/decoders/dsd/dstar/fixtures.js` | `core/src/dstar/dstar_gen.cpp` (known voice, NMEA and D-PRS lines, transmission bits, test schedule, GMSK) |
+| `test/decoders/dsd/dstar/proto.spec.js` | `tests/dstar/test_dstar_proto.cpp`, `rust/onair_dstar/src/tests.rs` |
+| `test/decoders/dsd/dstar/stream.spec.js` | `tests/dstar/test_dstar_rx.cpp`, `tests/dstar/test_dstar_sens.cpp` |
 | `src/client/worker/decoders/dsd/dpmr/types.ts` | `core/include/dect2/dpmr/dpmr_proto.h` (Header, Cch, End), `dpmr_tel.h` (DpmrCall) |
 | `src/client/worker/decoders/dsd/dpmr/proto.ts` | `core/src/dpmr/dpmr_proto.cpp`, `core/include/dect2/dpmr/dpmr_proto.h` (frame syncs, colour code, CRC-8/7/16, Hamming (12,8), PN9, block interleaving, soft decoding, header / CCH / end / data blocks, names, ids) |
 | `src/client/worker/decoders/dsd/dpmr/call.ts` | `core/src/dpmr/dpmr_rx.cpp` (fresh, startCall, endCall, endData, lost, header and CCH call bookkeeping), `core/include/dect2/dpmr/dpmr_tel.h` (DpmrCall) |

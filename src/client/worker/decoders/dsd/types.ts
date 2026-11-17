@@ -1,6 +1,7 @@
 import type { M17Status } from './m17/types';
 import type { P25p2Status } from './p25p2/types';
 import type { DmrInfo } from './dmr/types';
+import type { DstarStatus } from './dstar/types';
 /*
  * DSD (Digital Speech Decoder) status and sync types.
  * Ported from SDR++ Brown ch_extravhf_decoder.
@@ -73,6 +74,8 @@ export interface DSDStatus {
 	// ── D-STAR ──
 	/** D-STAR callsign (if decoded from header) */
 	callsign?: string;
+	/** D-STAR header, slow data, positions and events (dstar/). */
+	dstar?: DstarStatus;
 
 	// ── NXDN ──
 	/** NXDN type description */
@@ -166,6 +169,29 @@ export interface DmrLinkControl {
 	source: number;
 	/** Learned from the embedded LC of the voice bursts: the call was joined without its header (dmr/link.ts). */
 	lateEntry?: boolean;
+}
+
+/** One line of a protocol's short event list in the DSD panel (newest first). */
+export interface DsdEvent {
+	/** Wall clock time (ms). */
+	at: number;
+	text: string;
+}
+
+/** The 4800 symbols/s chain's buffers as D-STAR, NXDN96 and P25 Phase 1 read their frames from them. */
+export interface DsdChain {
+	dibits: Uint8Array;
+	/** The symbol value (Hz) of each dibit. */
+	symbols: Float32Array;
+	mask: number;
+}
+
+/** What the decoder does for D-STAR, NXDN and P25 Phase 1: the status, voice through mbelib, a codec reset, a sync to count. */
+export interface DsdSink {
+	status(): DSDStatus;
+	voice(frames: Int8Array[]): void;
+	reset(): void;
+	synced(sync: SyncType): void;
 }
 
 // ── Frame sync state ─────────────────────────────────────────────────

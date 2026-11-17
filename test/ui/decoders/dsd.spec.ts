@@ -6,6 +6,7 @@ import { makeDefaultVfo } from '@/app/core/constants';
 import type { DSDStatus, DpmrStatus, YsfStatus } from '@/worker/decoders/dsd/types';
 import type { P25p2Slot, P25p2Status } from '@/worker/decoders/dsd/p25p2/types';
 import type { DmrInfo } from '@/worker/decoders/dsd/dmr/types';
+import type { DstarStatus } from '@/worker/decoders/dsd/dstar/types';
 
 let wrapper: VueWrapper;
 afterEach(() => wrapper?.unmount());
@@ -252,5 +253,87 @@ describe('DSD status panel', () => {
 		wrapper.unmount();
 		const other = await panelWith({ mode: 'p25', synced: true, dmr });
 		expect(other.find('.dsd-dmr-alias').exists()).toBe(false);
+	});
+
+	it('shows D-STAR: the header callsigns and flags, the message, the position and the event list', async () => {
+		const dstar: DstarStatus = {
+			my: 'N0CALL',
+			sfx: 'ID51',
+			ur: 'CQCQCQ',
+			rpt1: 'LY0VNO B',
+			rpt2: 'LY0VNO G',
+			flag: [0x48, 0, 0],
+			flags: 'via repeater, EMERGENCY',
+			headerOk: true,
+			headerFromSlow: false,
+			lateEntry: false,
+			active: true,
+			endSeen: false,
+			text: 'OnAir D-STAR test 73',
+			textBlocks: 15,
+			gps: '$$CRC96B7,LY1TST-7>API51,DSTAR*:!5453.91N/02354.22E>OnAir D-PRS test',
+			position: { call: 'LY1TST-7', lat: 54.8985, lon: 23.90367, dprs: true, comment: 'OnAir D-PRS test', altM: 112.4 },
+			squelch: 12,
+			voiceFrames: 120,
+			durSec: 2.4,
+			berPct: 0,
+			inverted: false,
+			events: [
+				{ at: 0, text: 'message from N0CALL: OnAir D-STAR test 73' },
+				{ at: 0, text: 'N0CALL/ID51 → CQCQCQ via LY0VNO B / LY0VNO G' },
+			],
+		};
+		const panel = await panelWith({ mode: 'dstar', synced: true, syncName: 'DSTAR', syncCount: 3, dstar });
+		expect(panel.get('.dsd-dstar-call').text()).toBe('N0CALL/ID51 → CQCQCQ · EMERGENCY');
+		expect(panel.text()).toContain('RPT1: LY0VNO B · RPT2: LY0VNO G');
+		expect(panel.get('.dsd-dstar-flags').text()).toBe('via repeater, EMERGENCY · DSQ 12');
+		expect(panel.text()).toContain('Message: OnAir D-STAR test 73');
+		expect(panel.get('.dsd-dstar-position').text()).toBe('D-PRS: LY1TST-7 54.89850, 23.90367 · 112 m');
+		const at = new Date(2026, 10, 17, 21, 30, 5).getTime();
+		wrapper.unmount();
+		const withEvents = await panelWith({
+			mode: 'dstar',
+			synced: true,
+			dstar: { ...dstar, events: dstar.events.map((e, k) => ({ ...e, at: at - 1000 * k })) },
+		});
+		const events = withEvents.get('.dsd-dstar-events');
+		expect(events.get('summary').text()).toBe('Events (2): message from N0CALL: OnAir D-STAR test 73');
+		expect(events.findAll('div').map((d) => d.text())).toEqual([
+			'21:30:05 message from N0CALL: OnAir D-STAR test 73',
+			'21:30:04 N0CALL/ID51 → CQCQCQ via LY0VNO B / LY0VNO G',
+		]);
+		wrapper.unmount();
+		// after the carrier drops the summary stays; another protocol hides it
+		const lost = await panelWith({ mode: 'unknown', synced: false, dstar });
+		expect(lost.get('.dsd-dstar-call').text()).toBe('N0CALL/ID51 → CQCQCQ · EMERGENCY');
+		wrapper.unmount();
+		const other = await panelWith({ mode: 'p25', synced: true, dstar });
+		expect(other.find('.dsd-dstar-call').exists()).toBe(false);
+		wrapper.unmount();
+		const late = await panelWith({
+			mode: 'dstar',
+			synced: false,
+			dstar: {
+				...dstar,
+				my: '',
+				sfx: '',
+				ur: '',
+				rpt1: '',
+				rpt2: '',
+				flags: '',
+				flag: [0, 0, 0],
+				headerOk: false,
+				lateEntry: true,
+				active: false,
+				endSeen: false,
+				text: '',
+				position: undefined,
+				squelch: -1,
+				events: [],
+			},
+		});
+		expect(late.get('.dsd-dstar-call').text()).toBe('? → ? · lost');
+		expect(late.get('.dsd-dstar-flags').text()).toBe('header not received · joined late');
+		expect(late.find('.dsd-dstar-events').exists()).toBe(false);
 	});
 });

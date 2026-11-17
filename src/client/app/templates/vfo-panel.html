@@ -290,10 +290,19 @@
 				</div>
 				<div v-if="receiver.dsdStatus[i].p25p2.site" style="color:#aaa;">Site: SYS 0x{{ receiver.dsdStatus[i].p25p2.site.sysId.toString(16).toUpperCase().padStart(3,'0') }} · RFSS {{ receiver.dsdStatus[i].p25p2.site.rfss }} · site {{ receiver.dsdStatus[i].p25p2.site.site }}</div>
 			</template>
-			<!-- D-STAR details -->
-			<template v-if="receiver.dsdStatus[i]?.mode === 'dstar'">
-				<div v-if="receiver.dsdStatus[i]?.callsign" style="color:#aaa;">Callsign: {{ receiver.dsdStatus[i].callsign }}</div>
+			<!-- D-STAR (dstar/): header, slow data message and position, recent events; kept after the carrier drops -->
+			<template v-for="ds in (receiver.dsdStatus[i]?.dstar && ['dstar', 'unknown'].includes(receiver.dsdStatus[i].mode) ? [receiver.dsdStatus[i].dstar] : [])" :key="'dstar'">
+				<div class="dsd-dstar-call" style="color:#ddd;">{{ ds.my || '?' }}{{ ds.sfx ? '/' + ds.sfx : '' }} → {{ ds.ur || '?' }}<span v-if="ds.flag[0] & 8" style="color:#ff4444;"> · EMERGENCY</span><span v-if="!ds.active" style="opacity:0.6;"> · {{ ds.endSeen ? 'ended' : 'lost' }}</span></div>
+				<div v-if="ds.rpt1 || ds.rpt2" style="color:#aaa;">RPT1: {{ ds.rpt1 || '-' }} · RPT2: {{ ds.rpt2 || '-' }}</div>
+				<div class="dsd-dstar-flags" style="color:#aaa;">{{ ds.flags || 'header not received' }}<span v-if="ds.headerFromSlow"> · header from slow data</span><span v-if="ds.lateEntry"> · joined late</span><span v-if="ds.squelch >= 0"> · DSQ {{ ds.squelch }}</span></div>
+				<div v-if="ds.text" class="dsd-dstar-text" style="color:#aaa;">Message: {{ ds.text }}</div>
+				<div v-if="ds.position" class="dsd-dstar-position" style="color:#aaa;">{{ ds.position.dprs ? 'D-PRS' : 'GPS' }}: {{ ds.position.call }} {{ ds.position.lat.toFixed(5) }}, {{ ds.position.lon.toFixed(5) }}<template v-if="ds.position.altM != null"> · {{ Math.round(ds.position.altM) }} m</template></div>
+				<details v-if="ds.events.length" class="dsd-dstar-events" style="color:#aaa;">
+					<summary style="cursor:pointer;">Events ({{ ds.events.length }}): {{ ds.events[0].text }}</summary>
+					<div v-for="event in ds.events" :key="event.at + event.text" style="font-size:10px;">{{ new Date(event.at).toTimeString().slice(0, 8) }} {{ event.text }}</div>
+				</details>
 			</template>
+			<div v-if="receiver.dsdStatus[i]?.mode === 'dstar' && !receiver.dsdStatus[i]?.dstar && receiver.dsdStatus[i]?.callsign" style="color:#aaa;">Callsign: {{ receiver.dsdStatus[i].callsign }}</div>
 			<!-- NXDN details -->
 			<template v-if="receiver.dsdStatus[i]?.mode === 'nxdn'">
 				<div v-if="receiver.dsdStatus[i]?.nxdnType" style="color:#aaa;">Type: {{ receiver.dsdStatus[i].nxdnType }}</div>

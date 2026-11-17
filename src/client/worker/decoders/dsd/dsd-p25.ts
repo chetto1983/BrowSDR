@@ -8,7 +8,7 @@
 
 import { P25_IW, P25_IX, P25_IY, P25_IZ } from './constants';
 import { rsDecode_36_20_17, rsDecode_24_12_13, rsDecode_24_16_9 } from './ecc/reed-solomon';
-import type { DSDStatus } from './types';
+import type { DSDStatus, DsdSink } from './types';
 
 // ── P25 DUID (Data Unit ID) types ────────────────────────────────────
 export const DUID_HDU = 0x0; // Header Data Unit
@@ -328,6 +328,23 @@ function binToInt(bits: Int8Array, offset: number, length: number): number {
 		value = (value << 1) | (bits[offset + i] & 1);
 	}
 	return value;
+}
+
+/** A P25 Phase 1 frame after its sync on the 4800 symbols/s chain (moved here from dsd-decoder.ts). */
+export function processP25Frame(dibitBuf: Uint8Array, startPos: number, status: DSDStatus, sink: DsdSink): void {
+	const nid = parseP25NID(dibitBuf, startPos);
+	status.nac = nid.nac;
+	status.duid = nid.duidName;
+	const afterNid = startPos + P25_NID_DIBITS;
+	status.mbeDecoding = false;
+	if (nid.duid === DUID_LDU1) sink.voice(processP25LDU1(dibitBuf, afterNid, status));
+	else if (nid.duid === DUID_LDU2) sink.voice(processP25LDU2(dibitBuf, afterNid, status));
+	else if (nid.duid === DUID_HDU) processP25HDU(dibitBuf, afterNid, status);
+	else if (nid.duid === DUID_TDU || nid.duid === DUID_TDULC) {
+		if (nid.duid === DUID_TDU) processP25TDU(dibitBuf, afterNid, status);
+		else processP25TDULC(dibitBuf, afterNid, status);
+		sink.reset();
+	}
 }
 
 // ── P25 frame lengths ────────────────────────────────────────────────

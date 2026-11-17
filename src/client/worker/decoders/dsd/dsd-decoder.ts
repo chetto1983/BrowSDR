@@ -1,4 +1,4 @@
-import type { DSDMode, DSDStatus, DpmrStatus } from './types';
+import type { DSDMode, DSDStatus, DpmrStatus, DsdChain, DsdSink } from './types';
 /*
  * Main DSD (Digital Speech Decoder) state machine.
  * Handles frame sync detection and dispatches to mode-specific processors.
@@ -15,22 +15,9 @@ import { SyncType } from './types';
 import { syncTypeToMode, syncTypeLabel, isVoiceSync, matchSync, lastMatchErrors } from './sync';
 import { DmrFrames } from './dsd-dmr';
 import { processNXDNVoice, NXDN_VOICE_DIBITS } from './dsd-nxdn';
-import { processDSTARVoice, DSTAR_FRAME_DIBITS } from './dsd-dstar';
-import {
-	parseP25NID,
-	processP25LDU1,
-	processP25LDU2,
-	processP25HDU,
-	processP25TDU,
-	processP25TDULC,
-	P25_NID_DIBITS,
-	P25_LDU_BODY_DIBITS,
-	DUID_LDU1,
-	DUID_LDU2,
-	DUID_HDU,
-	DUID_TDU,
-	DUID_TDULC,
-} from './dsd-p25';
+import { DSTAR_FRAME_DIBITS } from './dsd-dstar';
+import { DstarCalls } from './dstar/call';
+import { processP25Frame, P25_NID_DIBITS, P25_LDU_BODY_DIBITS } from './dsd-p25';
 import { readYsfFrame } from './ysf/frame';
 import { YSF_FRAME_DIBITS, YSF_SYNC_DIBITS } from './ysf/proto';
 import { YsfCall, decodeYsfVoice } from './ysf/receiver';
@@ -62,9 +49,12 @@ export class DSDDecoder {
 
 	// State
 	private dibitHistory: string = '';
-	private dibitBuf: Uint8Array;
-	/** Symbol values beside dibitBuf, for protocols that fit their own levels (Fusion). */
-	private symbolBuf: Float32Array;
+	private dibitBuf = new Uint8Array(BUF_MASK + 1);
+	/** Symbol values beside dibitBuf, for protocols that fit their own levels (Fusion, D-STAR, NXDN96, P25). */
+	private symbolBuf = new Float32Array(BUF_MASK + 1);
+	private chain: DsdChain = { dibits: this.dibitBuf, symbols: this.symbolBuf, mask: BUF_MASK };
+	/** D-STAR, NXDN and P25 Phase 1 frames (ported from OnAir, see dstar/, nxdn/, p25/). */
+	private dstar = new DstarCalls(this.sink('dstar', decodeAmbe));
 	private dibitBufPos = 0;
 	private currentSync: SyncType = SyncType.NONE;
 	private synced = false;
@@ -129,10 +119,6 @@ export class DSDDecoder {
 
 		// 4-FSK slicer
 		this.slicer = new FourFSKSlicer();
-
-		// Dibit buffer (circular, large enough for any frame)
-		this.dibitBuf = new Uint8Array(BUF_MASK + 1);
-		this.symbolBuf = new Float32Array(BUF_MASK + 1);
 
 		// Audio accumulator
 		this.audioAccum = new Float32Array(8000); // 1 second at 8 kHz
@@ -249,6 +235,7 @@ export class DSDDecoder {
 			voiceFrameCount: this.status.voiceFrameCount,
 			mbeDecoding: false,
 			dmr: this.status.dmr,
+			dstar: this.status.dstar,
 		};
 		this.status.syncCount = this._dbgSyncCount;
 		this.status.lastSyncName = this.lastSyncName;
@@ -373,26 +360,23 @@ export class DSDDecoder {
 	 */
 	private processFrameData(): void {
 		this.frameDataRead++;
-		this.frameDataRemaining--;
-
-		if (this.frameDataRemaining <= 0) {
-			// Frame complete - process it
-			this.processCompleteFrame();
-
-			// Go back to searching for next sync
-			this.synced = false;
-			this.dibitHistory = '';
-		}
+		if (--this.frameDataRemaining > 0) return;
+		// Frame complete: process it; D-STAR and P25 may ask for more before the next sync
+		this.frameDataRemaining = this.processCompleteFrame();
+		if (this.frameDataRemaining > 0) return;
+		this.synced = false;
+		this.dibitHistory = '';
 	}
 
 	/**
 	 * Process a complete frame based on the sync type.
 	 */
-	private processCompleteFrame(): void {
+	private processCompleteFrame(): number {
 		this._dbgFrameCount++;
 		const syncType = this.currentSync;
 		const mode = syncTypeToMode(syncType);
 		const startPos = this.frameStart & BUF_MASK;
+		let more = 0;
 
 		switch (mode) {
 			case 'dmr':
@@ -412,10 +396,10 @@ export class DSDDecoder {
 				);
 				break;
 			case 'p25':
-				this.processP25Frame(syncType, startPos);
+				processP25Frame(this.dibitBuf, startPos, this.status, this.sink('p25', decodeImbe));
 				break;
 			case 'dstar':
-				this.processDSTARFrame(syncType, startPos);
+				more = this.dstar.frame(this.chain, syncType, this.frameStart, this.frameDataRead);
 				break;
 			case 'nxdn':
 				this.processNXDNFrame(syncType, startPos);
@@ -426,9 +410,20 @@ export class DSDDecoder {
 		}
 
 		this.onStatus({ ...this.status });
+		return more;
 	}
 
 	// ── Mode-specific frame processing ─────────────────────────────
+
+	/** The decoder's side of D-STAR, NXDN and P25 Phase 1: the status, voice, codec reset and a sync to count. */
+	private sink(mode: DSDMode, decode: (frame: Int8Array) => Float32Array): DsdSink {
+		return {
+			status: () => this.status,
+			voice: (frames) => this.decodeVoice(frames, decode),
+			reset: () => this.mbelibReady && resetMbe(),
+			synced: (sync) => this.announceSync(mode, sync),
+		};
+	}
 
 	/** Decode voice frames through mbelib into the audio output and the error bar. */
 	private decodeVoice<T>(frames: readonly T[], decode: (frame: T) => Float32Array): void {
@@ -449,51 +444,6 @@ export class DSDDecoder {
 			}
 		}
 		this.status.mbeErrors = errBar;
-	}
-
-	private processP25Frame(syncType: SyncType, startPos: number): void {
-		// Parse NID to get DUID
-		const nid = parseP25NID(this.dibitBuf, startPos);
-		this.status.nac = nid.nac;
-		this.status.duid = nid.duidName;
-
-		const afterNid = startPos + P25_NID_DIBITS;
-
-		switch (nid.duid) {
-			case DUID_LDU1:
-				this.decodeVoice(processP25LDU1(this.dibitBuf, afterNid, this.status), decodeImbe);
-				break;
-			case DUID_LDU2:
-				this.decodeVoice(processP25LDU2(this.dibitBuf, afterNid, this.status), decodeImbe);
-				break;
-			case DUID_HDU:
-				processP25HDU(this.dibitBuf, afterNid, this.status);
-				this.status.mbeDecoding = false;
-				break;
-			case DUID_TDU:
-				processP25TDU(this.dibitBuf, afterNid, this.status);
-				this.status.mbeDecoding = false;
-				if (this.mbelibReady) resetMbe();
-				break;
-			case DUID_TDULC:
-				processP25TDULC(this.dibitBuf, afterNid, this.status);
-				this.status.mbeDecoding = false;
-				if (this.mbelibReady) resetMbe();
-				break;
-			default:
-				this.status.mbeDecoding = false;
-				break;
-		}
-	}
-
-	private processDSTARFrame(syncType: SyncType, startPos: number): void {
-		if (syncType === SyncType.DSTAR_HD || syncType === SyncType.INV_DSTAR_HD) {
-			this.status.mbeDecoding = false;
-			return;
-		}
-
-		const ambeFrames = processDSTARVoice(this.dibitBuf, startPos, this.status, syncType === SyncType.INV_DSTAR);
-		this.decodeVoice(ambeFrames, decodeAmbe);
 	}
 
 	private processNXDNFrame(syncType: SyncType, startPos: number): void {
@@ -657,6 +607,7 @@ export class DSDDecoder {
 		this.dpmr.reset();
 		this.dpmrVoice.length = 0;
 		this.p25p2.reset();
+		this.dstar.reset();
 		this.status = {
 			mode: 'unknown',
 			synced: false,

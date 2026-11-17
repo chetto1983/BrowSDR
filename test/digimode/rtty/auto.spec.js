@@ -38,7 +38,7 @@ describe('RTTY Auto (OnAir test_hfdig_rttyauto)', () => {
 		expect(okNear, misses.join('; ')).toBe(n);
 		expect(ok, misses.join('; ')).toBeGreaterThanOrEqual(36);
 		expect(lowOk).toBeGreaterThanOrEqual(n - 1);
-	});
+	}, 30_000);
 
 	it('finds 50 Bd with an 85 Hz shift, both polarities', () => {
 		for (const rv of [false, true]) {

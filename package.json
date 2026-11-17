@@ -22,6 +22,8 @@
 		"build:mbelib": "bash wasm/mbelib/build.sh",
 		"build:meteor": "bash wasm/meteor/build.sh",
 		"build:faad2": "bash wasm/faad2/build.sh",
+		"build:codec2": "bash wasm/codec2/build.sh",
+		"test:codec2": "node scripts/validate-codec2.mjs",
 		"build:rtl433": "node scripts/update-rtl433.mjs --build",
 		"check:rtl433": "node scripts/update-rtl433.mjs --check",
 		"update:rtl433": "node scripts/update-rtl433.mjs",

@@ -44,6 +44,9 @@ file). Algorithms and protocol tables follow the OnAir source.
 | `src/client/worker/decoders/digimode/orbcomm/types.ts` | `core/include/dect2/orbcomm/orbcomm.h` (packet shapes) |
 | `src/client/worker/decoders/digimode/orbcomm/demodulator.ts` | `core/src/orbcomm/orbcomm_rx.cpp` (RRC filter, SDPSK, Gardner timing); streaming carrier estimate adapted for one VFO |
 | `src/client/worker/decoders/digimode/orbcomm/receiver.ts` | `core/src/orbcomm/orbcomm_rx.cpp` (sync, packet checks, message assembly) |
+| `src/client/worker/decoders/dsd/p25p2/data.ts`, `protocol.ts` | `core/src/p25p2/p25p2_proto.cpp` (ISCH, DUID, superframe scrambler and AMBE bit order) |
+| `src/client/worker/decoders/dsd/m17/protocol.ts` | `core/src/m17/m17_proto.cpp` (CRC, callsigns, Golay, convolutional code, puncturing, randomizer and interleaver) |
+| `src/client/worker/decoders/dsd/m17/receiver.ts` | `core/src/m17/m17_rx.cpp` (symbol sync, LSF/stream/packet assembly) |
 | `test/digimode/orbcomm/fixtures.js` | `core/src/orbcomm/orbcomm_gen.cpp` (test signal and packet builders) |
 | `src/client/worker/decoders/digimode/sstv/modes.ts`, `types.ts` | `core/src/hfdig/hfdig_sstv_modes.h` |
 | `src/client/worker/decoders/digimode/sstv/phase.ts` | `core/src/hfdig/hfdig_sstv.cpp` (front end), `hfdig_usb.h` (lowpass) |

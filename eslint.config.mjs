@@ -30,6 +30,7 @@ export default defineConfig(
 		'wasm/meteor/**',
 		'wasm/nrsc5/**',
 		'wasm/faad2/**',
+		'wasm/codec2/**',
 		'types/worker.d.ts',
 	]),
 	{

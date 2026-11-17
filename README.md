@@ -72,7 +72,7 @@ Enjoy the power of a desktop SDR platform fully within your web browser.
 - **📻 Wide Demodulation Support**
   Supports WFM, NFM, AM, USB, LSB, DSB, CW, and raw IQ modes.
 - **🗣️ Digital Voice**
-  The DSD mode finds DMR, P25 Phase 1, D-STAR, NXDN, Yaesu System Fusion and dPMR by
+  The DSD mode finds DMR, P25 Phase 1, D-STAR, NXDN, Yaesu System Fusion, dPMR and M17 by
   itself and plays the voice through mbelib; YSF and dPMR are ported from OnAir. See
   [the guide](docs/digital-voice.md).
 - **📡 RDS Decoding on the Fly**

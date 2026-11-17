@@ -110,4 +110,34 @@ describe('DSD status panel', () => {
 		expect(panel.get('.dsd-dpmr-call').text()).toBe('? → ? · all call · lost');
 		expect(panel.text()).toContain('CC: ---');
 	});
+	it('shows a clear M17 voice call and Codec2 availability', async () => {
+		const panel = await panelWith({
+			mode: 'm17',
+			synced: true,
+			syncName: 'M17 Voice 3200',
+			voiceFrameCount: 2,
+			m17: {
+				src: 'N0CALL',
+				dst: '@ALL',
+				can: 1,
+				kind: 'Voice 3200',
+				encrypted: false,
+				frames: 2,
+				voiceFrames: 2,
+				codecReady: true,
+				text: 'HELLO',
+				snrDb: 18.5,
+				inverted: false,
+				ended: false,
+			},
+		});
+		const text = panel.text();
+		expect(text).toContain('Mode: M17');
+		expect(text).toContain('N0CALL');
+		expect(text).toContain('@ALL');
+		expect(text).toContain('CAN: 1');
+		expect(text).toContain('SNR: 18.5 dB');
+		expect(text).toContain('Data: HELLO');
+		expect(text).toContain('Codec2 voice ready');
+	});
 });

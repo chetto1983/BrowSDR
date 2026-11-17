@@ -1,3 +1,4 @@
+import type { M17Status } from './m17/types';
 /*
  * DSD (Digital Speech Decoder) status and sync types.
  * Ported from SDR++ Brown ch_extravhf_decoder.
@@ -11,7 +12,7 @@
  */
 
 // ── Detected DSD mode ────────────────────────────────────────────────
-export type DSDMode = 'dmr' | 'dstar' | 'p25' | 'nxdn' | 'ysf' | 'dpmr' | 'unknown';
+export type DSDMode = 'dmr' | 'dstar' | 'p25' | 'nxdn' | 'ysf' | 'dpmr' | 'm17' | 'unknown';
 
 export interface DSDStatus {
 	mode: DSDMode;
@@ -73,6 +74,9 @@ export interface DSDStatus {
 
 	// ── dPMR ──
 	dpmr?: DpmrStatus;
+
+	// ── M17 ──
+	m17?: M17Status;
 }
 
 /** The last dPMR transmission: a voice call, a status message, a short message or packet data. */

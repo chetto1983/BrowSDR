@@ -36,6 +36,9 @@ import { readYsfFrame } from './ysf/frame';
 import { YSF_FRAME_DIBITS, YSF_SYNC_DIBITS } from './ysf/proto';
 import { YsfCall, decodeYsfVoice } from './ysf/receiver';
 import { DpmrReceiver } from './dpmr/receiver';
+import { M17Receiver } from './m17/receiver';
+import type { M17Frame } from './m17/types';
+import { decodeM17Voice, ensureM17Codec2, m17Codec2Ready, resetM17Voice } from './m17/codec2';
 import { ambeFrame } from './ambe';
 import { decodeAmbe, decodeImbe, ensureMbelibInitialized, getMbeErrors, resetMbe } from '@/worker/decoders/mbelib-init';
 
@@ -74,6 +77,8 @@ export class DSDDecoder {
 	private dpmr: DpmrReceiver;
 	private dpmrVoice: Uint8Array[] = [];
 	private dpmrResting = false;
+	private m17: M17Receiver;
+	private m17CodecPending = false;
 
 	/** Count of consecutive syncs for the current mode — used for mode locking */
 	private modeLockCount = 0;
@@ -139,6 +144,7 @@ export class DSDDecoder {
 				if (this.acceptsDpmr()) this.dpmrVoice.push(bits);
 			},
 		});
+		this.m17 = new M17Receiver((frame) => this.onM17Frame(frame));
 
 		// Start mbelib initialization
 		this.mbeInitPromise = ensureMbelibInitialized()
@@ -195,7 +201,9 @@ export class DSDDecoder {
 
 		// Step 4: Feed dibits to frame sync + decoder
 		for (let i = 0; i < numSymbols; i++) {
-			this.feedDibit(dibits[i], this.clockRecovery.symbolBuf[i] * this.hzPerUnit);
+			const symbol = this.clockRecovery.symbolBuf[i] * this.hzPerUnit;
+			this.m17.feed(symbol);
+			if (!this.m17.locked) this.feedDibit(dibits[i], symbol);
 		}
 
 		// Emit accumulated audio
@@ -227,6 +235,7 @@ export class DSDDecoder {
 		this.frameDataRemaining = 0;
 		this.audioAccumLen = 0;
 		this.ysf.reset();
+		this.m17.reset();
 		this.status = {
 			mode: 'unknown',
 			synced: false,
@@ -619,6 +628,47 @@ export class DSDDecoder {
 		return true;
 	}
 
+	private onM17Frame(frame: M17Frame): void {
+		if (!this.m17CodecPending && !m17Codec2Ready()) {
+			this.m17CodecPending = true;
+			void ensureM17Codec2()
+				.then(() => {
+					this.m17.setCodecReady(true);
+					if (this.status.mode === 'm17' && this.status.m17) {
+						this.status.m17.codecReady = true;
+						this.onStatus({ ...this.status });
+					}
+				})
+				.catch((error) => console.warn('M17 Codec2 unavailable:', error))
+				.finally(() => {
+					this.m17CodecPending = false;
+				});
+		}
+		this.lockedMode = frame.status.ended ? 'unknown' : 'm17';
+		this.frameDataRemaining = 0;
+		this.status.mode = 'm17';
+		this.status.synced = !frame.status.ended;
+		this.synced = !frame.status.ended;
+		this.status.syncName = 'M17 ' + frame.status.kind;
+		this.status.lastSyncName = this.status.syncName;
+		this.status.m17 = frame.status;
+		this.status.mbeDecoding = false;
+		this.status.mbeErrors = undefined;
+		this.status.syncCount = (this.status.syncCount || 0) + 1;
+		this.status.voiceFrameCount = frame.status.voiceFrames;
+		this.samplesSinceSync = 0;
+		if (frame.status.ended) resetM17Voice();
+		if (frame.voice && m17Codec2Ready()) {
+			try {
+				this.appendAudio(decodeM17Voice(frame.voice.payload, frame.voice.rate));
+				this.status.mbeDecoding = true;
+			} catch (error) {
+				console.warn('M17 voice frame failed:', error);
+			}
+		}
+		this.onStatus({ ...this.status });
+	}
+
 	// ── Audio output ────────────────────────────────────────────────
 
 	/**
@@ -690,6 +740,7 @@ export class DSDDecoder {
 		this.frameDataRead = 0;
 		this.audioAccumLen = 0;
 		this.ysf.reset();
+		this.m17.reset();
 		this.dpmr.reset();
 		this.dpmrVoice.length = 0;
 		this.status = {

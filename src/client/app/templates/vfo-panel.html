@@ -293,6 +293,12 @@
 				</div>
 				<div v-if="receiver.dsdStatus[i].dpmr.text" style="color:#aaa;">{{ receiver.dsdStatus[i].dpmr.kind === 'status' ? 'Status' : 'Message' }}: {{ receiver.dsdStatus[i].dpmr.text }}</div>
 			</template>
+			<!-- M17 details -->
+			<template v-if="receiver.dsdStatus[i]?.mode === 'm17' && receiver.dsdStatus[i]?.m17">
+				<div style="color:#ddd;">{{ receiver.dsdStatus[i].m17.src || '?' }} → {{ receiver.dsdStatus[i].m17.dst || '?' }} · {{ receiver.dsdStatus[i].m17.kind }}<span v-if="receiver.dsdStatus[i].m17.ended" style="opacity:0.6;"> · ended</span></div>
+				<div style="color:#aaa;">CAN: {{ receiver.dsdStatus[i].m17.can >= 0 ? receiver.dsdStatus[i].m17.can : '---' }}<span v-if="receiver.dsdStatus[i].m17.encrypted" style="color:#ff8844;"> · ENCRYPTED</span><span v-if="receiver.dsdStatus[i].m17.snrDb" style="margin-left:8px;">SNR: {{ receiver.dsdStatus[i].m17.snrDb.toFixed(1) }} dB</span></div>
+				<div v-if="receiver.dsdStatus[i].m17.text" style="color:#aaa;">Data: {{ receiver.dsdStatus[i].m17.text }}</div>
+			</template>
 			<!-- MBE status -->
 			<div style="display:flex;align-items:center;gap:6px;margin-top:2px;">
 				<span :style="{ color: receiver.dsdStatus[i]?.mbeDecoding ? '#44cc44' : '#ff6644' }">
@@ -303,7 +309,8 @@
 			<div v-if="receiver.dsdStatus[i]?.syncCount" style="color:#aaa;font-size:10px;">Detected bursts: {{ receiver.dsdStatus[i].syncCount }} · Voice frames: {{ receiver.dsdStatus[i].voiceFrameCount || 0 }}</div>
 			<div v-if="!receiver.dsdStatus[i]?.synced && receiver.dsdStatus[i]?.lastSyncName" style="color:#aaa;font-size:10px;">Last: {{ receiver.dsdStatus[i].lastSyncName }}</div>
 			<!-- mbelib warning -->
-			<div v-if="receiver.dsdStatus[i]?.mbelibLoaded != null" :style="{color: receiver.dsdStatus[i]?.mbelibLoaded ? '#888' : '#ff8844',fontSize:'10px',marginTop:'2px'}">
+			<div v-if="receiver.dsdStatus[i]?.mode === 'm17'" :style="{color: receiver.dsdStatus[i]?.m17?.codecReady ? '#888' : '#ff8844',fontSize:'10px',marginTop:'2px'}">{{ receiver.dsdStatus[i]?.m17?.codecReady ? 'Codec2 voice ready' : 'Loading Codec2 voice...' }}</div>
+			<div v-else-if="receiver.dsdStatus[i]?.mbelibLoaded != null" :style="{color: receiver.dsdStatus[i]?.mbelibLoaded ? '#888' : '#ff8844',fontSize:'10px',marginTop:'2px'}">
 				{{ receiver.dsdStatus[i]?.mbelibError || (receiver.dsdStatus[i]?.mbelibLoaded ? 'Voice decoder ready' : 'Loading voice decoder...') }}
 			</div>
 		</div>

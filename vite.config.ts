@@ -184,6 +184,7 @@ const wasmAssets = {
 	rtl433: ['rtl433.js', 'rtl433.wasm', 'COPYING', 'NOTICE'],
 	nrsc5: ['nrsc5.js', 'nrsc5.wasm', 'LICENSE-nrsc5', 'COPYING-faad2', 'COPYING-fftw', 'COPYING.GPL3', 'NOTICE'],
 	faad2: ['faad.js', 'faad.wasm', 'COPYING-faad2', 'NOTICE'],
+	codec2: ['codec2.js', 'codec2.wasm', 'COPYING'],
 };
 
 function copyDecoderAssets(distDir: string) {
@@ -207,7 +208,7 @@ function wasmAssetsPlugin(): Plugin {
 		configureServer(server) {
 			server.middlewares.use((request, response, next) => {
 				const pathname = new URL(request.url ?? '/', 'http://localhost').pathname;
-				const match = /^\/wasm\/(dsp|mbelib|meteor|rtl433|nrsc5|faad2)\/([^/]+)$/.exec(pathname);
+				const match = /^\/wasm\/(dsp|mbelib|meteor|rtl433|nrsc5|faad2|codec2)\/([^/]+)$/.exec(pathname);
 				if (!match) return next();
 				const module = match[1] as keyof typeof wasmAssets;
 				const file = match[2];

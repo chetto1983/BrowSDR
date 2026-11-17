@@ -4,7 +4,8 @@
 // core/include/dect2/avroad/avroad_proto.h (OgnPacket), core/include/dect2/adsl/adsl_proto.h (Traffic, Status, Parsed)
 // and the records of core/src/flarm/flarm_rx.cpp and core/src/adsl/adsl_rx.cpp (Cand, Pending, Rec),
 // https://github.com/adswill/OnAir; see third_party/onair. Changes: the decoder's options, counters, packet queue and
-// the record of an aircraft are BrowSDR's (OnAir keeps an aircraft table and telemetry); only the M-band of ADS-L.
+// the record of an aircraft are BrowSDR's (OnAir keeps an aircraft table and telemetry), shared with FANET; only the
+// M-band of ADS-L.
 
 import type { FlarmChannel } from './channel';
 
@@ -222,12 +223,12 @@ export interface FlarmStats {
 	};
 }
 
-export type AircraftProtocol = 'FLARM' | 'OGN' | 'ADS-L';
+export type AircraftProtocol = 'FLARM' | 'OGN' | 'ADS-L' | 'FANET';
 
 /** One aircraft as a record shows it. */
 export interface AircraftReport {
 	protocol: AircraftProtocol;
-	/** Six hex digits. */
+	/** Six hex digits (FANET: manufacturer and device, "11:2233"). */
 	id: string;
 	idType: string;
 	aircraft: string;
@@ -237,6 +238,9 @@ export interface AircraftReport {
 	climbMs?: number;
 	speedKmh?: number;
 	trackDeg?: number;
+	/** FANET sends a heading in place of the track. */
+	headingDeg?: number;
+	/** 0: 868.2 MHz, 1: 868.4 MHz; -1: no channel field (FANET). */
 	channel: number;
 	levelDb?: number;
 	/** Protocol fields beyond the common ones. */
@@ -246,12 +250,17 @@ export interface AircraftReport {
 	alert?: boolean;
 }
 
-/** A known aircraft: when it was last heard and reported. */
-export interface AircraftEntry {
+/** What the record pace needs of a report: an alert goes out at once. */
+export interface PacedReport {
+	alert?: boolean;
+}
+
+/** A known aircraft (or another paced sender): when it was last heard and reported. */
+export interface AircraftEntry<R extends PacedReport = AircraftReport> {
 	lastSeen: number;
 	lastReport: number;
 	packets: number;
-	report: AircraftReport;
+	report: R;
 }
 
 export interface LatLon {

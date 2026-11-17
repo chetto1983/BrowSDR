@@ -342,6 +342,45 @@ export const DIGIMODES: readonly DigimodeInfo[] = [
 		source: 'core/src/flarm/flarm_rx.cpp, flarm_proto.cpp, core/src/adsl/adsl_rx.cpp, adsl_proto.cpp, core/src/avroad/avroad_air.cpp',
 	},
 	{
+		id: 'fanet',
+		label: 'FANET (Europe, India: 250 kHz)',
+		family: 'Aviation',
+		description:
+			"Paragliders, hang gliders and their ground stations on FANET, Skytraxx's open LoRa protocol (SF7, sync word 0xF1), here the 250 kHz band of Europe (868.2 MHz) and India (866.2 MHz). Tracking with aircraft type, position, altitude, climb, speed, heading and turn rate; pilots on the ground (calls for help and distress calls as alerts); names, messages, weather stations and internet gateways, thermals and landmarks. One record per aircraft when first heard, then at most every 5 s; the distance once the station location is set (Tools → Satellites). Positions whose sender switched online tracking off are counted, never shown. FANET needs its own VFO next to FLARM's: its channel (868.075 - 868.325 MHz) does not fit FLARM's 400 kHz channel at 868.3 MHz.",
+		rate: 500000,
+		bandwidth: 300000,
+		presets: [
+			{ label: 'Europe 868.2', freqMHz: 868.2 },
+			{ label: 'India 866.2', freqMHz: 866.2 },
+		],
+		source: 'core/src/avroad/avroad_air.cpp, avroad_dec.cpp, core/src/loraraw/loraraw_rx.cpp, core/src/mesh/mesh_lora_demod.cpp',
+	},
+	{
+		id: 'fanet-500',
+		label: 'FANET (Americas, Australia: 500 kHz)',
+		family: 'Aviation',
+		description:
+			'FANET in its 500 kHz band at 920.8 MHz (North and South America, Australia, New Zealand): the same frames and records as FANET in Europe.',
+		rate: 1000000,
+		bandwidth: 600000,
+		presets: [{ label: 'Americas, Australia 920.8', freqMHz: 920.8 }],
+		source: 'core/src/avroad/avroad_air.cpp, avroad_dec.cpp, core/src/loraraw/loraraw_rx.cpp, core/src/mesh/mesh_lora_demod.cpp',
+	},
+	{
+		id: 'fanet-125',
+		label: 'FANET (Asia, Israel: 125 kHz)',
+		family: 'Aviation',
+		description:
+			'FANET in the 125 kHz zones of the protocol description (still marked work in progress there): 923.2 MHz in Korea and the rest of Asia, 918.5 MHz in Israel. The same frames and records as FANET in Europe.',
+		rate: 250000,
+		bandwidth: 175000,
+		presets: [
+			{ label: 'Korea, Asia 923.2', freqMHz: 923.2 },
+			{ label: 'Israel 918.5', freqMHz: 918.5 },
+		],
+		source: 'core/src/avroad/avroad_air.cpp, avroad_dec.cpp, core/src/loraraw/loraraw_rx.cpp, core/src/mesh/mesh_lora_demod.cpp',
+	},
+	{
 		id: 'tones',
 		label: 'Tone signalling (CTCSS, DCS, DTMF, selcall)',
 		family: 'Two-way radio',

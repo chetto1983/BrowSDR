@@ -46,6 +46,25 @@ export function radioFields(r: LoraRadio, payload: Uint8Array): Array<[string, s
 	return f;
 }
 
+/** What the LoRa layer knows about a frame the bank found (MeshRadioInfo). */
+export function loraRadio(d: LoraDecoded): LoraRadio {
+	const f = d.frame;
+	return {
+		sf: d.sf,
+		bwHz: d.bwHz,
+		cr: f.hdr.cr,
+		snrDb: f.snrDb,
+		levelDb: f.levelDb,
+		cfoHz: f.cfoHz,
+		crcOk: f.crcOk,
+		hasCrc: f.hdr.crc,
+		corrected: f.corrected,
+		softFixed: f.softFixed,
+		jumpsFixed: f.jumpsFixed,
+		syncWord: d.sync,
+	};
+}
+
 /** A LoRa protocol on the VFO channel: the bank of demodulators, the packet layer, one record per frame. */
 export class LoraDecoder implements DigimodeDecoder {
 	private bank: LoraBank;
@@ -99,20 +118,7 @@ export class LoraDecoder implements DigimodeDecoder {
 
 	private report(d: LoraDecoded): void {
 		const f = d.frame;
-		const radio: LoraRadio = {
-			sf: d.sf,
-			bwHz: d.bwHz,
-			cr: f.hdr.cr,
-			snrDb: f.snrDb,
-			levelDb: f.levelDb,
-			cfoHz: f.cfoHz,
-			crcOk: f.crcOk,
-			hasCrc: f.hdr.crc,
-			corrected: f.corrected,
-			softFixed: f.softFixed,
-			jumpsFixed: f.jumpsFixed,
-			syncWord: d.sync,
-		};
+		const radio = loraRadio(d);
 		const crcBad = f.hdr.crc && !f.crcOk;
 		const r = this.mode.decode(f.payload, radio);
 		if (crcBad) this.crcBad++;

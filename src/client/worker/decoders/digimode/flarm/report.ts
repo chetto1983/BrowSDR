@@ -3,10 +3,11 @@
 // Ported to TypeScript for BrowSDR from OnAir core/src/geo/maidenhead.cpp (greatCircle) and the aircraft rows of
 // core/src/flarm/flarm_rx.cpp and core/src/adsl/adsl_rx.cpp (Rec, expire: an aircraft silent for 60 s leaves the
 // table), https://github.com/adswill/OnAir; see third_party/onair. Changes: the aircraft table only paces the records
-// (the first packet of an aircraft at once, then one record per aircraft every 5 s of signal); the record text and
-// fields are BrowSDR's; the packets of an input block go through FrameQueue (one copy of each, in time order).
+// (the first packet of an aircraft at once, then one record per aircraft every 5 s of signal; FANET's records too);
+// the record text and fields are BrowSDR's, also for FANET; the packets of an input block go through FrameQueue (one
+// copy of each, in time order).
 
-import type { AircraftEntry, AircraftReport, LatLon, QueuedFrame } from './types';
+import type { AircraftEntry, AircraftProtocol, AircraftReport, LatLon, PacedReport, QueuedFrame } from './types';
 
 /** The same packet within this time is a copy (another phase, or the other channel), s. */
 const COPY_SEC = 0.004;
@@ -15,6 +16,12 @@ const EXPIRY_SEC = 60;
 /** At most one record per aircraft in this time, s. */
 export const REPORT_SEC = 5;
 const CHANNELS = ['868.2 MHz', '868.4 MHz'];
+const PROTOCOLS: Record<AircraftProtocol, string> = {
+	FLARM: 'FLARM (old protocol)',
+	OGN: 'OGN tracker',
+	'ADS-L': 'ADS-L (M-band)',
+	FANET: 'FANET',
+};
 
 /** Great-circle distance (km) and initial bearing (degrees) from point 1 to point 2. */
 export function greatCircle(lat1: number, lon1: number, lat2: number, lon2: number): { km: number; bearingDeg: number } {
@@ -40,6 +47,7 @@ function values(r: AircraftReport, station: LatLon | null): Array<[string, strin
 	if (r.altM !== undefined) out.push(['Altitude', `${r.altM.toFixed(0)} m`, `${r.altM.toFixed(0)} m`]);
 	if (r.speedKmh !== undefined) out.push(['Speed', `${r.speedKmh.toFixed(0)} km/h`, `${r.speedKmh.toFixed(0)} km/h`]);
 	if (r.trackDeg !== undefined) out.push(['Track', `${r.trackDeg.toFixed(0)}°`, `track ${r.trackDeg.toFixed(0)}°`]);
+	if (r.headingDeg !== undefined) out.push(['Heading', `${r.headingDeg.toFixed(0)}°`, `heading ${r.headingDeg.toFixed(0)}°`]);
 	if (r.climbMs !== undefined) out.push(['Climb', `${signed(r.climbMs, 1)} m/s`, `${signed(r.climbMs, 1)} m/s`]);
 	if (station && r.lat !== undefined && r.lon !== undefined) {
 		const g = greatCircle(station.lat, station.lon, r.lat, r.lon);
@@ -57,7 +65,7 @@ export function aircraftRecord(
 	const head = `${r.protocol} ${r.id} · ${r.aircraft}`;
 	const text = r.note ? `${head} · ${r.note}` : [head, ...v.map(([, , short]) => short)].join(' · ');
 	const fields: Array<[string, string]> = [
-		['Protocol', r.protocol === 'FLARM' ? 'FLARM (old protocol)' : r.protocol === 'OGN' ? 'OGN tracker' : 'ADS-L (M-band)'],
+		['Protocol', PROTOCOLS[r.protocol]],
 		['Aircraft ID', r.id],
 		['ID type', r.idType],
 		['Aircraft type', r.aircraft],
@@ -65,21 +73,22 @@ export function aircraftRecord(
 	];
 	if (r.note) fields.push(['Note', r.note]);
 	if (r.lat === undefined && !r.note && r.protocol === 'FLARM') fields.push(['Position', 'needs the station location']);
-	fields.push(...r.extra, ['Channel', CHANNELS[r.channel] ?? '?']);
+	fields.push(...r.extra);
+	if (r.channel >= 0) fields.push(['Channel', CHANNELS[r.channel] ?? '?']);
 	if (r.levelDb !== undefined && Number.isFinite(r.levelDb)) fields.push(['Level', `${r.levelDb.toFixed(1)} dB over the noise`]);
 	return r.alert ? { text, fields, alert: true } : { text, fields };
 }
 
 /** The aircraft heard lately: a record for the first packet of each, then at most one every REPORT_SEC. */
-export class AircraftTable {
-	private readonly entries = new Map<string, AircraftEntry>();
+export class AircraftTable<R extends PacedReport = AircraftReport> {
+	private readonly entries = new Map<string, AircraftEntry<R>>();
 
 	delete(key: string): void {
 		this.entries.delete(key);
 	}
 
 	/** Whether this packet's report is due as a record. */
-	update(key: string, report: AircraftReport, tnow: number): boolean {
+	update(key: string, report: R, tnow: number): boolean {
 		const e = this.entries.get(key);
 		if (!e) {
 			this.entries.set(key, { lastSeen: tnow, lastReport: tnow, packets: 1, report });
@@ -99,7 +108,7 @@ export class AircraftTable {
 	}
 
 	/** The aircraft and their packet counts (tests). */
-	snapshot(): Array<[string, AircraftEntry]> {
+	snapshot(): Array<[string, AircraftEntry<R>]> {
 		return [...this.entries];
 	}
 

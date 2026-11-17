@@ -14,6 +14,7 @@ import { LoraAprsDecoder } from './lora-aprs';
 import { Ft4Decoder, Ft8Decoder } from './ftx';
 import { WsprDecoder } from './wspr';
 import { RTTY_AMATEUR, RttyReceiver } from './rtty';
+import { CwDecoder } from './cw';
 
 /** Worker-side constructors of the catalog's decoders. */
 export const DIGIMODE_DECODERS: Record<string, (sink: DigimodeSink) => DigimodeDecoder> = {
@@ -33,6 +34,7 @@ export const DIGIMODE_DECODERS: Record<string, (sink: DigimodeSink) => DigimodeD
 	ft8: (sink) => new Ft8Decoder(sink),
 	ft4: (sink) => new Ft4Decoder(sink),
 	wspr: (sink) => new WsprDecoder(sink),
+	cw: (sink) => new CwDecoder(sink),
 	rtty: (sink) => new RttyReceiver(sink, { start: RTTY_AMATEUR }),
 	'rtty-dwd': (sink) => new RttyReceiver(sink, { start: { baudIdx: 1, shiftIdx: 3, reverse: false } }),
 	'rtty-dwd-lf': (sink) => new RttyReceiver(sink, { start: { baudIdx: 1, shiftIdx: 5, reverse: false } }),

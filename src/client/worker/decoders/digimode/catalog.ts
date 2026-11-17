@@ -174,6 +174,27 @@ export const DIGIMODES: readonly DigimodeInfo[] = [
 		source: 'core/src/hfdig/hfdig_ftx.cpp, hfdig_wspr.cpp, hfdig_ftx_tables.cpp',
 	},
 	{
+		id: 'cw',
+		label: 'CW (Morse)',
+		family: 'Amateur',
+		description:
+			'A skimmer of Morse code: every CW signal within ±7 kHz of the dial is found and decoded at once, 5 to 50 WPM, with the speed, the dash ratio and the gaps of each sender learned as the text comes, so hand keying and Farnsworth spacing read as well as a machine; a model of amateur traffic (calls, reports, Q-codes) settles doubtful characters. One record per line of a signal, with its offset from the dial, speed and SNR; the line being received is in the status. Needs HF reception, e.g. an RTL-SDR in direct sampling mode or behind an upconverter.',
+		rate: 24000,
+		bandwidth: 16000,
+		presets: [
+			{ label: '160 m', freqMHz: 1.817 },
+			{ label: '80 m', freqMHz: 3.507 },
+			{ label: '40 m', freqMHz: 7.007 },
+			{ label: '30 m', freqMHz: 10.107 },
+			{ label: '20 m', freqMHz: 14.007 },
+			{ label: '17 m', freqMHz: 18.075 },
+			{ label: '15 m', freqMHz: 21.007 },
+			{ label: '12 m', freqMHz: 24.897 },
+			{ label: '10 m', freqMHz: 28.007 },
+		],
+		source: 'core/src/cw/cw_rx.cpp, cw_decoder.cpp, cw_lm.cpp, cw_morse.cpp',
+	},
+	{
 		id: 'rtty',
 		label: 'RTTY',
 		family: 'Amateur',

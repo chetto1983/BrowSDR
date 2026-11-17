@@ -184,3 +184,14 @@ file). Algorithms and protocol tables follow the OnAir source.
 | `test/digimode/rtty/fixtures.js` | `core/src/hfdig/hfdig_rtty.cpp` (RttyTestAudio, makeRttyTxAudio), `tests/hfdig/test_hfdig_rtty.cpp` (noise of an SNR, textOk) |
 | `test/digimode/rtty/rtty.spec.js` | `tests/hfdig/test_hfdig_rtty.cpp` |
 | `test/digimode/rtty/auto.spec.js` | `tests/hfdig/test_hfdig_rttyauto.cpp` |
+| `src/client/worker/decoders/digimode/cw/types.ts` | `core/include/dect2/cw/cw_decoder.h` (DecTok, FistStats), `core/src/cw/cw_decoder.cpp` (Ev, Prior), `cw_lm.cpp` (Model), `core/include/dect2/cw/cw_tel.h` (CwSignal) |
+| `src/client/worker/decoders/digimode/cw/morse.ts` | `core/src/cw/cw_morse.cpp` (code table, decodeSymbol, encodeSymbol, tokenize, isCallsign, callsigns) |
+| `src/client/worker/decoders/digimode/cw/lm.ts` | `core/src/cw/cw_lm.cpp` (word list, sentences, character trigram, lmSymbol, lmLogP, lmWordBonus, callShape) |
+| `src/client/worker/decoders/digimode/cw/model.ts` | `core/src/cw/cw_decoder.cpp` (FistDecoder::Impl, the sender model: lpGauss, learnMark, learnGap, gmm, dashFit, fitGaps, twoMeans, relock, checkSpeed, fromBacklog, misfit; FistTune) |
+| `src/client/worker/decoders/digimode/cw/beam.ts` | `core/src/cw/cw_decoder.cpp` (Morse trie, Hyp, the beam search, commit, the queue of committed characters) |
+| `src/client/worker/decoders/digimode/cw/fist.ts` | `core/src/cw/cw_decoder.cpp` (FistDecoder: lock, events, soft merges, the check after a pause, idle flush) |
+| `src/client/worker/decoders/digimode/cw/skimmer.ts` | `core/src/cw/cw_rx.cpp` (CwReceiver::Impl: window spectrum, carrier search, per-signal mixer and filters, detector, fistKeyer) |
+| `src/client/worker/decoders/digimode/cw/index.ts` | `core/src/cw/cw_rx.cpp` (CwReceiver: feed, the report of every signal, cwBands), `core/include/dect2/cw/cw_tel.h` (cwSummary) |
+| `test/digimode/cw/fixtures.js` | `core/src/cw/cw_gen.cpp` (cwKeying, CwGenerator, cwTestSignals), `tests/cw/test_cw_fistrx.cpp` (decode, norm, editDistance) |
+| `test/digimode/cw/fist.spec.js` | `tests/cw/test_cw_morse.cpp`, `tests/cw/test_cw_fistrx.cpp` (the decoder alone) |
+| `test/digimode/cw/rx.spec.js` | `tests/cw/test_cw_rx.cpp`, `tests/cw/test_cw_fistrx.cpp` (the receiver) |

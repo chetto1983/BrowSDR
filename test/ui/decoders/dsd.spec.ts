@@ -5,6 +5,7 @@ import { ReceiverView } from '../helpers/receiver-view';
 import { makeDefaultVfo } from '@/app/core/constants';
 import type { DSDStatus, DpmrStatus, YsfStatus } from '@/worker/decoders/dsd/types';
 import type { P25p2Slot, P25p2Status } from '@/worker/decoders/dsd/p25p2/types';
+import type { DmrInfo } from '@/worker/decoders/dsd/dmr/types';
 
 let wrapper: VueWrapper;
 afterEach(() => wrapper?.unmount());
@@ -200,5 +201,56 @@ describe('DSD status panel', () => {
 		});
 		expect(scrambled.get('.dsd-p25p2-system').text()).toBe('Scrambled, seed not found yet · NAC: 0x293');
 		expect(scrambled.findAll('.dsd-p25p2-slot').map((s) => s.text())).toEqual(['S2: ? → TG ? · joined late · encryption unknown']);
+	});
+
+	it('shows the DMR link layer: late entry, talker alias, trunking, control block, text, position and the event list', async () => {
+		const at = new Date(2026, 10, 17, 21, 30, 5).getTime();
+		const dmr: DmrInfo = {
+			alias: { text: 'Truck 12', slot: 0, src: 250997 },
+			system: { kind: 'Tier III', text: 'Tiny network 6 site 3 (AB)', at },
+			control: { text: 'TV_GRANT talkgroup voice: TG 2149 ← 2145007 on channel 12 slot 2', slot: 1, at },
+			message: { text: 'Meet at gate 3', format: 'Text message (TMS)', src: 7001, dst: 7002, group: false, slot: 0, crcOk: false, at },
+			position: { lat: 54.68719, lon: 25.27971, source: 'GPS LC', src: 250997, slot: 0, speedKmh: 22, at },
+			activity: 'activity: slot 1 group voice, slot 2 none',
+			events: [
+				{ kind: 'position', slot: 0, text: '250997: 54.68719, 25.27971 (GPS LC)', at },
+				{ kind: 'alias', slot: 0, text: 'Talker alias "Truck 12" (250997)', at: at - 1000 },
+			],
+		};
+		const dmrCall = {
+			colourCode: 1,
+			terminator: false,
+			group: true,
+			featureSet: 0,
+			emergency: false,
+			privacy: false,
+			target: 262,
+			source: 250997,
+			lateEntry: true,
+			slot: 0,
+			at,
+		};
+		const panel = await panelWith({ mode: 'dmr', synced: true, syncName: 'DMR_BS_VOICE', colorCode: 1, dmrCall, dmr });
+		const text = panel.text();
+		expect(text).toContain('TS1 · TG 262 ← SRC 250997 · late entry');
+		expect(panel.get('.dsd-dmr-alias').text()).toBe('Alias: Truck 12 TS1 · 250997');
+		expect(panel.get('.dsd-dmr-system').text()).toBe('Tier III: Tiny network 6 site 3 (AB)');
+		expect(panel.get('.dsd-dmr-control').text()).toBe('CSBK TS2: TV_GRANT talkgroup voice: TG 2149 ← 2145007 on channel 12 slot 2');
+		expect(panel.get('.dsd-dmr-message').text()).toBe('Text 7001 → 7002: Meet at gate 3 · CRC wrong');
+		expect(panel.get('.dsd-dmr-position').text()).toBe('Position 250997: 54.68719, 25.27971 · GPS LC · 22 km/h');
+		expect(text).toContain('CACH activity: slot 1 group voice, slot 2 none');
+		const events = panel.get('.dsd-dmr-events');
+		expect(events.get('summary').text()).toBe('Events (2): 250997: 54.68719, 25.27971 (GPS LC)');
+		expect(events.findAll('div').map((d) => d.text())).toEqual([
+			'21:30:05 TS1 250997: 54.68719, 25.27971 (GPS LC)',
+			'21:30:04 TS1 Talker alias "Truck 12" (250997)',
+		]);
+		wrapper.unmount();
+		// after the carrier drops the summary stays; another protocol hides it
+		const lost = await panelWith({ mode: 'unknown', synced: false, dmr });
+		expect(lost.get('.dsd-dmr-alias').text()).toContain('Truck 12');
+		wrapper.unmount();
+		const other = await panelWith({ mode: 'p25', synced: true, dmr });
+		expect(other.find('.dsd-dmr-alias').exists()).toBe(false);
 	});
 });

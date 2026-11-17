@@ -249,8 +249,21 @@
 				<div v-if="receiver.dsdStatus[i]?.slot1Burst" style="color:#aaa;">SLOT1: {{ receiver.dsdStatus[i].slot1Burst }}</div>
 				<div v-if="receiver.dsdStatus[i]?.colorCode != null" style="color:#aaa;">CC: {{ receiver.dsdStatus[i].colorCode }}</div>
 				<div v-if="receiver.dsdStatus[i]?.dmrCall" style="color:#ddd;">
-					TS{{ receiver.dsdStatus[i].dmrCall.slot + 1 }} · {{ receiver.dsdStatus[i].dmrCall.group ? 'TG' : 'ID' }} {{ receiver.dsdStatus[i].dmrCall.target }} ← SRC {{ receiver.dsdStatus[i].dmrCall.source }}<span v-if="receiver.dsdStatus[i].dmrCall.privacy" style="color:#ff8844;"> · ENCRYPTED</span><span v-if="receiver.dsdStatus[i].dmrCall.emergency" style="color:#ff4444;"> · EMERGENCY</span><span v-if="receiver.dsdStatus[i].dmrCall.terminator" style="opacity:0.6;"> · ended</span>
+					TS{{ receiver.dsdStatus[i].dmrCall.slot + 1 }} · {{ receiver.dsdStatus[i].dmrCall.group ? 'TG' : 'ID' }} {{ receiver.dsdStatus[i].dmrCall.target }} ← SRC {{ receiver.dsdStatus[i].dmrCall.source }}<span v-if="receiver.dsdStatus[i].dmrCall.privacy" style="color:#ff8844;"> · ENCRYPTED</span><span v-if="receiver.dsdStatus[i].dmrCall.emergency" style="color:#ff4444;"> · EMERGENCY</span><span v-if="receiver.dsdStatus[i].dmrCall.lateEntry" style="opacity:0.6;"> · late entry</span><span v-if="receiver.dsdStatus[i].dmrCall.terminator" style="opacity:0.6;"> · ended</span>
 				</div>
+			</template>
+			<!-- DMR link layer (dmr/): talker alias, trunking, control block, text, position and recent events; kept after the carrier drops -->
+			<template v-for="dmr in (receiver.dsdStatus[i]?.dmr && ['dmr', 'unknown'].includes(receiver.dsdStatus[i].mode) ? [receiver.dsdStatus[i].dmr] : [])" :key="'dmr'">
+				<div v-if="dmr.alias" class="dsd-dmr-alias" style="color:#ddd;">Alias: {{ dmr.alias.text }} <span style="opacity:0.6;">TS{{ dmr.alias.slot + 1 }}<template v-if="dmr.alias.src"> · {{ dmr.alias.src }}</template></span></div>
+				<div v-if="dmr.system" class="dsd-dmr-system" style="color:#aaa;">{{ dmr.system.kind }}: {{ dmr.system.text }}</div>
+				<div v-if="dmr.control" class="dsd-dmr-control" style="color:#aaa;">CSBK TS{{ dmr.control.slot + 1 }}: {{ dmr.control.text }}</div>
+				<div v-if="dmr.message" class="dsd-dmr-message" style="color:#aaa;">Text {{ dmr.message.src }} → {{ dmr.message.group ? 'TG ' : '' }}{{ dmr.message.dst }}: {{ dmr.message.text }}<span v-if="!dmr.message.crcOk" style="color:#ff8844;"> · CRC wrong</span></div>
+				<div v-if="dmr.position" class="dsd-dmr-position" style="color:#aaa;">Position {{ dmr.position.src || '?' }}: {{ dmr.position.lat.toFixed(5) }}, {{ dmr.position.lon.toFixed(5) }} · {{ dmr.position.source }}<template v-if="dmr.position.speedKmh != null"> · {{ dmr.position.speedKmh.toFixed(0) }} km/h</template></div>
+				<div v-if="dmr.activity" style="color:#888;font-size:10px;">CACH {{ dmr.activity }}</div>
+				<details v-if="dmr.events.length" class="dsd-dmr-events" style="color:#aaa;">
+					<summary style="cursor:pointer;">Events ({{ dmr.events.length }}): {{ dmr.events[0].text }}</summary>
+					<div v-for="event in dmr.events" :key="event.at + event.text" style="font-size:10px;">{{ new Date(event.at).toTimeString().slice(0, 8) }} TS{{ event.slot + 1 }} {{ event.text }}</div>
+				</details>
 			</template>
 			<!-- P25 details -->
 			<template v-if="receiver.dsdStatus[i]?.mode === 'p25'">

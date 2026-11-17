@@ -111,6 +111,8 @@ export class ClockRecovery {
 
 	/** Output buffer for extracted symbols */
 	symbolBuf: Float32Array;
+	/** Each symbol's time in input samples since the reset, for protocols that re-sample their frames (NXDN96, P25). */
+	timeBuf = new Float64Array(4096);
 	symbolCount: number;
 
 	constructor(sampleRate: number = DSD_IF_RATE, symbolRate: number = DSD_SYMBOL_RATE) {
@@ -186,7 +188,11 @@ export class ClockRecovery {
 				const newBuf = new Float32Array(this.symbolBuf.length * 2);
 				newBuf.set(this.symbolBuf);
 				this.symbolBuf = newBuf;
+				const newTimes = new Float64Array(newBuf.length);
+				newTimes.set(this.timeBuf);
+				this.timeBuf = newTimes;
 			}
+			this.timeBuf[this.symbolCount] = this.previousSymbolTime;
 			this.symbolBuf[this.symbolCount++] = curSample;
 			this.previousInput = sample;
 			this.sampleIndex++;

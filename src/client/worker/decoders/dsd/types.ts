@@ -2,6 +2,7 @@ import type { M17Status } from './m17/types';
 import type { P25p2Status } from './p25p2/types';
 import type { DmrInfo } from './dmr/types';
 import type { DstarStatus } from './dstar/types';
+import type { NxdnStatus } from './nxdn/types';
 /*
  * DSD (Digital Speech Decoder) status and sync types.
  * Ported from SDR++ Brown ch_extravhf_decoder.
@@ -80,6 +81,8 @@ export interface DSDStatus {
 	// ── NXDN ──
 	/** NXDN type description */
 	nxdnType?: string;
+	/** NXDN48 / NXDN96 call, site and events (nxdn/). */
+	nxdn?: NxdnStatus;
 
 	// ── Yaesu System Fusion ──
 	ysf?: YsfStatus;
@@ -183,6 +186,9 @@ export interface DsdChain {
 	dibits: Uint8Array;
 	/** The symbol value (Hz) of each dibit. */
 	symbols: Float32Array;
+	/** Each dibit's time in samples of the RRC filter output, kept in samples (48 kHz, its own mask). */
+	times: Float64Array;
+	samples: Float32Array;
 	mask: number;
 }
 
@@ -233,6 +239,10 @@ export const enum SyncType {
 	DPMR_FS2 = 31,
 	DPMR_FS3 = 32,
 	DPMR_FS4 = 33,
+	/** NXDN48 (found by its own 2400 symbols/s receiver, nxdn/) and NXDN96 frame syncs with a LICH other than DSD's. */
+	NXDN48 = 50,
+	NXDN96 = 51,
+	INV_NXDN96 = 52,
 }
 
 export interface SyncPattern {

@@ -14,9 +14,10 @@ import { DSD_IF_RATE, DSD_SYMBOL_RATE, RRC_ALPHA, RRC_NUM_TAPS } from './constan
 import { SyncType } from './types';
 import { syncTypeToMode, syncTypeLabel, isVoiceSync, matchSync, lastMatchErrors } from './sync';
 import { DmrFrames } from './dsd-dmr';
-import { processNXDNVoice, NXDN_VOICE_DIBITS } from './dsd-nxdn';
 import { DSTAR_FRAME_DIBITS } from './dsd-dstar';
 import { DstarCalls } from './dstar/call';
+import { NxdnReceiver } from './nxdn/receiver';
+import { NXDN96_READ } from './nxdn/proto';
 import { processP25Frame, P25_NID_DIBITS, P25_LDU_BODY_DIBITS } from './dsd-p25';
 import { readYsfFrame } from './ysf/frame';
 import { YSF_FRAME_DIBITS, YSF_SYNC_DIBITS } from './ysf/proto';
@@ -52,9 +53,15 @@ export class DSDDecoder {
 	private dibitBuf = new Uint8Array(BUF_MASK + 1);
 	/** Symbol values beside dibitBuf, for protocols that fit their own levels (Fusion, D-STAR, NXDN96, P25). */
 	private symbolBuf = new Float32Array(BUF_MASK + 1);
-	private chain: DsdChain = { dibits: this.dibitBuf, symbols: this.symbolBuf, mask: BUF_MASK };
+	/** The RRC filter output and each dibit's time in it, for frames that are re-sampled (NXDN96, P25). */
+	private timeBuf = new Float64Array(BUF_MASK + 1);
+	private rrcBuf = new Float32Array(BUF_MASK + 1);
+	private rrcN = 0;
+	private chain: DsdChain = { dibits: this.dibitBuf, symbols: this.symbolBuf, times: this.timeBuf, samples: this.rrcBuf, mask: BUF_MASK };
 	/** D-STAR, NXDN and P25 Phase 1 frames (ported from OnAir, see dstar/, nxdn/, p25/). */
 	private dstar = new DstarCalls(this.sink('dstar', decodeAmbe));
+	/** NXDN48 runs beside the chain at 2400 symbols/s, like dPMR; NXDN96 frames come from the chain. */
+	private nxdn = new NxdnReceiver(this.sink('nxdn', decodeAmbe));
 	private dibitBufPos = 0;
 	private currentSync: SyncType = SyncType.NONE;
 	private synced = false;
@@ -167,19 +174,21 @@ export class DSDDecoder {
 		this.samplesSinceSync += fmAudio.length;
 		if (this.status.synced && this.samplesSinceSync > DSD_IF_RATE) this.expireSync();
 
-		// dPMR (2400 symbols/s) has its own symbol filter and sync search; it rests while another protocol holds the lock
+		// dPMR and NXDN48 (2400 symbols/s) have their own symbol filters and sync searches; they rest while another protocol holds the lock
 		if (!this.acceptsDpmr()) this.dpmrResting = true;
 		else {
 			if (this.dpmrResting) this.dpmr.reset();
 			this.dpmrResting = false;
 			this.dpmr.process(fmAudio);
 		}
+		this.nxdn.process(fmAudio, this.acceptsDpmr());
 		if (this.flushDpmrVoice()) this.onStatus({ ...this.status });
 		if (this.p25p2.process(iq, this.lockedMode)) this.onStatus({ ...this.status });
 
 		// Step 1: RRC filter
 		const filtered = new Float32Array(fmAudio.length);
 		this.rrcFilter.process(fmAudio, filtered);
+		for (const v of filtered) this.rrcBuf[this.rrcN++ & BUF_MASK] = v;
 
 		// Step 2: Clock recovery (extract symbols at 4800 sym/s)
 		this.clockRecovery.process(filtered);
@@ -193,6 +202,7 @@ export class DSDDecoder {
 		// Step 4: Feed dibits to frame sync + decoder
 		for (let i = 0; i < numSymbols; i++) {
 			const symbol = this.clockRecovery.symbolBuf[i] * this.hzPerUnit;
+			this.timeBuf[this.dibitBufPos & BUF_MASK] = this.clockRecovery.timeBuf[i];
 			this.m17.feed(symbol);
 			if (!this.m17.locked) this.feedDibit(dibits[i], symbol);
 		}
@@ -236,6 +246,7 @@ export class DSDDecoder {
 			mbeDecoding: false,
 			dmr: this.status.dmr,
 			dstar: this.status.dstar,
+			nxdn: this.status.nxdn,
 		};
 		this.status.syncCount = this._dbgSyncCount;
 		this.status.lastSyncName = this.lastSyncName;
@@ -297,8 +308,9 @@ export class DSDDecoder {
 		if (syncType === SyncType.NONE) return;
 		const mode = syncTypeToMode(syncType);
 		if (!this.validateProtocolSync(mode, syncType)) return;
-		// A Fusion sync is announced once the FICH that follows it checks (processYSFFrame).
-		if (mode !== 'ysf') this.announceSync(mode, syncType);
+		// A Fusion sync is announced once the FICH that follows it checks (processYSFFrame), an NXDN96 sync with a LICH
+		// other than DSD's once a channel of its frame checks (nxdn/).
+		if (mode !== 'ysf' && syncType !== SyncType.NXDN96 && syncType !== SyncType.INV_NXDN96) this.announceSync(mode, syncType);
 
 		// Reset dibit position for frame processing
 		this.frameDataRemaining = this.getFrameLength(syncType);
@@ -402,7 +414,7 @@ export class DSDDecoder {
 				more = this.dstar.frame(this.chain, syncType, this.frameStart, this.frameDataRead);
 				break;
 			case 'nxdn':
-				this.processNXDNFrame(syncType, startPos);
+				this.nxdn.frame96(this.chain, this.frameStart, syncType);
 				break;
 			case 'ysf':
 				this.processYSFFrame(syncType);
@@ -444,15 +456,6 @@ export class DSDDecoder {
 			}
 		}
 		this.status.mbeErrors = errBar;
-	}
-
-	private processNXDNFrame(syncType: SyncType, startPos: number): void {
-		if (!isVoiceSync(syncType)) {
-			this.status.mbeDecoding = false;
-			return;
-		}
-
-		this.decodeVoice(processNXDNVoice(this.dibitBuf, startPos, this.status), decodeAmbe);
 	}
 
 	/** A Fusion frame: levels fitted from its sync, FICH checked, then callsigns, data and voice (ysf/). */
@@ -575,7 +578,7 @@ export class DSDDecoder {
 					? DSTAR_FRAME_DIBITS // 72 voice + 24 slow-data GMSK symbols
 					: 660; // Header: 660 one-bit GMSK symbols
 			case 'nxdn':
-				return NXDN_VOICE_DIBITS; // 144 dibits
+				return NXDN96_READ; // SACCH / CAC and the two halves after the FSW and LICH
 			case 'ysf':
 				return YSF_FRAME_DIBITS - YSF_SYNC_DIBITS; // FICH 100 + payload 360 dibits
 			default:
@@ -589,6 +592,7 @@ export class DSDDecoder {
 	reset(): void {
 		this.rrcFilter.reset();
 		this.clockRecovery.reset();
+		this.rrcN = 0;
 		this.slicer.reset();
 		this.dibitHistory = '';
 		this.dibitBufPos = 0;
@@ -608,6 +612,7 @@ export class DSDDecoder {
 		this.dpmrVoice.length = 0;
 		this.p25p2.reset();
 		this.dstar.reset();
+		this.nxdn.reset();
 		this.status = {
 			mode: 'unknown',
 			synced: false,

@@ -9,6 +9,7 @@ import { SyncType } from './types';
 import type { DSDMode, SyncPattern } from './types';
 import { SYNC_WORDS } from './constants';
 import { syncPolarity } from './ysf/proto';
+import { nxdnSyncAt } from './nxdn/proto';
 
 /** Invert a dibit (0 ↔ 2, 1 ↔ 3). */
 export function invertDibit(d: number): number {
@@ -39,6 +40,9 @@ const syncLabels: Readonly<Partial<Record<SyncType, string>>> = {
 	[SyncType.INV_NXDN_BS_DATA]: '-NXDN_BS_DATA',
 	[SyncType.NXDN_BS_VOICE]: 'NXDN_BS_VOICE',
 	[SyncType.INV_NXDN_BS_VOICE]: '-NXDN_BS_VOICE',
+	[SyncType.NXDN48]: 'NXDN48',
+	[SyncType.NXDN96]: 'NXDN96',
+	[SyncType.INV_NXDN96]: '-NXDN96',
 	[SyncType.YSF]: 'YSF',
 	[SyncType.INV_YSF]: '-YSF',
 	[SyncType.DPMR_FS1]: 'DPMR_FS1',
@@ -76,6 +80,9 @@ const syncModes: Readonly<Partial<Record<SyncType, DSDMode>>> = {
 	[SyncType.INV_NXDN_BS_DATA]: 'nxdn',
 	[SyncType.NXDN_BS_VOICE]: 'nxdn',
 	[SyncType.INV_NXDN_BS_VOICE]: 'nxdn',
+	[SyncType.NXDN48]: 'nxdn',
+	[SyncType.NXDN96]: 'nxdn',
+	[SyncType.INV_NXDN96]: 'nxdn',
 	[SyncType.YSF]: 'ysf',
 	[SyncType.INV_YSF]: 'ysf',
 	[SyncType.DPMR_FS1]: 'dpmr',
@@ -206,6 +213,10 @@ export function matchSync(dibitHistory: string, lastMode: DSDMode): SyncType {
 	// Last pass: 18-dibit syncs (NXDN) — only if we're not already locked to DMR/P25/D-STAR/Fusion.
 	// When the decoder is idle or already in NXDN mode, allow NXDN detection.
 	// This prevents false NXDN matches on DMR idle channels.
-	if (lastMode === 'unknown' || lastMode === 'nxdn') return matchLength(dibitHistory, 18, () => SYNC_TOLERANCE_18);
-	return SyncType.NONE;
+	if (lastMode !== 'unknown' && lastMode !== 'nxdn') return SyncType.NONE;
+	const nxdn = matchLength(dibitHistory, 18, () => SYNC_TOLERANCE_18);
+	if (nxdn !== SyncType.NONE) return nxdn;
+	// Any other LICH that the NXDN decoder reads (nxdn/proto.ts), the frame announced once a channel checks.
+	const polarity = nxdnSyncAt(dibitHistory);
+	return polarity > 0 ? SyncType.NXDN96 : polarity < 0 ? SyncType.INV_NXDN96 : SyncType.NONE;
 }

@@ -14,8 +14,9 @@ vi.mock('@/worker/decoders/mbelib-init', () => ({
 
 import { DSDStream } from '@/worker/decoders/dsd/dsd-stream';
 import { ambeFrame } from '@/worker/decoders/dsd/ambe';
-import { NXDN_PR, SYNC_WORDS } from '@/worker/decoders/dsd/constants';
-import { ambeEncode, channel, fmIq, randomBits } from './voice-fixtures.js';
+import { SYNC_WORDS } from '@/worker/decoders/dsd/constants';
+import { channel, fmIq, randomBits } from './voice-fixtures.js';
+import { nxdnSignal, tx } from './nxdn/fixtures.js';
 import { c4fmFrequency } from './ysf/fixtures.js';
 
 function transmission(sync, spacing, count) {
@@ -53,24 +54,21 @@ describe('shared DSD clock recovery with P25 and NXDN syncs', () => {
 	});
 
 	it('delivers steady NXDN AMBE frames exactly through the DSD stream at a 1 kHz tuning error', async () => {
+		// Whole NXDN96 frames (FSW, the LICH of DSD's NXDN_MS_VOICE sync word, SACCH and four voice frames, PN9 on the
+		// symbols' signs) as nxdn/ decodes them; the voice frames follow the SACCH.
 		codec.frames.length = 0;
-		const channelBits = ambeEncode(randomBits(19, 49));
-		const bits = transmission(SYNC_WORDS.NXDN_MS_VOICE, 192, 18);
-		for (let frame = 0; frame < 18; frame++)
-			for (let voice = 0; voice < 4; voice++)
-				for (let i = 0; i < 36; i++) {
-					const bitPos = 2 * (40 + frame * 192 + 18 + voice * 36 + i);
-					const pr = NXDN_PR[voice * 36 + i];
-					bits[bitPos] = channelBits[2 * i] ^ pr;
-					bits[bitPos + 1] = channelBits[2 * i + 1] ^ pr;
-				}
-		const statuses = await receive(bits, 1000);
+		const t = tx({ baud: 4800, durSec: 18 * 0.04, noHeader: true, noRelease: true });
+		const { iq, voice } = nxdnSignal([t], { cnrDb: 30, cfoHz: 1000, validVoice: true, lich: { rfct: 2, fct: 2, opt: 3, dir: 0 } });
+		const statuses = [];
+		const stream = new DSDStream((status) => statuses.push(status));
+		await stream.decoder.mbeInitPromise;
+		for (let i = 0; i < iq.length; i += 1920) stream.process(iq.subarray(i, i + 1920));
 		expect(statuses.filter((status) => status.mode === 'nxdn' && status.nxdnType === 'Voice').length).toBeGreaterThanOrEqual(14);
 		expect(codec.frames.length).toBeGreaterThanOrEqual(14 * 4);
-		const expected = Array.from(ambeFrame(channelBits));
-		const errors = codec.frames.map((frame) => frame.reduce((n, bit, i) => n + (bit !== expected[i]), 0));
-		// The first two acquired frames train the slicer; every subsequent frame must match the transmitted channel bits.
-		expect(Math.max(...errors.slice(0, 8))).toBeLessThanOrEqual(3);
-		expect(Math.max(...errors.slice(8))).toBe(0);
+		// Every frame that reached the codec is one that was sent, in order (the very last one ends where the carrier stops).
+		const sent = voice.map((bits) => Array.from(ambeFrame(bits)).join(''));
+		const at = codec.frames.slice(0, -1).map((frame) => sent.indexOf(frame.join('')));
+		expect(Math.min(...at)).toBeGreaterThanOrEqual(0);
+		expect(at.every((k, i) => i === 0 || k === at[i - 1] + 1)).toBe(true);
 	});
 });

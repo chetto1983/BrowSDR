@@ -303,10 +303,18 @@
 				</details>
 			</template>
 			<div v-if="receiver.dsdStatus[i]?.mode === 'dstar' && !receiver.dsdStatus[i]?.dstar && receiver.dsdStatus[i]?.callsign" style="color:#aaa;">Callsign: {{ receiver.dsdStatus[i].callsign }}</div>
-			<!-- NXDN details -->
-			<template v-if="receiver.dsdStatus[i]?.mode === 'nxdn'">
-				<div v-if="receiver.dsdStatus[i]?.nxdnType" style="color:#aaa;">Type: {{ receiver.dsdStatus[i].nxdnType }}</div>
+			<!-- NXDN (nxdn/): the NXDN48 / NXDN96 transmission, the site and recent events; kept after the carrier drops -->
+			<template v-for="nx in (receiver.dsdStatus[i]?.nxdn && ['nxdn', 'unknown'].includes(receiver.dsdStatus[i].mode) ? [receiver.dsdStatus[i].nxdn] : [])" :key="'nxdn'">
+				<div v-if="nx.kind !== 'control'" class="dsd-nxdn-call" style="color:#ddd;">{{ nx.src < 0 ? '?' : nx.src }} → {{ nx.callType === 'group' ? 'TG ' : '' }}{{ nx.dst < 0 ? '?' : nx.dst }} · {{ nx.kind === 'voice' ? nx.callType : nx.kind === 'data' ? 'short data' : 'status' }}<span v-if="nx.cipher" style="color:#ff8844;"> · ENCRYPTED ({{ ['', 'scrambler', 'DES', 'AES'][nx.cipher] }}, key {{ nx.keyId }})</span><span v-if="nx.lateEntry" style="opacity:0.6;"> · joined late</span><span v-if="!nx.active" style="opacity:0.6;"> · {{ nx.endSeen ? 'ended' : 'lost' }}</span></div>
+				<div v-if="nx.text" class="dsd-nxdn-text" style="color:#aaa;">{{ nx.kind === 'status' ? 'Status' : 'Data' }}: {{ nx.text }}</div>
+				<div class="dsd-nxdn-frame" style="color:#aaa;">NXDN{{ nx.baud === 2400 ? '48' : '96' }} · RAN {{ nx.ran >= 0 ? nx.ran : '?' }}<template v-if="nx.frame"> · {{ nx.frame }}</template></div>
+				<div v-if="nx.site" class="dsd-nxdn-site" style="color:#aaa;">Site: location 0x{{ nx.site.location.toString(16).toUpperCase().padStart(6, '0') }} · system {{ nx.site.system }} · site {{ nx.site.site }} · RAN {{ nx.site.ran }}</div>
+				<details v-if="nx.events.length" class="dsd-nxdn-events" style="color:#aaa;">
+					<summary style="cursor:pointer;">Events ({{ nx.events.length }}): {{ nx.events[0].text }}</summary>
+					<div v-for="event in nx.events" :key="event.at + event.text" style="font-size:10px;">{{ new Date(event.at).toTimeString().slice(0, 8) }} {{ event.text }}</div>
+				</details>
 			</template>
+			<div v-if="receiver.dsdStatus[i]?.mode === 'nxdn' && !receiver.dsdStatus[i]?.nxdn && receiver.dsdStatus[i]?.nxdnType" style="color:#aaa;">Type: {{ receiver.dsdStatus[i].nxdnType }}</div>
 			<!-- Yaesu System Fusion details -->
 			<template v-if="receiver.dsdStatus[i]?.mode === 'ysf' && receiver.dsdStatus[i]?.ysf">
 				<div class="dsd-ysf-call" style="color:#ddd;">

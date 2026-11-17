@@ -7,6 +7,7 @@ import type { DSDStatus, DpmrStatus, YsfStatus } from '@/worker/decoders/dsd/typ
 import type { P25p2Slot, P25p2Status } from '@/worker/decoders/dsd/p25p2/types';
 import type { DmrInfo } from '@/worker/decoders/dsd/dmr/types';
 import type { DstarStatus } from '@/worker/decoders/dsd/dstar/types';
+import type { NxdnStatus } from '@/worker/decoders/dsd/nxdn/types';
 
 let wrapper: VueWrapper;
 afterEach(() => wrapper?.unmount());
@@ -335,5 +336,74 @@ describe('DSD status panel', () => {
 		expect(late.get('.dsd-dstar-call').text()).toBe('? → ? · lost');
 		expect(late.get('.dsd-dstar-flags').text()).toBe('header not received · joined late');
 		expect(late.find('.dsd-dstar-events').exists()).toBe(false);
+	});
+
+	it('shows NXDN: the call with its rate, RAN and frame type, encryption, a status message, the site and the events', async () => {
+		const at = new Date(2026, 10, 17, 21, 30, 5).getTime();
+		const nxdn: NxdnStatus = {
+			kind: 'voice',
+			active: true,
+			src: 1001,
+			dst: 200,
+			callType: 'group',
+			cipher: 3,
+			keyId: 5,
+			ran: 1,
+			baud: 2400,
+			lateEntry: true,
+			endSeen: false,
+			voiceFrames: 40,
+			durSec: 0.8,
+			text: '',
+			frame: 'RTCH, SACCH superframe, voice + voice, outbound',
+			site: { location: 0x0a4c2b, system: 659, site: 43, service: 0x3c00, channel: 0x0101, ran: 5 },
+			blocksOk: 10,
+			blocksBad: 0,
+			inverted: false,
+			events: [
+				{ at, text: 'VCALL group 1001 → 200, encrypted (cipher 3, key 5) (joined late)' },
+				{ at: at - 1000, text: 'SITE_INFO location 0x0A4C2B (system 659, site 43), RAN 5' },
+			],
+		};
+		const panel = await panelWith({ mode: 'nxdn', synced: true, syncName: 'NXDN48', syncCount: 5, nxdn });
+		expect(panel.get('.dsd-nxdn-call').text()).toBe('1001 → TG 200 · group · ENCRYPTED (AES, key 5) · joined late');
+		expect(panel.get('.dsd-nxdn-frame').text()).toBe('NXDN48 · RAN 1 · RTCH, SACCH superframe, voice + voice, outbound');
+		expect(panel.get('.dsd-nxdn-site').text()).toBe('Site: location 0x0A4C2B · system 659 · site 43 · RAN 5');
+		const events = panel.get('.dsd-nxdn-events');
+		expect(events.get('summary').text()).toBe('Events (2): VCALL group 1001 → 200, encrypted (cipher 3, key 5) (joined late)');
+		expect(events.findAll('div').map((d) => d.text())).toEqual([
+			'21:30:05 VCALL group 1001 → 200, encrypted (cipher 3, key 5) (joined late)',
+			'21:30:04 SITE_INFO location 0x0A4C2B (system 659, site 43), RAN 5',
+		]);
+		wrapper.unmount();
+		const status = await panelWith({
+			mode: 'unknown',
+			synced: false,
+			nxdn: {
+				...nxdn,
+				kind: 'status',
+				active: false,
+				endSeen: true,
+				src: 1002,
+				dst: 1001,
+				callType: 'individual',
+				cipher: 0,
+				lateEntry: false,
+				text: 'status 17',
+				baud: 4800,
+				site: undefined,
+			},
+		});
+		expect(status.get('.dsd-nxdn-call').text()).toBe('1002 → 1001 · status · ended');
+		expect(status.get('.dsd-nxdn-text').text()).toBe('Status: status 17');
+		expect(status.find('.dsd-nxdn-site').exists()).toBe(false);
+		wrapper.unmount();
+		const control = await panelWith({
+			mode: 'nxdn',
+			synced: true,
+			nxdn: { ...nxdn, kind: 'control', frame: 'RCCH, CAC, outbound', baud: 4800, ran: 5 },
+		});
+		expect(control.find('.dsd-nxdn-call').exists()).toBe(false);
+		expect(control.get('.dsd-nxdn-frame').text()).toBe('NXDN96 · RAN 5 · RCCH, CAC, outbound');
 	});
 });

@@ -243,6 +243,14 @@ file). Algorithms and protocol tables follow the OnAir source.
 | `test/decoders/dsd/dpmr/fixtures.js` | `core/src/dpmr/dpmr_gen.cpp` (Builder, dpmrKnownVoice, dpmrTxSymbols, dpmrTestSchedule, DpmrGenerator), `core/include/dect2/dpmr/dpmr_gen.h` |
 | `test/decoders/dsd/dpmr/proto.spec.js` | `tests/dpmr/test_dpmr_proto.cpp` |
 | `test/decoders/dsd/dpmr/stream.spec.js` | `tests/dpmr/test_dpmr_rx.cpp`, `tests/dpmr/test_dpmr_sens.cpp` |
+| `src/client/worker/decoders/dsd/nxdn/types.ts` | `core/include/dect2/nxdn/nxdn_proto.h` (Lich, Msg), `core/include/dect2/nxdn/nxdn_tel.h` (NxdnCall, NxdnSite) |
+| `src/client/worker/decoders/dsd/nxdn/proto.ts` | `rust/onair_nxdn/src/lich.rs` (PN9, LICH), `crc.rs`, `chan.rs` (SACCH, FACCH1, CAC: convolutional code, Viterbi, puncturing, interleaving), `msg.rs` (layer 3 messages, names), `core/src/nxdn/nxdn_proto.cpp` (frame sync word), `core/include/dect2/nxdn/nxdn_proto.h` (frame geometry) |
+| `src/client/worker/decoders/dsd/nxdn/calls.ts` | `core/src/nxdn/nxdn_rx.cpp` (frame decoding from the LICH on, SACCH superframe, calls, cipher trust, status, short data, site, voice) |
+| `src/client/worker/decoders/dsd/nxdn/receiver.ts` | `core/src/nxdn/nxdn_rx.cpp` (NXDN48 chain: symbol filter, frame sync search and tracking, frame levels) |
+| `src/client/worker/decoders/dsd/frame-timing.ts` | `core/src/p25/p25_rx.cpp` (frame timing search and level refit), `core/src/nxdn/nxdn_rx.cpp` (level refit) |
+| `test/decoders/dsd/nxdn/fixtures.js` | `core/src/nxdn/nxdn_gen.cpp` (frame builder, known voice, transmissions, test schedule, raised cosine 4FSK) |
+| `test/decoders/dsd/nxdn/proto.spec.js` | `tests/nxdn/test_nxdn_proto.cpp`, `rust/onair_nxdn/src/tests.rs` |
+| `test/decoders/dsd/nxdn/stream.spec.js` | `tests/nxdn/test_nxdn_rx.cpp`, `tests/nxdn/test_nxdn_sens.cpp` |
 | `src/client/worker/decoders/dsd/p25p2/types.ts` | `core/include/dect2/p25p2/p25p2_tel.h` (P25p2Call, P25p2Telemetry), `core/include/dect2/p25/p25_tel.h` (P25Site, P25IdenRow), `core/src/p25p2/p25p2_rx.cpp` (Ess) |
 | `src/client/worker/decoders/dsd/p25p2/rs.ts` | `rust/onair_p25/src/gf.rs`, `rust/onair_p25/src/rs.rs` (GF(64), Reed-Solomon encoder and decoder), `core/src/p25p2/p25p2_proto.cpp` (rs63Decode with erasures, crc12) |
 | `src/client/worker/decoders/dsd/p25p2/demod.ts` | `core/src/p25p2/p25p2_rx.cpp` (carrier search and AFC, spectrum look, matched filter, parallel differential demodulators, sync search, symbol clock, ISCH framing) |

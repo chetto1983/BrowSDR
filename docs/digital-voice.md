@@ -7,22 +7,28 @@ AMBE+2 and IMBE); M17 voice uses Codec2 3200 or 1600 in separate WebAssembly.
 The VFO panel shows the protocol, the voice frame error bar and what each
 protocol carries:
 
-| Protocol | Shown                                                                                                                                      | VFO bandwidth     |
-| -------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ----------------- |
-| DMR      | Colour code, slot, burst types, talkgroup or unit call, privacy flag                                                                       | 12.5 kHz          |
-| P25      | NAC, data unit, source, talkgroup, emergency, encryption algorithm                                                                         | 12.5 kHz          |
-| P25 Ph2  | Both time slots: source, talkgroup or unit, call state, emergency, encryption algorithm; WACN, system ID and NAC; last grant and site      | 12.5 kHz          |
-| D-STAR   | Callsign from the header                                                                                                                   | 6.25–12.5 kHz     |
-| NXDN     | Frame type                                                                                                                                 | 12.5 kHz (NXDN96) |
-| YSF      | Source, destination, uplink and downlink callsigns, DG-ID, DN / VW / data mode, slow-data text, GPS position. Voice in DN and VW modes.    | 12.5 kHz          |
-| dPMR     | Own and called IDs, call type, colour code, communication mode, emergency flag, status and short messages, packet data, how the call ended | 6.25–8 kHz        |
+| Protocol | Shown                                                                                                                                                                                                                                                                                             | VFO bandwidth     |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| DMR      | Colour code, slot, burst types, talkgroup or unit call (also when joined late), emergency, privacy; talker alias; GPS, LRRP and NMEA positions; short data and Motorola TMS texts; Tier III, Capacity Plus, Connect Plus and Hytera XPT grants and site; CACH slot activity; the 20 latest events | 12.5 kHz          |
+| P25      | NAC, data unit, source, talkgroup, emergency, encryption algorithm                                                                                                                                                                                                                                | 12.5 kHz          |
+| P25 Ph2  | Both time slots: source, talkgroup or unit, call state, emergency, encryption algorithm; WACN, system ID and NAC; last grant and site                                                                                                                                                             | 12.5 kHz          |
+| D-STAR   | Callsign from the header                                                                                                                                                                                                                                                                          | 6.25–12.5 kHz     |
+| NXDN     | Frame type                                                                                                                                                                                                                                                                                        | 12.5 kHz (NXDN96) |
+| YSF      | Source, destination, uplink and downlink callsigns, DG-ID, DN / VW / data mode, slow-data text, GPS position. Voice in DN and VW modes.                                                                                                                                                           | 12.5 kHz          |
+| dPMR     | Own and called IDs, call type, colour code, communication mode, emergency flag, status and short messages, packet data, how the call ended                                                                                                                                                        | 6.25–8 kHz        |
 
 M17 shows source and destination callsigns, CAN, stream type, encryption flag,
 text and CRC-checked packet messages. It plays clear Codec2 voice.
 
-YSF, dPMR, M17 and P25 Phase 2 are ported from
+YSF, dPMR, M17, P25 Phase 2 and the DMR link layer are ported from
 [OnAir](https://github.com/adswill/OnAir) (GPL-3.0-or-later, see
 `third_party/onair`).
+
+## DMR
+
+Every burst of both slots is read, including data on the other slot during a
+voice superframe. The talker alias, positions, texts, trunking lines and the
+event list stay after the carrier drops and are cleared on retune.
 
 ## P25 Phase 2
 
@@ -43,6 +49,13 @@ ID and NAC with "seed found". Channels whose MAC bursts are sent unscrambled
 need no seed.
 
 ## Limits
+
+- DMR data and trunking were tested on OnAir's generator and captured code
+  vectors, not on off-air recordings. Tier III grants show logical channel
+  numbers, not frequencies; Hytera XPT layouts are experimental; MBC absolute
+  channel parameters, reverse channel bursts and headers without a sync word are
+  not decoded. Encrypted DMR voice still plays (as noise); only the flag is shown.
+  DMR positions are listed in the panel, not on the APRS map.
 
 - Tune within about 1.5 kHz of the channel; apart from P25 Phase 2 there is no
   automatic frequency correction.

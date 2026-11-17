@@ -156,10 +156,13 @@ describe('Satellites panel', () => {
 	});
 	it('decodes the ISS APRS digipeater without retuning it', async () => {
 		await openPanel({ vfos: [{ ...makeDefaultVfo(137.9), meteor: true }] });
+		await wrapper.find('select[aria-label="Downlink"]').setValue('2');
 		await wrapper.vm.satelliteTrack(25544, 2);
+		await wrapper.vm.$nextTick();
 		expect(wrapper.vm.vfos[0]).toMatchObject({ freq: 437.825, mode: 'nfm', aprs: true, meteor: false });
 		expect(wrapper.vm.satellites.tracking).toBeNull();
 		expect(wrapper.vm.satellites.notice).toContain('APRS decoding on VFO 1');
+		expect(wrapper.text()).toContain('No VFO Doppler tracking');
 	});
 	it('keeps 145.825 MHz as an explicit ISS APRS alternate', async () => {
 		await openPanel();

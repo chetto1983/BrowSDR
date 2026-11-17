@@ -37,12 +37,12 @@ export function frame(number, satellite = 23, breakPacket = false) {
 	const packets = Array.from({ length: 50 }, () => packet(0x1e));
 	packets[0] = packet(0x65, [0xa8, 0xf9, satellite, number]);
 	packets[1] = ephemeris();
-	packets[2] = packet(0x1c, [2, 100, 0, 115, 0]);
-	packets[3] = packet(0x1b, [1, 200, 0]);
-	packets[4] = packet(0x1d, [7, 0x81]);
+	packets[2] = packet(0x1c, [0x30, 0xb0, 0, 5, 100, 0, 20, 29, 1]);
+	packets[3] = packet(0x1b, [0x10, 0x54, 0x2d, 0x30, 0x16]);
+	packets[4] = packet(0x1d, [0x10]);
 	packets[5] = packet(0x22, [satellite, 0x94, 0x11, 0xd0, 0x07, 0xa0, 0x0f, 0x74, 0x27]);
-	packets[6] = packet(0x1a, [42, 0, ...Array.from('HELLO W', (c) => c.charCodeAt(0))]);
-	packets[7] = packet(0x1a, [42, 0x81, ...Array.from('ORLD   ', (c) => c.charCodeAt(0))]);
+	packets[6] = packet(0x1a, [0x20, 0x13, 0x31, 0x3d, 0, 0, 0, 0, 0]);
+	packets[7] = packet(0x1a, [0x21, 0x14, 0x32, 0x3e, 0, 0, 0, 0, 0]);
 	if (breakPacket) packets[8][3] ^= 0x40;
 	return packets;
 }

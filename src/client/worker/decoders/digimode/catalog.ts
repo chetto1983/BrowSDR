@@ -107,7 +107,7 @@ export const DIGIMODES: readonly DigimodeInfo[] = [
 		label: 'ORBCOMM',
 		family: 'Satellite',
 		description:
-			'ORBCOMM subscriber downlinks at 137.2–137.8 MHz: satellite ID, position, orbital elements, assigned channels and packet messages. One downlink per VFO; add a second ORBCOMM VFO to receive two channels at once. 4800 bit/s SDPSK, Fletcher-checked packets. A clear view of the sky and a 137 MHz antenna help.',
+			'ORBCOMM subscriber downlinks at 137.2–137.8 MHz: satellite ID and checksum-checked packet fragments. Binary payloads appear in hex until their format is verified. One downlink per VFO; add a second ORBCOMM VFO to receive two channels at once. 4800 bit/s SDPSK. A clear view of the sky and a 137 MHz antenna help.',
 		rate: 48000,
 		bandwidth: 16000,
 		presets: [

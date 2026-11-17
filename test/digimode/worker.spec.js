@@ -51,8 +51,8 @@ describe('Digital Modes through the production DSP worker', () => {
 		expect(output.every(validDigimodeMessage)).toBe(true);
 		expect(output.some((message) => message.status?.message.includes('137.2875 MHz'))).toBe(true);
 		const records = output.flatMap((message) => message.records);
-		expect(records.some((record) => record.text.includes('HELLO WORLD'))).toBe(true);
-		expect(records.some((record) => record.text.includes('Position'))).toBe(true);
+		expect(records.some((record) => record.text.includes('Message fragment 1/2'))).toBe(true);
+		expect(records.some((record) => record.text.includes('Downlink info 1/3'))).toBe(true);
 	}, 20_000);
 	it('decodes a channel 70 distress alert 50 kHz from the centre at 240 kS/s', async () => {
 		const { messages, send } = await startWorker();

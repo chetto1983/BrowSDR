@@ -15,33 +15,38 @@ function decode(iq) {
 }
 
 describe('ORBCOMM public downlink', () => {
-	it('requires Fletcher checksum and parses sync, channels and position', () => {
+	it('requires Fletcher checksum and reports fragments without guessing binary payloads', () => {
 		const packets = frame(7, 23);
 		expect(isSync(packets[0])).toBe(true);
 		expect(fletcherOk(packets[2])).toBe(true);
-		expect(parseOrbcommPacket(packets[2]).text).toContain('137.2500');
-		const position = parseOrbcommPacket(packets[1]).position;
-		expect(position.lat).toBeGreaterThan(8);
-		expect(position.lat).toBeLessThan(9);
-		expect(position.altitudeKm).toBeGreaterThan(690);
+		expect(parseOrbcommPacket(packets[2]).text).toContain('Downlink info 1/3');
+		expect(parseOrbcommPacket(packets[1]).text).toContain('Ephemeris');
 		const corrupted = packets[2].slice();
 		corrupted[5] ^= 1;
 		expect(parseOrbcommPacket(corrupted)).toBeNull();
 	});
 
-	it('decodes a pulse-shaped downlink with Doppler and assembles messages', () => {
+	it('decodes a pulse-shaped downlink with Doppler and shows message fragments', () => {
 		const { records, statuses } = decode(signal({ seconds: 3, offsetHz: 1200 }));
 		expect(statuses.some((status) => status.locked && status.message.includes('satellite 23'))).toBe(true);
-		expect(records.some((record) => record.text.includes('Position'))).toBe(true);
-		expect(records.some((record) => record.text.includes('Downlink channels'))).toBe(true);
-		expect(records.some((record) => record.text.includes('HELLO WORLD'))).toBe(true);
+		expect(records.some((record) => record.text.includes('Ephemeris'))).toBe(true);
+		expect(records.some((record) => record.text.includes('Downlink info 1/3'))).toBe(true);
+		expect(records.some((record) => record.text.includes('Message fragment 1/2'))).toBe(true);
 	});
 
 	it('survives negative Doppler, clock error and a corrupt packet', () => {
 		const { records, statuses } = decode(signal({ seconds: 4, offsetHz: -3700, clockPpm: 150, breakPacket: true }));
 		expect(statuses.some((status) => status.locked)).toBe(true);
-		expect(records.some((record) => record.text.includes('HELLO WORLD'))).toBe(true);
-		expect(records.some((record) => record.text.includes('Position'))).toBe(true);
+		expect(records.some((record) => record.text.includes('Message fragment 1/2'))).toBe(true);
+		expect(records.some((record) => record.text.includes('Ephemeris'))).toBe(true);
+	});
+
+	it('parses checksum-valid packets captured from the live pass', () => {
+		const message = Uint8Array.from([0x1a, 0x21, 0x13, 0x31, 0x3d, 0, 0, 0, 0, 0, 0xba, 0x8a]);
+		const downlink = Uint8Array.from([0x1c, 0x32, 0x27, 0x01, 0x14, 0, 0, 0, 0, 0, 0xe5, 0x91]);
+		expect(parseOrbcommPacket(message).text).toBe('Message fragment 2/2 · 13 31 3D 00 00 00 00 00');
+		expect(parseOrbcommPacket(downlink).text).toBe('Downlink info 3/3 · 27 01 14 00 00 00 00 00');
+		expect(parseOrbcommPacket(downlink).fields).not.toContainEqual(['Channels', expect.anything()]);
 	});
 
 	it('does not claim a satellite from receiver noise', () => {

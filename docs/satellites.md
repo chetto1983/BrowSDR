@@ -76,6 +76,6 @@ Not corrected:
   correction: the decoder restarts on every retune, and the ±3.5 kHz shift fits
   its channel. Packets appear in **Tools → APRS**.
 - **Meteor** opens the Meteor panel; its demodulator locks onto the carrier.
-- **ORBCOMM** passes and orbits appear on the satellite map. **Track on VFO** opens its Digital Modes decoder on the chosen example frequency; packet positions and channel assignments appear in the log. Check the spectrum for the active downlink, since Celestrak orbital data does not identify the satellite's current transmit channel.
+- **ORBCOMM** passes and orbits appear on the satellite map. **Track on VFO** opens its Digital Modes decoder on the chosen example frequency; checksum-valid packet fragments appear in hex in the log. Check the spectrum for the active downlink, since Celestrak orbital data does not identify the satellite's current transmit channel.
 - Dongle frequency error: an RTL-SDR off by 1 ppm is 435 Hz off at 435 MHz.
   Correct the dongle first, or retune by ear (the tracker keeps the correction).

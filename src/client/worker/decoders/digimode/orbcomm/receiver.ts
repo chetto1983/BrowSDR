@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Ported from OnAir core/src/orbcomm/orbcomm_rx.cpp; one receiver per BrowSDR VFO.
 import type { DigimodeDecoder, DigimodeSink } from '@/worker/decoders/digimode/types';
-import type { MessageParts } from './types';
 import { FRAME_PACKETS, PACKET_BYTES, fletcherOk, isSync, parseOrbcommPacket } from './protocol';
 import { OrbcommDemodulator } from './demodulator';
 
@@ -19,7 +18,6 @@ export class OrbcommReceiver implements DigimodeDecoder {
 	private readonly demodulator = new OrbcommDemodulator((bit) => this.bit(bit));
 	private readonly search: number[] = [];
 	private readonly packetBits = new Uint8Array(PACKET_BITS);
-	private readonly parts = new Map<string, MessageParts>();
 	private locked = false;
 	private polarity = 0;
 	private packetIndex = 0;
@@ -28,7 +26,6 @@ export class OrbcommReceiver implements DigimodeDecoder {
 	private satellite = -1;
 	private good = 0;
 	private bad = 0;
-	private station?: { lat: number; lon: number };
 
 	constructor(private readonly sink: DigimodeSink) {}
 
@@ -36,14 +33,9 @@ export class OrbcommReceiver implements DigimodeDecoder {
 		this.demodulator.process(iq);
 	}
 
-	setStation(lat: number, lon: number): void {
-		this.station = { lat, lon };
-	}
-
 	reset(): void {
 		this.demodulator.reset();
 		this.search.length = 0;
-		this.parts.clear();
 		this.locked = false;
 		this.polarity = 0;
 		this.packetIndex = 0;
@@ -107,37 +99,6 @@ export class OrbcommReceiver implements DigimodeDecoder {
 		if (this.good % 50 === 0) this.sink.status(`ORBCOMM satellite ${this.satellite} · ${this.good} packets · ${this.bad} failed`, true);
 		if (parsed.kind === 'fill') return;
 		const fields = [['Satellite', this.satellite >= 0 ? String(this.satellite) : 'Unknown'] as [string, string], ...parsed.fields];
-		if (parsed.position && this.station) {
-			const lat1 = (this.station.lat * Math.PI) / 180;
-			const lat2 = (parsed.position.lat * Math.PI) / 180;
-			const dlat = lat2 - lat1;
-			const dlon = ((parsed.position.lon - this.station.lon) * Math.PI) / 180;
-			const arc =
-				2 * Math.asin(Math.min(1, Math.sqrt(Math.sin(dlat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dlon / 2) ** 2)));
-			fields.push(['Ground distance', `${Math.round(6371 * arc)} km`]);
-		}
 		this.sink.record({ text: `Sat ${this.satellite}: ${parsed.text}`, fields });
-		if (!parsed.message) return;
-		const { id, part, last, text } = parsed.message;
-		const key = `${this.satellite}:${id}`;
-		if (part === 0) this.parts.set(key, { next: 0, text: '' });
-		const entry = this.parts.get(key);
-		if (!entry || entry.next !== part) return;
-		entry.text += text;
-		entry.next++;
-		if (entry.text.length > 512) this.parts.delete(key);
-		else if (last) {
-			const full = entry.text.trimEnd();
-			this.sink.record({
-				text: `Sat ${this.satellite}: message ${id} complete · ${full}`,
-				fields: [
-					['Satellite', String(this.satellite)],
-					['Message ID', String(id)],
-					['Text', full],
-				],
-			});
-			this.parts.delete(key);
-		}
-		if (this.parts.size > 64) this.parts.clear();
 	}
 }

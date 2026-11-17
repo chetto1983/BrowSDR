@@ -177,3 +177,10 @@ file). Algorithms and protocol tables follow the OnAir source.
 | `test/digimode/ftx/messages.spec.js` | `tests/hfdig/test_hfdig_ftx_tables.cpp` |
 | `test/digimode/ftx/ft8.spec.js` | `tests/hfdig/test_hfdig_ft8.cpp` |
 | `test/digimode/ftx/modes.spec.js` | `tests/hfdig/test_hfdig_ft4.cpp`, `test_hfdig_wspr.cpp` |
+| `src/client/worker/decoders/digimode/rtty/types.ts` | `core/include/dect2/hfdig/hfdig_rtty.h` (RttyAutoHyp, HfdigRttyTelemetry), `core/include/dect2/autoparam/autoparam.h` (FskPair, FskBaud) |
+| `src/client/worker/decoders/digimode/rtty/decoder.ts` | `core/src/hfdig/hfdig_rtty.cpp` (HfdigRtty::Impl: pair search, lock, matched filters, ATC, start / stop bits, ITA2), `hfdig_rtty.h` (speed and shift tables) |
+| `src/client/worker/decoders/digimode/rtty/auto.ts` | `core/src/hfdig/hfdig_rtty_auto.cpp` (rttyAutoAnalyse, textScore), `core/src/autoparam/autoparam.cpp` (powerSpectrum, findFskPairs, measureFskBaud) |
+| `src/client/worker/decoders/digimode/rtty/index.ts` | `core/src/hfdig/hfdig_rtty.cpp` (HfdigRtty: feedAudio, the Auto rule), `hfdig_rx.cpp` (USB audio, RTTY with Auto on) |
+| `test/digimode/rtty/fixtures.js` | `core/src/hfdig/hfdig_rtty.cpp` (RttyTestAudio, makeRttyTxAudio), `tests/hfdig/test_hfdig_rtty.cpp` (noise of an SNR, textOk) |
+| `test/digimode/rtty/rtty.spec.js` | `tests/hfdig/test_hfdig_rtty.cpp` |
+| `test/digimode/rtty/auto.spec.js` | `tests/hfdig/test_hfdig_rttyauto.cpp` |

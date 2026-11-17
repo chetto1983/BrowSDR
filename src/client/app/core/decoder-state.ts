@@ -7,6 +7,7 @@ export function clearDecoderSources(receiver: AppInstance): void {
 	receiver.hdRadioStatus = [];
 	receiver.dabStatus = [];
 	receiver.adsb.sources = [];
+	receiver.adsb.hfdl = [];
 	receiver.adsb.status = [];
 	receiver.ais.sources = [];
 	receiver.radiosonde.sources = [];

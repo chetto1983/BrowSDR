@@ -10,7 +10,7 @@
 // A downlink (block id is a digit) starts its text with the message number (3), the block sequence letter (1) and the
 // flight id (6).
 
-import type { Vdl2Acars, Vdl2Message } from './types';
+import type { Vdl2Acars, Vdl2Line, Vdl2Message } from './types';
 
 const STX = 0x02;
 /** Longest text kept (characters). */
@@ -304,15 +304,21 @@ export function readAcars(p: Uint8Array, m: Vdl2Message): void {
 	}
 	m.acars = a;
 	m.summary = acarsSummary(a);
+	m.detail.push(...acarsLines(a));
+}
+
+/** The detail lines of a decoded block (also those of the ACARS blocks HFDL carries). */
+export function acarsLines(a: Vdl2Acars): Vdl2Line[] {
 	const state = (a.crcOk ? '' : ', check sequence FAILED') + (a.finalBlock ? '' : ', more blocks follow');
-	m.detail.push(['ACARS', `mode ${a.mode}, ${a.downlink ? 'downlink' : 'uplink'}${state}`]);
-	m.detail.push(['Registration', a.reg || '-']);
-	if (a.flight) m.detail.push(['Flight', a.flight]);
-	m.detail.push(['Label', a.label + (a.labelText ? ` (${a.labelText})` : '')]);
-	m.detail.push(['Block id', a.blockId]);
-	if (a.msgNum) m.detail.push(['Message number', a.msgNum + a.msgSeq]);
-	if (a.sublabel || a.mfi) m.detail.push(['Sublabel / MFI', `${a.sublabel || '-'} / ${a.mfi || '-'}`]);
-	m.detail.push(['Acknowledgement', a.ack === '!' ? 'NAK (nothing acknowledged)' : a.ack === '^' ? 'ACK' : `block ${a.ack}`]);
-	if (a.text) m.detail.push(['Text', a.text]);
-	if (a.decoded) m.detail.push(['Reading', a.decoded]);
+	const lines: Vdl2Line[] = [['ACARS', `mode ${a.mode}, ${a.downlink ? 'downlink' : 'uplink'}${state}`]];
+	lines.push(['Registration', a.reg || '-']);
+	if (a.flight) lines.push(['Flight', a.flight]);
+	lines.push(['Label', a.label + (a.labelText ? ` (${a.labelText})` : '')]);
+	lines.push(['Block id', a.blockId]);
+	if (a.msgNum) lines.push(['Message number', a.msgNum + a.msgSeq]);
+	if (a.sublabel || a.mfi) lines.push(['Sublabel / MFI', `${a.sublabel || '-'} / ${a.mfi || '-'}`]);
+	lines.push(['Acknowledgement', a.ack === '!' ? 'NAK (nothing acknowledged)' : a.ack === '^' ? 'ACK' : `block ${a.ack}`]);
+	if (a.text) lines.push(['Text', a.text]);
+	if (a.decoded) lines.push(['Reading', a.decoded]);
+	return lines;
 }

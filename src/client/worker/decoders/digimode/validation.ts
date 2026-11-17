@@ -7,9 +7,16 @@ const text = (value: unknown, max: number): value is string => typeof value === 
 const MAX_IMAGE_WIDTH = 4096;
 const MAX_IMAGE_ROWS = 8192;
 
+function validPosition(value: unknown): boolean {
+	if (value === undefined) return true;
+	if (!isRecord(value) || !text(value.id, 32) || !finite(value.lat) || !finite(value.lon)) return false;
+	return Math.abs(value.lat) <= 90 && Math.abs(value.lon) <= 180 && (value.label === undefined || text(value.label, 32));
+}
+
 function validRecord(value: unknown): boolean {
 	if (!isRecord(value) || !Number.isInteger(value.id) || !finite(value.time) || !text(value.mode, 64) || !text(value.text, 2000))
 		return false;
+	if (!validPosition(value.position)) return false;
 	if (value.fields === undefined) return true;
 	return (
 		Array.isArray(value.fields) &&

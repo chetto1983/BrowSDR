@@ -74,7 +74,10 @@
 							<td>
 								<UiButton variant="transcript" @click="select(item.icao)" :aria-pressed="selected === item.icao"
 									>{{ item.callsign || item.icao }}</UiButton
-								><small>{{ item.icao }} · {{ hasLivePosition(item, now) ? 'Located' : 'No current position' }}</small>
+								><small
+									>{{ item.icao }} · <template v-if="item.source === 'hfdl'">HFDL · </template>{{ hasLivePosition(item, now) ? 'Located' :
+									'No current position' }}</small
+								>
 							</td>
 							<td :title="item.altitudeSource">{{ item.altitude == null ? '—' : item.altitude.toLocaleString() + ' ft' }}</td>
 							<td>{{ item.speed == null ? '—' : item.speed + ' kt' }}</td>

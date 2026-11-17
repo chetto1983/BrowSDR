@@ -13,6 +13,18 @@ export interface DigimodeRecord {
 	damaged?: boolean;
 	/** Alert-worthy content, such as a DSC distress call. */
 	alert?: boolean;
+	/** Where what the record is about was, for maps (an aircraft's reported position). */
+	position?: DigimodePosition;
+}
+
+/** A position a record reports. */
+export interface DigimodePosition {
+	/** What is located: an ICAO address in hex, or another id of the mode. */
+	id: string;
+	lat: number;
+	lon: number;
+	/** A flight or a call. */
+	label?: string;
 }
 
 export interface DigimodeStatus {

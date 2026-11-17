@@ -13,7 +13,7 @@ export function aircraftTooltip(record: Aircraft, metadata?: AircraftMetadata, a
 		['Type', metadata?.type || '—'],
 		['Airline', airline?.airline || '—'],
 		['Operator', metadata?.operator || '—'],
-		['Source', 'ADS-B · radio'],
+		['Source', record.source === 'hfdl' ? 'HFDL · radio (reported position)' : 'ADS-B · radio'],
 		['Altitude', record.altitude === undefined ? '—' : `${record.altitude.toLocaleString()} ft (${record.altitudeSource ?? 'unknown'})`],
 		['Ground speed', record.speed === undefined ? '—' : `${record.speed} kt`],
 		['Track', record.heading === undefined ? '—' : `${Math.round(record.heading)}°`],

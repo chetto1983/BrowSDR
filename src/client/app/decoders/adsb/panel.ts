@@ -26,6 +26,7 @@ export default defineComponent({
 			visibleAircraft(
 				receiver.adsb.sources.filter((_, index) => receiver.vfos[index]?.adsb && receiver.vfos[index]?.freq === 1090),
 				now.value,
+				receiver.adsb.hfdl,
 			),
 		);
 		const positioned = computed(() => aircraft.value.filter((item) => hasLivePosition(item, now.value)));

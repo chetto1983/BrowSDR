@@ -18,6 +18,7 @@ import { RTTY_AMATEUR, RttyReceiver } from './rtty';
 import { PSK_MODES, PskDecoder } from './psk';
 import { CwDecoder } from './cw';
 import { FlarmDecoder } from './flarm';
+import { HfdlDecoder } from './hfdl';
 import { FANET_125, FANET_250, FANET_500, FanetDecoder } from './fanet';
 import { Mpt1327Decoder } from './mpt1327';
 import { OrbcommReceiver } from './orbcomm/receiver';
@@ -52,6 +53,7 @@ export const DIGIMODE_DECODERS: Record<string, (sink: DigimodeSink) => DigimodeD
 	psk125: (sink) => new PskDecoder(sink, PSK_MODES[4]),
 	qpsk31: (sink) => new PskDecoder(sink, PSK_MODES[2]),
 	qpsk63: (sink) => new PskDecoder(sink, PSK_MODES[3]),
+	hfdl: (sink) => new HfdlDecoder(sink),
 	flarm: (sink) => new FlarmDecoder(sink),
 	fanet: (sink) => new FanetDecoder(sink, FANET_250),
 	'fanet-500': (sink) => new FanetDecoder(sink, FANET_500),

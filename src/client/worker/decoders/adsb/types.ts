@@ -21,6 +21,8 @@ export interface Aircraft {
 	positionTime?: number;
 	lastSeen: number;
 	messages: number;
+	/** Heard on HFDL (a position the aircraft reported over HF), not on ADS-B. */
+	source?: 'hfdl';
 }
 
 export interface AircraftState extends Aircraft {

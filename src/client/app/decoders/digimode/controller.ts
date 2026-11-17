@@ -2,6 +2,7 @@ import { toRaw } from 'vue';
 import type { AppInstance } from '@/app/core/receiver.types';
 import type { DigimodeMessage, DigimodeStatus } from '@/worker/decoders/digimode/types';
 import { digimodeInfo } from '@/worker/decoders/digimode/catalog';
+import { mergeHfdlPositions } from '@/app/decoders/adsb/hfdl';
 import { DigimodePicture } from './image';
 import type { DigimodeLogEntry } from './types';
 
@@ -39,6 +40,9 @@ export const digimodeMethods = {
 			const entries = message.records.map((record) => ({ ...record, vfo: index, freq })).reverse();
 			this.digimodes.log = [...entries, ...this.digimodes.log].slice(0, LOG_LIMIT);
 		}
+		// HFDL aircraft positions go to the ADS-B tool's aircraft map
+		if (message.mode === 'hfdl' && message.records.some((record) => record.position))
+			this.adsb.hfdl = mergeHfdlPositions(this.adsb.hfdl, message.records, Date.now());
 		if (message.image) {
 			digimodePicture(this, index).append(message.image);
 			this.digimodes.imageVersion++;

@@ -72,6 +72,25 @@ file). Algorithms and protocol tables follow the OnAir source.
 | `src/client/worker/decoders/digimode/vdl2/types.ts` | `rust/onair_vdl2/src/bits.rs`, `avlc.rs`, `proto.rs`, `core/include/dect2/vdl2/vdl2_tel.h` (Vdl2Message), `rust/onair_acars/src/block.rs` |
 | `src/client/worker/decoders/digimode/vdl2/index.ts` | after `core/src/vdl2/vdl2_rx.cpp` (one record per AVLC frame) |
 | `test/digimode/vdl2-fixtures.js` | `core/src/vdl2/vdl2_gen.cpp` (burst waveform), `vdl2_proto.cpp` (builders), `core/src/acars/acars_proto.cpp` (acarsBuildFrame) |
+| `src/client/worker/decoders/digimode/hfdl/types.ts` | `rust/onair_hfdl/src/phy.rs` (Rate), `stations.rs` (Station), `parse.rs` (Msg), `core/include/dect2/hfdl/hfdl_tel.h` (HfdlMessage, the burst and "why" counters), `core/src/hfdl/hfdl_rx.cpp` (the channel state) |
+| `src/client/worker/decoders/digimode/hfdl/phy.ts` | `rust/onair_hfdl/src/phy.rs` (rates, A and M sequences, preamble, scrambler, interleaver, convolutional code, Viterbi decoder, FCS), `core/src/hfdl/hfdl_proto.cpp` (PSK maps, decisions, soft bits, hfdlDecodeSoft), `core/include/dect2/hfdl/hfdl_proto.h` (constants); protocol facts as credited there: [dumphfdl](https://github.com/szpajder/dumphfdl) (szpajder, GPL-3.0; read for reference, no code used) |
+| `src/client/worker/decoders/digimode/hfdl/stations.ts` | `rust/onair_hfdl/src/stations.rs` (OnAir's built-in ground station table, frequency masks) |
+| `src/client/worker/decoders/digimode/hfdl/parse.ts` | `rust/onair_hfdl/src/parse.rs` (SPDU, MPDU, LPDU, parse_pdu), `core/src/hfdl/hfdl_proto_rs.cpp` (hfdlParsePdu); protocol facts as credited there: dumphfdl (read for reference) |
+| `src/client/worker/decoders/digimode/hfdl/hfnpdu.ts` | `rust/onair_hfdl/src/parse.rs` (HFNPDUs: performance and frequency data, positions, system table parts), `core/src/hfdl/hfdl_proto.cpp` (hfdlReadAcars, on the ACARS reader of `vdl2/acars.ts`) |
+| `src/client/worker/decoders/digimode/hfdl/front.ts` | `core/src/hfdl/hfdl_rx.cpp` (matched filter, sample store, noise floor, cubicAt, trim), `core/include/dect2/dsp/rrc.h` (rrc) |
+| `src/client/worker/decoders/digimode/hfdl/coarse.ts` | `core/src/hfdl/hfdl_rx.cpp` (coarseRefs, coarse: the burst search, computed with kept chunk magnitudes) |
+| `src/client/worker/decoders/digimode/hfdl/search.ts` | `core/src/hfdl/hfdl_rx.cpp` (refProducts, corrAt, burst(): carrier, timing, A1 / A2 phase step, coherence check, M1) |
+| `src/client/worker/decoders/digimode/hfdl/equalizer.ts` | `core/src/hfdl/hfdl_rx.cpp` (burst(): half-symbol samples, the equaliser and the gain / phase tracker) |
+| `src/client/worker/decoders/digimode/hfdl/pilots.ts` | `core/src/hfdl/hfdl_rx.cpp` (burst(): the known-symbol decoder with its timing fit) |
+| `src/client/worker/decoders/digimode/hfdl/burst.ts` | `core/src/hfdl/hfdl_rx.cpp` (burst(): the three modes in turn, soft bits, level, SNR, why a burst failed) |
+| `src/client/worker/decoders/digimode/hfdl/receiver.ts` | `core/src/hfdl/hfdl_rx.cpp` (process, the search position rules, trim, the counters; one channel) |
+| `src/client/worker/decoders/digimode/hfdl/report.ts` | `core/src/hfdl/hfdl_rx.cpp` (note, expire: the logon table, aircraft and ground stations), `core/include/dect2/limits.h` (kAeroStaleSec) |
+| `src/client/worker/decoders/digimode/hfdl/index.ts` | `core/src/hfdl/hfdl_rx.cpp` (feed, the telemetry state, hfdlTuning), `core/include/dect2/hfdl/hfdl_tel.h` (hfdlSummary) |
+| `test/digimode/hfdl/fixtures.js` | `core/src/hfdl/hfdl_gen.cpp` (waveform, HF channel, render, traffic), `core/src/hfdl/hfdl_proto.cpp` (hfdlBurst, PDU builders), `tests/hfdl/test_hfdl_rx.cpp` (play) |
+| `test/digimode/hfdl/real-burst.txt` | `tests/data/hfdl/real_burst.h` (a real 600 bit/s burst received near Sydney) |
+| `test/digimode/hfdl/proto.spec.js` | `tests/hfdl/test_hfdl_proto.cpp`, `test_hfdl_table.cpp`, `rust/onair_hfdl/src/tests.rs` |
+| `test/digimode/hfdl/rx.spec.js` | `tests/hfdl/test_hfdl_rx.cpp`, `test_hfdl_weak.cpp`, `test_hfdl_why.cpp` |
+| `test/digimode/hfdl/worker.spec.js` | `tests/hfdl/test_hfdl_real.cpp`, `test_hfdl_offset.cpp`, `test_hfdl_rx.cpp` (traffic) |
 | `src/client/worker/decoders/digimode/tones/proto.ts` | `core/src/tones/tones_proto.cpp`, `core/include/dect2/tones/tones_proto.h` (CTCSS, DCS, DTMF, five-tone and SELCAL tables), `dtmf_numbers.h` (key group kinds) |
 | `src/client/worker/decoders/digimode/tones/types.ts` | `core/include/dect2/tones/tones_proto.h` (SeqSet, DcsHit), `tones_tel.h` (ToneEvent) |
 | `src/client/worker/decoders/digimode/tones/dsp.ts` | `core/src/tones/tones_rx.cpp` (Biquad, Goertzel, FFT, Hann windows), `core/include/dect2/dmr/dmr_dsp.h` (lowpassTaps) |

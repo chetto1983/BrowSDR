@@ -228,7 +228,7 @@ function createDecoderAndBookmarkState() {
 			sources: [] as RtkStation[][],
 			frames: [] as Array<RtkMessage['rtcm']>,
 		},
-		adsb: { panelOpen: false, status: [] as Array<AdsbStatus | null>, sources: [] as Aircraft[][] },
+		adsb: { panelOpen: false, status: [] as Array<AdsbStatus | null>, sources: [] as Aircraft[][], hfdl: [] as Aircraft[] },
 		rtl433: {
 			panelOpen: false,
 			status: [] as Array<Rtl433Status | null>,

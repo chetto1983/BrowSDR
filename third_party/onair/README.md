@@ -203,3 +203,13 @@ file). Algorithms and protocol tables follow the OnAir source.
 | `test/digimode/psk/fixtures.js` | `core/src/psk/psk_gen.cpp` (PskGenerator, pskTestSignals), `tests/psk/test_psk_rx.cpp` (sig, run) |
 | `test/digimode/psk/varicode.spec.js` | `tests/psk/test_psk_proto.cpp` |
 | `test/digimode/psk/psk.spec.js` | `tests/psk/test_psk_rx.cpp` |
+| `src/client/worker/decoders/dsd/ysf/types.ts` | `core/include/dect2/fusion/fusion_proto.h` (Fich, VoiceUnit, FrameContent), `fusion_gps.h` (YsfGps) |
+| `src/client/worker/decoders/dsd/ysf/proto.ts` | `core/src/fusion/fusion_proto.cpp`, `core/include/dect2/fusion/fusion_proto.h` (sync, CRC-16, Golay (24,12), convolutional code and Viterbi, interleaver, whitening, FICH, DCH, V/D mode 2 voice, callsign fields) |
+| `src/client/worker/decoders/dsd/ysf/frame.ts` | `core/src/fusion/fusion_proto.cpp` (buildFrameBits, parseFrameBits), `core/src/fusion/fusion_rx.cpp` (tryFrame: level fit, slicing, SNR) |
+| `src/client/worker/decoders/dsd/ysf/gps.ts` | `core/include/dect2/fusion/fusion_gps.h` (ysfRadioName, ysfGpsParse) |
+| `src/client/worker/decoders/dsd/ysf/receiver.ts` | `core/src/fusion/fusion_rx.cpp` (onFrame, beginTx, endTx, csd1, csd2, csd3, slow, remText, voice) |
+| `src/client/worker/decoders/dsd/ambe.ts` | `rust/onair_nxdn/src/msg.rs` (ambe_frame), `core/src/nxdn/nxdn_ambe.cpp` (NxdnAmbe::decode) |
+| `test/decoders/dsd/ysf/fixtures.js` | `core/src/fusion/fusion_gen.cpp` (genVoiceBytes, genTransmissionBits, modulateC4fm), `tests/fusion/fusion_test_util.h` (signal), `tests/fusion/test_fusion_gps.cpp` (block) |
+| `test/decoders/dsd/ysf/proto.spec.js` | `tests/fusion/test_fusion_proto.cpp` |
+| `test/decoders/dsd/ysf/interop.spec.js` | `tests/fusion/test_fusion_interop.cpp` (MMDVMHost frames as data), `tests/fusion/test_fusion_gps.cpp` |
+| `test/decoders/dsd/ysf/stream.spec.js` | `tests/fusion/test_fusion_rx.cpp`, `test_fusion_codec.cpp`, `test_fusion_sweep.cpp` |

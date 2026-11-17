@@ -4,10 +4,13 @@
  *
  * Original DSD source: https://github.com/szechyjs/dsd
  * Copyright (C) 2010 DSD Author (ISC License)
+ *
+ * The Yaesu System Fusion status (YsfStatus) describes what BrowSDR shows of OnAir's FusionTelemetry
+ * (core/include/dect2/fusion/fusion_rx.h, GPL-3.0-or-later, see third_party/onair); the decoding is in ysf/.
  */
 
 // ── Detected DSD mode ────────────────────────────────────────────────
-export type DSDMode = 'dmr' | 'dstar' | 'p25' | 'nxdn' | 'unknown';
+export type DSDMode = 'dmr' | 'dstar' | 'p25' | 'nxdn' | 'ysf' | 'unknown';
 
 export interface DSDStatus {
 	mode: DSDMode;
@@ -63,6 +66,45 @@ export interface DSDStatus {
 	// ── NXDN ──
 	/** NXDN type description */
 	nxdnType?: string;
+
+	// ── Yaesu System Fusion ──
+	ysf?: YsfStatus;
+}
+
+/** A Yaesu System Fusion transmission as far as it has been decoded. */
+export interface YsfStatus {
+	/** 'DN' (V/D mode 1 or 2), 'VW' (voice full rate) or 'Data' (data full rate). */
+	mode: string;
+	/** FICH data type: 0 V/D mode 1, 1 data FR, 2 V/D mode 2, 3 voice FR. */
+	dataType: number;
+	/** FICH frame type: 0 header, 1 communication, 2 terminator, 3 test. */
+	frameType: number;
+	/** Source (own) and destination callsigns. */
+	src: string;
+	dest: string;
+	/** Repeater downlink and uplink callsigns. */
+	down: string;
+	up: string;
+	/** Callsign data 3: four five-character fields (radio IDs). */
+	rem: string[];
+	/** Digital group ID (the FICH squelch code field, 0 to 127). */
+	dgId: number;
+	/** 0 group / CQ, 3 individual. */
+	callMode: number;
+	/** Message routing: 0 direct, 1 and 2 via a repeater downlink. */
+	routing: number;
+	voip: boolean;
+	/** Slow data as text. */
+	text: string;
+	/** Position from the slow data GPS block, with the radio model. */
+	gps?: { lat: number; lon: number; radio: string };
+	/** Frames whose FICH checked in this transmission. */
+	frames: number;
+	/** A terminator frame closed the transmission. */
+	ended: boolean;
+	/** The spectrum is mirrored. */
+	inverted: boolean;
+	snrDb: number;
 }
 
 /** DMR Full Link Control of a voice call (ETSI TS 102 361-2 §7.1.1). */
@@ -126,6 +168,8 @@ export const enum SyncType {
 	DMR_DM_TS1_VOICE = 25,
 	DMR_DM_TS2_DATA = 26,
 	DMR_DM_TS2_VOICE = 27,
+	YSF = 28,
+	INV_YSF = 29,
 }
 
 export interface SyncPattern {

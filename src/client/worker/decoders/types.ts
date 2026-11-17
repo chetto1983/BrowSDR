@@ -54,6 +54,7 @@ export interface MbelibModule {
 	_malloc(this: void, size: number): number;
 	_free(this: void, ptr: number): void;
 	cwrap(name: string, result: 'number', args: ['number', 'number']): (frame: number, audio: number) => number;
+	cwrap(name: string, result: 'number', args: ['number', 'number', 'number']): (data: number, errors: number, audio: number) => number;
 	cwrap(name: string, result: null, args: []): () => void;
 }
 

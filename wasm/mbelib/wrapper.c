@@ -1,6 +1,8 @@
 /*
  * Thin WASM wrapper for mbelib voice codec library.
- * Exposes AMBE 3600x2450 and IMBE 7200x4400 decoding for DSD.
+ * Exposes AMBE 3600x2450 and IMBE 7200x4400 decoding for DSD, and AMBE 2450
+ * parameter decoding for 49 bits whose error correction was done by the caller
+ * (Yaesu System Fusion V/D mode 2).
  *
  * Build: emcc -O3 -s WASM=1 -s MODULARIZE=1 -s EXPORT_NAME='MbelibModule' \
  *        -s EXPORTED_FUNCTIONS='[...]' -s EXPORTED_RUNTIME_METHODS='[...]' \
@@ -93,6 +95,40 @@ int mbelib_decode_imbe(const char *imbe_fr_flat, float *audio) {
         audio[i] = (float)audio_out[i] / 32768.0f;
 
     return errs + errs2;
+}
+
+/*
+ * Decode 49 AMBE 3600x2450 parameter bits (mbelib's ambe_d order: 12 C0 data
+ * bits, 12 C1 data bits, 11 C2 bits, 14 C3 bits) that the caller has already
+ * error-corrected, e.g. Yaesu System Fusion V/D mode 2 voice after its
+ * majority vote.
+ *
+ * ambe_d: 49 bytes, one bit each
+ * errors: bit errors the caller found; above 3 mbelib repeats the last frame
+ * audio:  output buffer for 160 float samples
+ *
+ * Returns the error count used.
+ */
+int mbelib_decode_ambe2450_data(const char *ambe_d_in, int errors, float *audio) {
+    if (!initialized) mbelib_init();
+
+    char ambe_d[49];
+    memcpy(ambe_d, ambe_d_in, 49);
+
+    /* err_str receives one character per error: keep it inside its 64 bytes. */
+    if (errors < 0) errors = 0;
+    if (errors > 48) errors = 48;
+    errs = errors;
+    errs2 = errors;
+
+    mbe_processAmbe2450Data(audio_out, &errs, &errs2, err_str, ambe_d,
+                            &curMp, &prevMp, &prevMpEnhanced, 3);
+
+    /* Convert int16 to float */
+    for (int i = 0; i < 160; i++)
+        audio[i] = (float)audio_out[i] / 32768.0f;
+
+    return errs2;
 }
 
 /*

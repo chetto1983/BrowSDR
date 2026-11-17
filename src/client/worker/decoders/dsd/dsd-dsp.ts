@@ -152,6 +152,8 @@ export class ClockRecovery {
 			// Gardner timing error uses the midpoint between adjacent symbols.
 			// Sign-only M&M decisions mistake DMR's inner and outer levels for
 			// the same amplitude and drift on repeating AMBE payloads.
+			// The midpoint is taken relative to the two symbols' average: a carrier
+			// offset moves every level, and the plain product then steers the timing.
 			const midpointTime = (this.previousSymbolTime + this.nextSymbolTime) / 2;
 			const midpointIndex = Math.floor(midpointTime);
 			const midpointFraction = midpointTime - midpointIndex;
@@ -159,7 +161,12 @@ export class ClockRecovery {
 				this.history[midpointIndex % this.history.length] * (1 - midpointFraction) +
 				this.history[(midpointIndex + 1) % this.history.length] * midpointFraction;
 			const timingError =
-				this.sampleIndex === 0 ? 0 : Math.max(-1, Math.min(1, ((this.prevSample - curSample) * midpoint) / Math.max(this.power, 1e-8)));
+				this.sampleIndex === 0
+					? 0
+					: Math.max(
+							-1,
+							Math.min(1, ((this.prevSample - curSample) * (midpoint - (this.prevSample + curSample) / 2)) / Math.max(this.power, 1e-8)),
+						);
 
 			// Update loop
 			this.omega += this.omegaGain * timingError;

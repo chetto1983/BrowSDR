@@ -269,6 +269,20 @@
 			<template v-if="receiver.dsdStatus[i]?.mode === 'nxdn'">
 				<div v-if="receiver.dsdStatus[i]?.nxdnType" style="color:#aaa;">Type: {{ receiver.dsdStatus[i].nxdnType }}</div>
 			</template>
+			<!-- Yaesu System Fusion details -->
+			<template v-if="receiver.dsdStatus[i]?.mode === 'ysf' && receiver.dsdStatus[i]?.ysf">
+				<div class="dsd-ysf-call" style="color:#ddd;">
+					{{ receiver.dsdStatus[i].ysf.src || '?' }} → {{ receiver.dsdStatus[i].ysf.dest || '?' }} · {{ receiver.dsdStatus[i].ysf.mode }}<span v-if="receiver.dsdStatus[i].ysf.ended" style="opacity:0.6;"> · ended</span>
+				</div>
+				<div style="color:#aaa;">
+					DG-ID: {{ receiver.dsdStatus[i].ysf.dgId }}
+					<span v-if="receiver.dsdStatus[i].ysf.down || receiver.dsdStatus[i].ysf.up" style="margin-left:8px;">DL: {{ receiver.dsdStatus[i].ysf.down || '-' }} · UL: {{ receiver.dsdStatus[i].ysf.up || '-' }}</span>
+				</div>
+				<div v-if="receiver.dsdStatus[i].ysf.gps" style="color:#aaa;">
+					GPS: {{ receiver.dsdStatus[i].ysf.gps.lat.toFixed(4) }}, {{ receiver.dsdStatus[i].ysf.gps.lon.toFixed(4) }} · {{ receiver.dsdStatus[i].ysf.gps.radio }}
+				</div>
+				<div v-if="receiver.dsdStatus[i].ysf.text" style="color:#aaa;">Data: {{ receiver.dsdStatus[i].ysf.text }}</div>
+			</template>
 			<!-- MBE status -->
 			<div style="display:flex;align-items:center;gap:6px;margin-top:2px;">
 				<span :style="{ color: receiver.dsdStatus[i]?.mbeDecoding ? '#44cc44' : '#ff6644' }">

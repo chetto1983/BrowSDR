@@ -65,7 +65,7 @@ emcc -O3 \
     -s MODULARIZE=1 \
     -s EXPORT_ES6=1 \
     -s EXPORT_NAME='MbelibModule' \
-    -s EXPORTED_FUNCTIONS='["_mbelib_init","_mbelib_reset","_mbelib_decode_ambe","_mbelib_decode_imbe","_mbelib_get_err_str","_mbelib_get_errs","_mbelib_get_errs2","_malloc","_free"]' \
+    -s EXPORTED_FUNCTIONS='["_mbelib_init","_mbelib_reset","_mbelib_decode_ambe","_mbelib_decode_imbe","_mbelib_decode_ambe2450_data","_mbelib_get_err_str","_mbelib_get_errs","_mbelib_get_errs2","_malloc","_free"]' \
     -s EXPORTED_RUNTIME_METHODS='["ccall","cwrap","getValue","setValue","UTF8ToString","HEAPF32","HEAP8"]' \
     -s ALLOW_MEMORY_GROWTH=1 \
     -s INITIAL_MEMORY=1048576 \

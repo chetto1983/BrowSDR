@@ -4,7 +4,7 @@ import { ReceiverView } from '../helpers/receiver-view';
 import { makeDefaultVfo } from '@/app/core/constants';
 import { orbitState, receivedMHz } from '@/satellites/orbit';
 import { parseTle } from '@/satellites/tle';
-import { AMATEUR_TLE, METEOR_TLE, SITE } from '../../satellites/fixtures.js';
+import { AMATEUR_TLE, METEOR_TLE, ORBCOMM_TLE, SITE } from '../../satellites/fixtures.js';
 
 vi.mock('leaflet', () => ({}));
 vi.mock('@/app/satellites/map', () => ({
@@ -25,6 +25,7 @@ const DURING_SO50 = new Date('2026-11-16T22:51:00Z');
 function celestrak() {
 	const blocks = (AMATEUR_TLE + METEOR_TLE).trim().split('\n');
 	return vi.fn(async (url: string) => {
+		if (new URL(url).searchParams.get('GROUP') === 'orbcomm') return new Response(ORBCOMM_TLE);
 		const norad = Number(new URL(url).searchParams.get('CATNR'));
 		const at = blocks.findIndex((line) => line.startsWith('1 ') && Number(line.slice(2, 7)) === norad);
 		return new Response(blocks.slice(at - 1, at + 2).join('\n'));
@@ -74,14 +75,28 @@ afterEach(() => {
 describe('Satellites panel', () => {
 	it('lists every satellite with pointing and the next pass', async () => {
 		await openPanel();
-		expect(fetch).toHaveBeenCalledTimes(9);
+		expect(fetch).toHaveBeenCalledTimes(10);
 		const text = wrapper.text();
-		for (const name of ['ISS', 'SO-50', 'AO-123', 'RS-44', 'FO-29', 'AO-7', 'JO-97', 'Meteor-M2 3']) expect(text).toContain(name);
+		for (const name of ['ISS', 'SO-50', 'AO-123', 'RS-44', 'FO-29', 'AO-7', 'JO-97', 'Meteor-M2 3', 'ORBCOMM FM06'])
+			expect(text).toContain(name);
 		// SO-50 is up, high in the west.
 		const so50 = wrapper.findAll('tbody tr').find((row) => row.text().startsWith('SO-50'))!;
 		expect(so50.text()).toMatch(/27\d° W · 7\d°/);
 		expect(so50.text()).toContain('now');
 		expect(so50.classes()).toContain('satellite-up');
+	});
+	it('shows ORBCOMM passes and satellite positions on the map', async () => {
+		await openPanel();
+		await wrapper.find('select[aria-label="Passes of"]').setValue('-1');
+		await wrapper.vm.$nextTick();
+		const panel = wrapper.findComponent({ name: 'SatellitesPanel' }).vm;
+		expect(wrapper.vm.satellites.selected).toBe(25118);
+		expect(panel.mapSatellites.map((item) => item.state.norad)).toEqual([25118, 25159]);
+		expect(panel.passList.length).toBeGreaterThan(0);
+		expect(panel.passList.every((row) => [25118, 25159].includes(row.pass.norad))).toBe(true);
+		const orbit = panel.selection.track;
+		expect(orbit.length).toBeGreaterThan(10);
+		expect(panel.selection.passTrack.length).toBeGreaterThan(10);
 	});
 	it('asks for the station before predicting passes', async () => {
 		await openPanel({ station: null });

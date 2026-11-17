@@ -20,7 +20,7 @@ export function pointing(state: OrbitState | null): string {
 /** The tracking summary line, or '' while nothing is tracked. */
 function trackingText(receiver: AppInstance): string {
 	const active = receiver.satellites.tracking;
-	const satellite = TRACKED_SATELLITES.find((item) => item.norad === active?.norad);
+	const satellite = [...TRACKED_SATELLITES, ...receiver.satellites.orbcomm].find((item) => item.norad === active?.norad);
 	const vfo = active ? receiver.vfos[active.vfoIndex] : undefined;
 	if (!active || !satellite || !vfo) return '';
 	const label = satellite.downlinks[active.downlink]?.label ?? '';
@@ -31,8 +31,9 @@ function trackingText(receiver: AppInstance): string {
  * Positions, pointing and Doppler of every satellite at `now`, and the selected satellite's next orbit from
  * `trackFrom` (refreshed less often: the marker moves along it).
  */
-export function useSatelliteLive(receiver: AppInstance, now: Ref<Date>, trackFrom: Ref<Date>) {
+export function useSatelliteLive(receiver: AppInstance, now: Ref<Date>, trackFrom: Ref<Date>, passFilter: Ref<number>) {
 	const state = receiver.satellites;
+	const satellites = computed(() => [...TRACKED_SATELLITES, ...state.orbcomm]);
 	const states = computed(() => {
 		if (!state.panelOpen) return new Map<number, OrbitState>();
 		const entries = state.tles.map((tle) => [tle.norad, orbitState(tle, receiver.station, now.value)] as const);
@@ -45,7 +46,7 @@ export function useSatelliteLive(receiver: AppInstance, now: Ref<Date>, trackFro
 		),
 	);
 	const rows = computed<SatelliteRow[]>(() =>
-		TRACKED_SATELLITES.map((satellite) => ({
+		satellites.value.map((satellite) => ({
 			satellite,
 			state: states.value.get(satellite.norad) ?? null,
 			next: upcoming.value.find((row) => row.pass.norad === satellite.norad),
@@ -59,19 +60,25 @@ export function useSatelliteLive(receiver: AppInstance, now: Ref<Date>, trackFro
 		const freq = receivedMHz(downlink.value.freqMHz, look.rangeRateKmS);
 		return { freq, shiftHz: (freq - downlink.value.freqMHz) * 1e6 };
 	});
-	const mapSatellites = computed<MapSatellite[]>(() =>
-		rows.value.flatMap((row) => (row.state ? [{ name: row.satellite.name, state: row.state }] : [])),
-	);
+	const mapSatellites = computed<MapSatellite[]>(() => {
+		const orbcommIds = new Set(state.orbcomm.map((satellite) => satellite.norad));
+		return rows.value.flatMap((row) =>
+			row.state && (passFilter.value !== -1 || orbcommIds.has(row.satellite.norad)) ? [{ name: row.satellite.name, state: row.state }] : [],
+		);
+	});
 	const selection = computed(() => {
 		const tle = state.tles.find((item) => item.norad === state.selected);
 		const current = selected.value.state;
-		if (!tle || !current) return { track: [], coverage: [] };
+		if (!tle || !current) return { track: [], passTrack: [], coverage: [] };
+		const pass = selected.value.next?.pass;
 		return {
 			track: groundTrack(tle, trackFrom.value, orbitMinutes(tle)),
+			passTrack: pass ? groundTrack(tle, pass.aos, (pass.los.getTime() - pass.aos.getTime()) / 60_000, 10) : [],
 			coverage: footprint(current.latitude, current.longitude, current.altitudeKm),
 		};
 	});
 	return {
+		satellites,
 		rows,
 		upcoming,
 		selected,

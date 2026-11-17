@@ -42,6 +42,15 @@ export async function fetchTles(norads: readonly number[], fetchFn: typeof fetch
 	return sets.flat();
 }
 
+/** Current members of a Celestrak satellite group, fetched in one request. */
+export async function fetchTleGroup(group: string, fetchFn: typeof fetch = fetch): Promise<Tle[]> {
+	const response = await fetchFn(`${CELESTRAK}?GROUP=${encodeURIComponent(group)}&FORMAT=TLE`);
+	if (!response.ok) throw new Error(`Celestrak returned HTTP ${response.status} for ${group}.`);
+	const tles = parseTle(await response.text());
+	if (!tles.length) throw new Error(`Celestrak sent no orbits for ${group}.`);
+	return tles;
+}
+
 /** TLEs kept per browser so predictions also work offline in the field; refetched after two days. */
 export class TleCache {
 	constructor(

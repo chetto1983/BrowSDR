@@ -1,4 +1,4 @@
-import type { SatelliteInfo, TrackedSatellite } from './types';
+import type { SatelliteInfo, Tle, TrackedSatellite } from './types';
 
 /** Meteor-M weather satellites with LRPT downlinks (72k QPSK; 137.100 MHz is the backup frequency). */
 export const METEOR_SATELLITES: readonly SatelliteInfo[] = [
@@ -83,6 +83,19 @@ export const TRACKED_SATELLITES: readonly TrackedSatellite[] = [
 		note: 'Weather pictures: Track opens the Meteor panel with its decoder.',
 	})),
 ];
+
+/** The published ORBCOMM group changes over time. Frequencies are listening choices, not per-satellite assignments. */
+export function orbcommSatellites(tles: readonly Tle[]): TrackedSatellite[] {
+	const frequencies = [137.25, 137.2875, 137.3125, 137.4625, 137.6625, 137.7375];
+	return tles
+		.filter((tle) => /^ORBCOMM\b/i.test(tle.name))
+		.map((tle) => ({
+			name: tle.name,
+			norad: tle.norad,
+			downlinks: frequencies.map((freqMHz) => ({ label: 'Try downlink', freqMHz, mode: 'nfm' as const, digimode: 'orbcomm' })),
+			note: 'Pass prediction uses Celestrak orbital elements. The transmitting channel is not known from the orbit; check the spectrum and choose the active ORBCOMM downlink.',
+		}));
+}
 
 /** The short name BrowSDR uses for a satellite (Celestrak calls SO-50 "SAUDISAT 1C (SO-50)"). */
 export function satelliteName(norad: number, fallback: string): string {

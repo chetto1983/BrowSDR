@@ -21,6 +21,7 @@ means the uplink is LSB and moves the opposite way to the downlink.
 | AO-7               | mode B 145.925–145.975 USB · mode A 29.400–29.500 USB · beacon 29.502                                         | mode B 432.125–432.175 LSB, inverting · mode A 2 m USB |
 | JO-97              | 145.855–145.875 USB/CW                                                                                        | 435.100–435.120 LSB/CW, inverting                      |
 | Meteor-M2 3 / M2 4 | 137.900 LRPT (Meteor panel)                                                                                   | —                                                      |
+| ORBCOMM group      | 137.2500, 137.2875, 137.3125, 137.4625, 137.6625, 137.7375 MHz (Digital Modes)                                | —                                                      |
 
 AO-7 works only in sunlight and a 24-hour timer alternates modes A and B; the
 table marks each satellite as sunlit or in eclipse. FO-29 is switched on by
@@ -33,9 +34,14 @@ change; select 145.825 MHz only when ARISS reports the VHF packet station active
 ## Map
 
 Markers are green above your horizon, yellow in sunlight and grey in Earth's
-shadow. The selected satellite shows its next orbit (dashed) and the area that
+shadow. The selected satellite shows its next orbit (cyan dashed), the visible
+part of its next pass (orange), and the area that
 can hear it now (0° elevation). The red dot is the station. Map tiles come from
 OpenStreetMap and need internet; positions are computed locally.
+The ORBCOMM satellites come from Celestrak's current ORBCOMM group. Choose
+**ORBCOMM constellation (map and passes)** in the pass filter to see only their
+markers and upcoming passes; selecting one draws its orbit and coverage area.
+The map uses TLE predictions, not positions reported in decoded packets.
 
 ## Passes
 
@@ -67,6 +73,6 @@ Not corrected:
   correction: the decoder restarts on every retune, and the ±3.5 kHz shift fits
   its channel. Packets appear in **Tools → APRS**.
 - **Meteor** opens the Meteor panel; its demodulator locks onto the carrier.
-- **ORBCOMM** downlinks are available through **Tools → ORBCOMM** or the two-channel ORBCOMM station bookmark. Packet positions and channel assignments appear in the Digital Modes log; ORBCOMM is not in the TLE map catalog.
+- **ORBCOMM** passes and orbits appear on the satellite map. **Track on VFO** opens its Digital Modes decoder on the chosen example frequency; packet positions and channel assignments appear in the log. Check the spectrum for the active downlink, since Celestrak orbital data does not identify the satellite's current transmit channel.
 - Dongle frequency error: an RTL-SDR off by 1 ppm is 435 Hz off at 435 MHz.
   Correct the dongle first, or retune by ear (the tracker keeps the correction).

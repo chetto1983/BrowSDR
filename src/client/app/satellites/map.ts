@@ -4,7 +4,7 @@ import type { MapSatellite } from './types';
 
 /** Lines and areas are drawn on the world copies either side too, so they wrap when the map is zoomed out. */
 const WORLD_COPIES = [-360, 0, 360];
-const COLORS = { up: '#22c55e', sunlit: '#facc15', eclipse: '#94a3b8', selection: '#38bdf8', station: '#f43f5e' };
+const COLORS = { up: '#22c55e', sunlit: '#facc15', eclipse: '#94a3b8', selection: '#38bdf8', pass: '#fb923c', station: '#f43f5e' };
 
 const copies = (points: LatLon[]): Leaflet.LatLngTuple[][] =>
 	WORLD_COPIES.map((offset) => points.map(([lat, lon]): Leaflet.LatLngTuple => [lat, lon + offset]));
@@ -20,6 +20,7 @@ export class SatelliteMap {
 	private markers = new Map<number, Leaflet.CircleMarker>();
 	private station: Leaflet.CircleMarker | null = null;
 	private track: Leaflet.Polyline;
+	private passTrack: Leaflet.Polyline;
 	private coverage: Leaflet.Polygon;
 
 	constructor(
@@ -41,6 +42,7 @@ export class SatelliteMap {
 		const line = { color: COLORS.selection, interactive: false };
 		this.coverage = leaflet.polygon([], { ...line, weight: 1, fillOpacity: 0.1 }).addTo(this.map);
 		this.track = leaflet.polyline([], { ...line, weight: 2, dashArray: '6 6' }).addTo(this.map);
+		this.passTrack = leaflet.polyline([], { color: COLORS.pass, weight: 4, interactive: false }).addTo(this.map);
 	}
 
 	update(satellites: MapSatellite[], selected: number): void {
@@ -64,9 +66,10 @@ export class SatelliteMap {
 		}
 	}
 
-	/** The next orbit of the selected satellite and the area that hears it now. */
-	setSelection(track: LatLon[], coverage: LatLon[]): void {
+	/** The next orbit, the visible part of the next pass, and the area that hears the satellite now. */
+	setSelection(track: LatLon[], passTrack: LatLon[], coverage: LatLon[]): void {
 		this.track.setLatLngs(track.length ? copies(track) : []);
+		this.passTrack.setLatLngs(passTrack.length ? copies(passTrack) : []);
 		this.coverage.setLatLngs(coverage.length ? copies(coverage).map((ring) => [ring]) : []);
 	}
 

@@ -52,10 +52,11 @@ Enjoy the power of a desktop SDR platform fully within your web browser.
   (Meshtastic, MeshCore, LoRaWAN headers, LoRa APRS), FLARM/OGN/ADS-L aircraft, MPT 1327 trunking, FT8, FT4, WSPR, CW, RTTY and PSK31/63/125, in one log with pictures. See
   [the guide](docs/digital-modes.md).
 - **🌍 Satellite Map and Doppler Tracking**
-  Tools → Satellites shows the ISS, SO-50, AO-123, RS-44, FO-29, AO-7, JO-97 and
-  Meteor-M live on a world map with ground track and coverage, pointing from your
-  station and the next passes. Track tunes a VFO to the downlink and corrects
-  Doppler every second. See [the satellite guide](docs/satellites.md).
+  Tools → Satellites shows the ISS, amateur satellites, Meteor-M and the current
+  ORBCOMM constellation on a world map, with the next visible pass highlighted,
+  pointing from your station and upcoming passes. Track tunes a VFO to the
+  downlink; voice and transponder channels get Doppler correction every second.
+  See [the satellite guide](docs/satellites.md).
 - **🛰️ Meteor-M Weather Satellite Images**
   Receive LRPT pictures from Meteor-M2 3 and M2 4 on 137.9 MHz: an OQPSK demodulator
   in the DSP worker feeds [meteor_decode](wasm/meteor/README.md), and the picture

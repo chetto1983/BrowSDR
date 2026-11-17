@@ -11,7 +11,7 @@ export function useSatelliteMap(
 	showMap: Ref<boolean>,
 	mapElement: Ref<HTMLElement | undefined>,
 	satellites: ComputedRef<MapSatellite[]>,
-	selection: ComputedRef<{ track: LatLon[]; coverage: LatLon[] }>,
+	selection: ComputedRef<{ track: LatLon[]; passTrack: LatLon[]; coverage: LatLon[] }>,
 	error: Ref<string>,
 ) {
 	let map: SatelliteMap | undefined;
@@ -27,7 +27,7 @@ export function useSatelliteMap(
 		map?.focus(norad);
 	};
 	const refresh = () => map?.update(satellites.value, receiver.satellites.selected);
-	const refreshSelection = () => map?.setSelection(selection.value.track, selection.value.coverage);
+	const refreshSelection = () => map?.setSelection(selection.value.track, selection.value.passTrack, selection.value.coverage);
 	const destroy = () => {
 		generation++;
 		observer?.disconnect();

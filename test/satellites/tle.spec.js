@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { fetchTles, parseTle, TleCache } from '@/satellites/tle';
-import { METEOR_TLE } from './fixtures';
+import { fetchTleGroup, fetchTles, parseTle, TleCache } from '@/satellites/tle';
+import { METEOR_TLE, ORBCOMM_TLE } from './fixtures';
 
 function memoryStorage() {
 	const data = new Map();
@@ -27,6 +27,14 @@ describe('TLEs', () => {
 		const tles = await fetchTles([57166, 59051], fetchFn);
 		expect(tles.map((tle) => tle.norad)).toEqual([57166, 59051]);
 		expect(urls[0]).toBe('https://celestrak.org/NORAD/elements/gp.php?CATNR=57166&FORMAT=TLE');
+	});
+	it('fetches the current ORBCOMM group in one request', async () => {
+		const fetchFn = async (url) => {
+			expect(url).toBe('https://celestrak.org/NORAD/elements/gp.php?GROUP=orbcomm&FORMAT=TLE');
+			return new Response(ORBCOMM_TLE);
+		};
+		const tles = await fetchTleGroup('orbcomm', fetchFn);
+		expect(tles.map((tle) => tle.norad)).toEqual([25118, 25159]);
 	});
 	it('rejects when Celestrak cannot be reached', async () => {
 		await expect(fetchTles([57166], async () => Promise.reject(new TypeError('offline')))).rejects.toThrow();

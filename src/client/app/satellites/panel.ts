@@ -1,6 +1,5 @@
 import { computed, defineComponent, inject, onBeforeUnmount, ref, watch } from 'vue';
 import type { AppInstance } from '@/app/core/receiver.types';
-import { TRACKED_SATELLITES } from '@/satellites/catalog';
 import * as components from '@/ui';
 import { formatKHz, formatMHz, pointing, useSatelliteLive } from './live';
 import { useSatelliteMap } from './map-view';
@@ -53,7 +52,10 @@ export default defineComponent({
 			() => state.hours,
 			() => void receiver.satellitesRefresh(),
 		);
-		const live = useSatelliteLive(receiver, now, trackFrom);
+		watch([passFilter, () => state.orbcomm.length], ([filter]) => {
+			if (filter === -1 && state.orbcomm.length) receiver.satelliteSelect(state.orbcomm[0].norad);
+		});
+		const live = useSatelliteLive(receiver, now, trackFrom, passFilter);
 		const map = useSatelliteMap(receiver, showMap, mapElement, live.mapSatellites, live.selection, error);
 
 		return {
@@ -67,8 +69,12 @@ export default defineComponent({
 			passFilter,
 			...live,
 			...map,
-			passList: computed(() => live.upcoming.value.filter((row) => !passFilter.value || row.pass.norad === passFilter.value)),
-			satellites: TRACKED_SATELLITES,
+			passList: computed(() => {
+				const orbcommIds = new Set(state.orbcomm.map((satellite) => satellite.norad));
+				return live.upcoming.value.filter(
+					(row) => !passFilter.value || (passFilter.value === -1 ? orbcommIds.has(row.pass.norad) : row.pass.norad === passFilter.value),
+				);
+			}),
 			pointing,
 			formatMHz,
 			formatKHz,

@@ -65,7 +65,7 @@
 					<strong>{{ selected.satellite.name }}</strong>
 					<UiSelect v-model.number="state.downlink" aria-label="Downlink">
 						<option v-for="(item, i) in selected.satellite.downlinks" :key="i" :value="i">
-							{{ item.label }} · {{ item.freqMHz.toFixed(3) }} MHz {{ item.mode.toUpperCase() }}
+							{{ item.label }} · {{ formatMHz(item.freqMHz) }} {{ item.mode.toUpperCase() }}
 						</option>
 					</UiSelect>
 					<UiButton @click="receiver.satelliteTrack()">Track on VFO {{ receiver.activeVfoIndex + 1 }}</UiButton>
@@ -100,6 +100,7 @@
 			<div class="satellite-pass-tools">
 				<UiSelect v-model.number="passFilter" aria-label="Passes of">
 					<option :value="0">All satellites</option>
+					<option :value="-1">ORBCOMM constellation (map and passes)</option>
 					<option v-for="item in satellites" :key="item.norad" :value="item.norad">{{ item.name }}</option>
 				</UiSelect>
 				<UiSelect v-model.number="state.minPeak" aria-label="Lowest peak elevation">
@@ -133,6 +134,6 @@
 	</div>
 	<div class="adsb-footer">
 		<span>{{ state.tleNote || 'Orbits load from Celestrak' }} · SGP4 · Doppler updated every second while tracking</span
-		><span>Green: above your horizon · yellow: sunlit · grey: in Earth's shadow. Map tiles need internet.</span>
+		><span>Orange: next visible pass · cyan dashed: orbit · green: above your horizon. Map tiles need internet.</span>
 	</div>
 </section>

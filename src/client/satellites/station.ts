@@ -1,5 +1,5 @@
 import type { Site, Tle } from './types';
-import { fetchTles, TleCache } from './tle';
+import { fetchTleGroup, fetchTles, TleCache } from './tle';
 import { errorMessage } from '@/platform/errors';
 
 const STATION_KEY = 'browsdr.station';
@@ -63,5 +63,25 @@ export async function cachedTles(
 	} catch (error) {
 		if (cached) return { tles: cached.tles, note: `Orbits from ${cached.fetchedAt.toLocaleDateString()} (offline)` };
 		throw new Error(`No orbit data yet: connect to the internet once. (${errorMessage(error)})`, { cause: error });
+	}
+}
+
+/** One Celestrak constellation, cached separately from the fixed satellite catalog. */
+export async function cachedTleGroup(
+	storageKey: string,
+	group: string,
+	now: Date,
+	fetchFn: typeof fetch = fetch,
+): Promise<{ tles: Tle[]; note: string }> {
+	const cache = new TleCache(browserStorage(), storageKey);
+	const cached = cache.get();
+	if (cached && !cache.stale(now)) return { tles: cached.tles, note: `Orbits from ${cached.fetchedAt.toLocaleDateString()}` };
+	try {
+		const tles = await fetchTleGroup(group, fetchFn);
+		cache.put(tles, now);
+		return { tles, note: `Orbits from ${now.toLocaleDateString()}` };
+	} catch (error) {
+		if (cached) return { tles: cached.tles, note: `Orbits from ${cached.fetchedAt.toLocaleDateString()} (offline)` };
+		throw error;
 	}
 }

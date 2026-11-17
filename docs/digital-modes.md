@@ -55,7 +55,7 @@ satellite tracker.
 ## Limits
 
 - One decoder per VFO; add VFOs to run several.
-- ORBCOMM needs a VFO on the actual downlink. Its presets are examples, not a channel scan; the current channel assignment can differ. The ephemeris coordinates are shown in the packet log, not plotted on the satellite map. The decoder has been checked with generated signals, including ±3.7 kHz offset and 150 ppm clock error; live ORBCOMM reception is still unverified.
+- ORBCOMM needs a VFO on the actual downlink. Its presets are examples, not a channel scan; the current channel assignment can differ. Tools → Satellites shows TLE-based ORBCOMM passes and orbits. Decoded ephemeris coordinates remain in the packet log and do not replace the map's TLE positions. The decoder has been checked with generated signals, including ±3.7 kHz offset and 150 ppm clock error; live ORBCOMM reception is still unverified.
 - HF modes need HF reception (RTL-SDR direct sampling, an upconverter or an HF
   receiver).
 - Wireless M-Bus loses about one telegram in twenty from meters that send only

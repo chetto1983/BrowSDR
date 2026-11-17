@@ -1,18 +1,20 @@
 import type { AppInstance } from '@/app/core/receiver.types';
 import type { Pass, SatelliteTracking, Tle } from '@/satellites/types';
-import { TRACKED_SATELLITES } from '@/satellites/catalog';
+import { orbcommSatellites, TRACKED_SATELLITES } from '@/satellites/catalog';
 import { predictPasses } from '@/satellites/passes';
-import { cachedTles, loadStation, saveStation, stationError } from '@/satellites/station';
+import { cachedTleGroup, cachedTles, loadStation, saveStation, stationError } from '@/satellites/station';
 import { errorMessage } from '@/platform/errors';
 import { startTracking, stopTracking } from './tracking';
 
 const TLE_KEY = 'browsdr.satelliteTles';
+const ORBCOMM_TLE_KEY = 'browsdr.orbcommTles';
 
 /** The receiver's satellite map state. */
 export function satellitesPanelState() {
 	return {
 		panelOpen: false,
 		tles: [] as Tle[],
+		orbcomm: [] as ReturnType<typeof orbcommSatellites>,
 		passes: [] as Pass[],
 		/** Hours of passes to predict. */
 		hours: 48,
@@ -35,15 +37,33 @@ export const satelliteMethods = {
 	async satellitesRefresh(this: AppInstance, now = new Date()): Promise<void> {
 		this.station ??= loadStation();
 		try {
-			const { tles, note } = await cachedTles(
-				TLE_KEY,
-				TRACKED_SATELLITES.map((satellite) => satellite.norad),
-				now,
-			);
-			this.satellites.tles = tles;
-			this.satellites.tleNote = note;
-			this.satellites.passes = this.station ? predictPasses(tles, this.station, now, this.satellites.hours) : [];
-			this.satellites.message = this.station ? '' : 'Set the station location for passes, pointing and Doppler.';
+			const [standard, group] = await Promise.allSettled([
+				cachedTles(
+					TLE_KEY,
+					TRACKED_SATELLITES.map((satellite) => satellite.norad),
+					now,
+				),
+				cachedTleGroup(ORBCOMM_TLE_KEY, 'orbcomm', now),
+			]);
+			if (standard.status === 'rejected' && group.status === 'rejected') throw standard.reason;
+			const orbcommTles = group.status === 'fulfilled' ? group.value.tles.filter((tle) => /^ORBCOMM\b/i.test(tle.name)) : [];
+			this.satellites.orbcomm = orbcommSatellites(orbcommTles);
+			this.satellites.tles = [...(standard.status === 'fulfilled' ? standard.value.tles : []), ...orbcommTles];
+			this.satellites.tleNote = [standard, group]
+				.filter((result) => result.status === 'fulfilled')
+				.map((result) => result.value.note)
+				.filter((note, index, notes) => notes.indexOf(note) === index)
+				.join(' · ');
+			if (![...TRACKED_SATELLITES, ...this.satellites.orbcomm].some((satellite) => satellite.norad === this.satellites.selected)) {
+				this.satellites.selected = TRACKED_SATELLITES[0].norad;
+				this.satellites.downlink = 0;
+			}
+			this.satellites.passes = this.station ? predictPasses(this.satellites.tles, this.station, now, this.satellites.hours) : [];
+			this.satellites.message = !this.station
+				? 'Set the station location for passes, pointing and Doppler.'
+				: group.status === 'rejected'
+					? 'ORBCOMM orbits unavailable; other satellite passes remain visible.'
+					: '';
 		} catch (error) {
 			this.satellites.message = errorMessage(error);
 		}
@@ -81,7 +101,7 @@ export const satelliteMethods = {
 	},
 	/** Tunes the active VFO to the selected downlink with Doppler tracking; Meteor goes to its own panel. */
 	async satelliteTrack(this: AppInstance, norad = this.satellites.selected, downlink = this.satellites.downlink): Promise<void> {
-		const satellite = TRACKED_SATELLITES.find((item) => item.norad === norad);
+		const satellite = [...TRACKED_SATELLITES, ...this.satellites.orbcomm].find((item) => item.norad === norad);
 		if (!satellite) return;
 		if (satellite.downlinks[downlink]?.decoder === 'meteor') {
 			stopTracking(this);

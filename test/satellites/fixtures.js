@@ -6,6 +6,14 @@ METEOR-M2 4
 1 59051U 24039A   26319.98070929  .00000024  00000+0  30586-4 0  9994
 2 59051  98.7247 277.5227 0008135  90.3361 269.8749 14.22443441140841
 `;
+/** Celestrak ORBCOMM-group TLEs fetched on 2026-11-17, for pass and map tests. */
+export const ORBCOMM_TLE = `ORBCOMM FM06
+1 25118U 97084G   26320.94370505  .00001284  00000+0  38223-3 0  9996
+2 25118  45.0147  37.1453 0002403 245.8958 283.0118 14.47886683516520
+ORBCOMM FM04
+1 25159U 98007C   26321.17838706  .00000715  00000+0  28936-3 0  9993
+2 25159 107.9645 124.3195 0038269  56.8686 303.6118 14.35963704498553
+`;
 /** Cuneo area, the station's town (not the station's exact position). */
 export const SITE = { lat: 44.42, lon: 7.43, altM: 550 };
 /** Celestrak amateur-group TLEs fetched on 2026-11-16 (epochs 26320); reference values come from skyfield 1.55 with DE421. */

@@ -96,7 +96,10 @@ export const DIGIMODES: readonly DigimodeInfo[] = [
 			'AX.25 frames from amateur satellites: 1200 bd AFSK and 9600 / 4800 bd G3RUH FSK at once. Pair with Tools → Satellites for Doppler.',
 		rate: 96000,
 		bandwidth: 30000,
-		presets: [{ label: 'ISS packet', freqMHz: 145.825 }],
+		presets: [
+			{ label: 'ISS packet (ARISS 2026-11)', freqMHz: 437.825 },
+			{ label: 'ISS packet (alternate)', freqMHz: 145.825 },
+		],
 		source: 'core/src/cubesat/cubesat_rx.cpp, core/include/dect2/packet/packet_demod.h',
 	},
 	{

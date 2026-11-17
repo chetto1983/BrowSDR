@@ -11,21 +11,24 @@ Frequencies follow the AMSAT FM and linear frequency tables (November 2026).
 Linear transponders are tuned to the middle of the passband in USB; inverting
 means the uplink is LSB and moves the opposite way to the downlink.
 
-| Satellite          | Downlinks in BrowSDR                                                  | Uplink (for stations that transmit)                    |
-| ------------------ | --------------------------------------------------------------------- | ------------------------------------------------------ |
-| ISS                | 145.800 FM voice and SSTV · 437.800 FM repeater · 145.825 APRS        | 145.990 FM, CTCSS 67 Hz · APRS 145.825                 |
-| SO-50              | 436.795 FM                                                            | 145.850 FM, CTCSS 67 Hz; arm with 2 s of 74.4 Hz       |
-| AO-123             | 435.400 FM                                                            | 145.850 FM, CTCSS 67 Hz                                |
-| RS-44              | 435.610–435.670 USB/CW · beacon 435.605                               | 145.935–145.995 LSB/CW, inverting                      |
-| FO-29              | 435.800–435.900 USB/CW · beacon 435.795                               | 145.900–146.000 LSB/CW, inverting                      |
-| AO-7               | mode B 145.925–145.975 USB · mode A 29.400–29.500 USB · beacon 29.502 | mode B 432.125–432.175 LSB, inverting · mode A 2 m USB |
-| JO-97              | 145.855–145.875 USB/CW                                                | 435.100–435.120 LSB/CW, inverting                      |
-| Meteor-M2 3 / M2 4 | 137.900 LRPT (Meteor panel)                                           | —                                                      |
+| Satellite          | Downlinks in BrowSDR                                                                                          | Uplink (for stations that transmit)                    |
+| ------------------ | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| ISS                | 145.800 FM voice and SSTV · 437.800 FM repeater · 437.825 APRS (ARISS November 2026) · 145.825 APRS alternate | 145.990 FM, CTCSS 67 Hz · check ARISS for APRS         |
+| SO-50              | 436.795 FM                                                                                                    | 145.850 FM, CTCSS 67 Hz; arm with 2 s of 74.4 Hz       |
+| AO-123             | 435.400 FM                                                                                                    | 145.850 FM, CTCSS 67 Hz                                |
+| RS-44              | 435.610–435.670 USB/CW · beacon 435.605                                                                       | 145.935–145.995 LSB/CW, inverting                      |
+| FO-29              | 435.800–435.900 USB/CW · beacon 435.795                                                                       | 145.900–146.000 LSB/CW, inverting                      |
+| AO-7               | mode B 145.925–145.975 USB · mode A 29.400–29.500 USB · beacon 29.502                                         | mode B 432.125–432.175 LSB, inverting · mode A 2 m USB |
+| JO-97              | 145.855–145.875 USB/CW                                                                                        | 435.100–435.120 LSB/CW, inverting                      |
+| Meteor-M2 3 / M2 4 | 137.900 LRPT (Meteor panel)                                                                                   | —                                                      |
 
 AO-7 works only in sunlight and a 24-hour timer alternates modes A and B; the
 table marks each satellite as sunlit or in eclipse. FO-29 is switched on by
 schedule. Check the [AMSAT status page](https://www.amsat.org/status/) before a
 pass: a correct orbit does not mean the transponder is on.
+The [ARISS station status](https://www.ariss.org/current-status-of-iss-stations.html)
+reported ISS APRS on 437.825 MHz as of 4 November 2026. Its operating channel can
+change; select 145.825 MHz only when ARISS reports the VHF packet station active.
 
 ## Map
 
@@ -60,7 +63,7 @@ received band.
 
 Not corrected:
 
-- **ISS APRS** enables the APRS decoder on 145.825 MHz without Doppler
+- **ISS APRS** enables the APRS decoder on the selected ISS packet channel without Doppler
   correction: the decoder restarts on every retune, and the ±3.5 kHz shift fits
   its channel. Packets appear in **Tools → APRS**.
 - **Meteor** opens the Meteor panel; its demodulator locks onto the carrier.

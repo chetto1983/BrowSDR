@@ -13,7 +13,8 @@ export const APRS_CHANNELS = [
 	{ frequency: 144.575, region: 'New Zealand' },
 	{ frequency: 144.66, region: 'Japan' },
 	{ frequency: 145.57, region: 'Brazil' },
-	{ frequency: 145.825, region: 'ISS / satellites' },
+	{ frequency: 437.825, region: 'ISS (ARISS 2026-11)' },
+	{ frequency: 145.825, region: 'ISS / satellites (alternate)' },
 ];
 // 1200-baud AFSK packet is used on the 6 m, 2 m, 1.25 m and 70 cm amateur bands.
 const APRS_BANDS = [

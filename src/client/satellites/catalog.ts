@@ -12,11 +12,12 @@ const ISS: TrackedSatellite = {
 	downlinks: [
 		{ label: 'FM voice / SSTV', freqMHz: 145.8, mode: 'nfm' },
 		{ label: 'FM repeater', freqMHz: 437.8, mode: 'nfm' },
-		{ label: 'APRS digipeater', freqMHz: 145.825, mode: 'nfm', decoder: 'aprs' },
+		{ label: 'APRS digipeater (ARISS 2026-11)', freqMHz: 437.825, mode: 'nfm', decoder: 'aprs' },
 		{ label: 'SSTV pictures', freqMHz: 145.8, mode: 'nfm', digimode: 'sstv-fm' },
+		{ label: 'APRS digipeater (alternate)', freqMHz: 145.825, mode: 'nfm', decoder: 'aprs' },
 	],
-	uplink: 'Repeater 145.990 MHz FM, CTCSS 67 Hz · APRS 145.825 MHz',
-	note: 'Crew contacts and SSTV events (PD120 on 145.800) follow the ARISS schedule.',
+	uplink: 'Repeater 145.990 MHz FM, CTCSS 67 Hz · check ARISS for the current APRS channel',
+	note: 'ARISS reported APRS on 437.825 MHz in November 2026; 145.825 MHz is an alternate. Check ARISS status before a pass. Crew contacts and SSTV events follow the ARISS schedule.',
 };
 
 /** Linear transponders: the tuning point is the middle of the passband; inverting means LSB up, USB down. */

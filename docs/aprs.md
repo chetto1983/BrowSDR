@@ -5,19 +5,23 @@ Open **Tools → APRS**, select a VFO, choose your region's channel and press
 antenna and a compatible SDR. Audio can remain muted; decoding uses an independent
 48 kHz IQ channel in the DSP worker. Closing the panel preserves decoding.
 
-| Channel     | Region           |
-| ----------- | ---------------- |
-| 144.390 MHz | North America    |
-| 144.800 MHz | Europe / Africa  |
-| 145.175 MHz | Australia        |
-| 144.575 MHz | New Zealand      |
-| 144.660 MHz | Japan            |
-| 145.570 MHz | Brazil           |
-| 145.825 MHz | ISS / satellites |
+| Channel     | Region                            |
+| ----------- | --------------------------------- |
+| 144.390 MHz | North America                     |
+| 144.800 MHz | Europe / Africa                   |
+| 145.175 MHz | Australia                         |
+| 144.575 MHz | New Zealand                       |
+| 144.660 MHz | Japan                             |
+| 145.570 MHz | Brazil                            |
+| 437.825 MHz | ISS (ARISS status, November 2026) |
+| 145.825 MHz | ISS / satellites (alternate)      |
 
 Regional usage varies; check your national bandplan. Manual tuning works on any
 frequency in the 6 m, 2 m, 1.25 m and 70 cm amateur bands, so other 1200-baud
 packet channels can be decoded too. Satellite reception does not correct Doppler shift.
+Check the [ARISS station status](https://www.ariss.org/current-status-of-iss-stations.html)
+before an ISS pass: it reported APRS on 437.825 MHz as of 4 November 2026, while
+145.825 MHz remains an alternate when the VHF packet station is in use.
 
 ## What is decoded
 

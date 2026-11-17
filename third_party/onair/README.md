@@ -213,3 +213,10 @@ file). Algorithms and protocol tables follow the OnAir source.
 | `test/decoders/dsd/ysf/proto.spec.js` | `tests/fusion/test_fusion_proto.cpp` |
 | `test/decoders/dsd/ysf/interop.spec.js` | `tests/fusion/test_fusion_interop.cpp` (MMDVMHost frames as data), `tests/fusion/test_fusion_gps.cpp` |
 | `test/decoders/dsd/ysf/stream.spec.js` | `tests/fusion/test_fusion_rx.cpp`, `test_fusion_codec.cpp`, `test_fusion_sweep.cpp` |
+| `src/client/worker/decoders/dsd/dpmr/types.ts` | `core/include/dect2/dpmr/dpmr_proto.h` (Header, Cch, End), `dpmr_tel.h` (DpmrCall) |
+| `src/client/worker/decoders/dsd/dpmr/proto.ts` | `core/src/dpmr/dpmr_proto.cpp`, `core/include/dect2/dpmr/dpmr_proto.h` (frame syncs, colour code, CRC-8/7/16, Hamming (12,8), PN9, block interleaving, soft decoding, header / CCH / end / data blocks, names, ids) |
+| `src/client/worker/decoders/dsd/dpmr/call.ts` | `core/src/dpmr/dpmr_rx.cpp` (fresh, startCall, endCall, endData, lost, header and CCH call bookkeeping), `core/include/dect2/dpmr/dpmr_tel.h` (DpmrCall) |
+| `src/client/worker/decoders/dsd/dpmr/receiver.ts` | `core/src/dpmr/dpmr_rx.cpp` (symbol filter, sync search, frame state machine, level fits, header / CCH / TCH / end decoding, voice frames) |
+| `test/decoders/dsd/dpmr/fixtures.js` | `core/src/dpmr/dpmr_gen.cpp` (Builder, dpmrKnownVoice, dpmrTxSymbols, dpmrTestSchedule, DpmrGenerator), `core/include/dect2/dpmr/dpmr_gen.h` |
+| `test/decoders/dsd/dpmr/proto.spec.js` | `tests/dpmr/test_dpmr_proto.cpp` |
+| `test/decoders/dsd/dpmr/stream.spec.js` | `tests/dpmr/test_dpmr_rx.cpp`, `tests/dpmr/test_dpmr_sens.cpp` |

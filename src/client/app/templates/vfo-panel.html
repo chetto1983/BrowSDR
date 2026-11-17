@@ -283,6 +283,16 @@
 				</div>
 				<div v-if="receiver.dsdStatus[i].ysf.text" style="color:#aaa;">Data: {{ receiver.dsdStatus[i].ysf.text }}</div>
 			</template>
+			<!-- dPMR details -->
+			<template v-if="receiver.dsdStatus[i]?.mode === 'dpmr' && receiver.dsdStatus[i]?.dpmr">
+				<div class="dsd-dpmr-call" style="color:#ddd;">
+					<template v-for="(id, k) in [receiver.dsdStatus[i].dpmr.src, receiver.dsdStatus[i].dpmr.dst]" :key="k">{{ k ? ' → ' : '' }}{{ id < 0 ? '?' : id === 16777215 ? 'ALL' : String(id).padStart(8, '0') }}</template> · {{ receiver.dsdStatus[i].dpmr.callType }}<span v-if="receiver.dsdStatus[i].dpmr.emergency" style="color:#ff4444;"> · EMERGENCY</span><span v-if="receiver.dsdStatus[i].dpmr.ended" style="opacity:0.6;"> · {{ receiver.dsdStatus[i].dpmr.lost ? 'lost' : 'ended' }}</span>
+				</div>
+				<div style="color:#aaa;">
+					CC: {{ receiver.dsdStatus[i].dpmr.colourCode >= 0 ? receiver.dsdStatus[i].dpmr.colourCode : '---' }} · {{ receiver.dsdStatus[i].dpmr.commMode }}<span v-if="receiver.dsdStatus[i].dpmr.lateEntry"> · joined late</span>
+				</div>
+				<div v-if="receiver.dsdStatus[i].dpmr.text" style="color:#aaa;">{{ receiver.dsdStatus[i].dpmr.kind === 'status' ? 'Status' : 'Message' }}: {{ receiver.dsdStatus[i].dpmr.text }}</div>
+			</template>
 			<!-- MBE status -->
 			<div style="display:flex;align-items:center;gap:6px;margin-top:2px;">
 				<span :style="{ color: receiver.dsdStatus[i]?.mbeDecoding ? '#44cc44' : '#ff6644' }">

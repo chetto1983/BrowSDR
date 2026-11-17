@@ -5,12 +5,13 @@
  * Original DSD source: https://github.com/szechyjs/dsd
  * Copyright (C) 2010 DSD Author (ISC License)
  *
- * The Yaesu System Fusion status (YsfStatus) describes what BrowSDR shows of OnAir's FusionTelemetry
- * (core/include/dect2/fusion/fusion_rx.h, GPL-3.0-or-later, see third_party/onair); the decoding is in ysf/.
+ * The Yaesu System Fusion and dPMR statuses (YsfStatus, DpmrStatus) describe what BrowSDR shows of OnAir's
+ * FusionTelemetry and DpmrTelemetry (core/include/dect2/fusion/fusion_rx.h, core/include/dect2/dpmr/dpmr_tel.h,
+ * GPL-3.0-or-later, see third_party/onair); the decoding is in ysf/ and dpmr/.
  */
 
 // ── Detected DSD mode ────────────────────────────────────────────────
-export type DSDMode = 'dmr' | 'dstar' | 'p25' | 'nxdn' | 'ysf' | 'unknown';
+export type DSDMode = 'dmr' | 'dstar' | 'p25' | 'nxdn' | 'ysf' | 'dpmr' | 'unknown';
 
 export interface DSDStatus {
 	mode: DSDMode;
@@ -69,6 +70,36 @@ export interface DSDStatus {
 
 	// ── Yaesu System Fusion ──
 	ysf?: YsfStatus;
+
+	// ── dPMR ──
+	dpmr?: DpmrStatus;
+}
+
+/** The last dPMR transmission: a voice call, a status message, a short message or packet data. */
+export interface DpmrStatus {
+	kind: 'voice' | 'status' | 'message' | 'packet';
+	/** Colour code 0 to 63 (-1: not received yet). */
+	colourCode: number;
+	/** Own (source) and called (destination) 24-bit ids; -1 while not known (a call joined late). */
+	src: number;
+	dst: number;
+	/** 'individual', 'group' or 'all call'. */
+	callType: string;
+	/** Communication mode, e.g. 'voice' or 'data type 2'. */
+	commMode: string;
+	emergency: boolean;
+	/** Found from the control channel superframe (the header was missed). */
+	lateEntry: boolean;
+	/** The end frame or the loss of the signal closed it. */
+	ended: boolean;
+	/** It ended without an end frame (the signal was lost). */
+	lost: boolean;
+	/** Status message: "status N"; short message or packet data: the text. */
+	text: string;
+	/** Blocks that passed their CRC. */
+	blocks: number;
+	inverted: boolean;
+	snrDb: number;
 }
 
 /** A Yaesu System Fusion transmission as far as it has been decoded. */
@@ -170,6 +201,10 @@ export const enum SyncType {
 	DMR_DM_TS2_VOICE = 27,
 	YSF = 28,
 	INV_YSF = 29,
+	DPMR_FS1 = 30,
+	DPMR_FS2 = 31,
+	DPMR_FS3 = 32,
+	DPMR_FS4 = 33,
 }
 
 export interface SyncPattern {

@@ -1,10 +1,11 @@
-import type { DSDMode, DSDStatus } from './types';
+import type { DSDMode, DSDStatus, DpmrStatus } from './types';
 /*
  * Main DSD (Digital Speech Decoder) state machine.
  * Handles frame sync detection and dispatches to mode-specific processors.
  * Ported from SDR++ Brown dsd.h / dsd_demod.cpp.
  *
- * Yaesu System Fusion frames are handed to ysf/ (ported from OnAir, GPL-3.0-or-later, see third_party/onair).
+ * Yaesu System Fusion frames are handed to ysf/, and dPMR runs beside the 4800 symbols/s chain in dpmr/
+ * (both ported from OnAir, GPL-3.0-or-later, see third_party/onair).
  */
 
 import { FIRFilter, ClockRecovery, FourFSKSlicer, rrcTaps } from './dsd-dsp';
@@ -34,6 +35,8 @@ import {
 import { readYsfFrame } from './ysf/frame';
 import { YSF_FRAME_DIBITS, YSF_SYNC_DIBITS } from './ysf/proto';
 import { YsfCall, decodeYsfVoice } from './ysf/receiver';
+import { DpmrReceiver } from './dpmr/receiver';
+import { ambeFrame } from './ambe';
 import { decodeAmbe, decodeImbe, ensureMbelibInitialized, getMbeErrors, resetMbe } from '@/worker/decoders/mbelib-init';
 
 /** Nominal slicer levels of the four dibits, for dibits fed without their symbol value. */
@@ -67,6 +70,10 @@ export class DSDDecoder {
 	private candidateMode: DSDMode = 'unknown';
 	private candidatePosition = -1;
 	private ysf = new YsfCall();
+	/** dPMR at 2400 symbols/s on the same discriminator output, and its voice frames of the current chunk. */
+	private dpmr: DpmrReceiver;
+	private dpmrVoice: Uint8Array[] = [];
+	private dpmrResting = false;
 
 	/** Count of consecutive syncs for the current mode — used for mode locking */
 	private modeLockCount = 0;
@@ -122,6 +129,17 @@ export class DSDDecoder {
 		// Audio accumulator
 		this.audioAccum = new Float32Array(8000); // 1 second at 8 kHz
 
+		this.dpmr = new DpmrReceiver({
+			update: (status, sync) => this.onDpmr(status, sync),
+			callStart: () => {
+				this.flushDpmrVoice();
+				if (this.mbelibReady) resetMbe();
+			},
+			voice: (bits) => {
+				if (this.acceptsDpmr()) this.dpmrVoice.push(bits);
+			},
+		});
+
 		// Start mbelib initialization
 		this.mbeInitPromise = ensureMbelibInitialized()
 			.then(() => {
@@ -152,6 +170,15 @@ export class DSDDecoder {
 		this._dbgProcessCalls++;
 		this.samplesSinceSync += fmAudio.length;
 		if (this.status.synced && this.samplesSinceSync > DSD_IF_RATE) this.expireSync();
+
+		// dPMR (2400 symbols/s) has its own symbol filter and sync search; it rests while another protocol holds the lock
+		if (!this.acceptsDpmr()) this.dpmrResting = true;
+		else {
+			if (this.dpmrResting) this.dpmr.reset();
+			this.dpmrResting = false;
+			this.dpmr.process(fmAudio);
+		}
+		if (this.flushDpmrVoice()) this.onStatus({ ...this.status });
 
 		// Step 1: RRC filter
 		const filtered = new Float32Array(fmAudio.length);
@@ -570,6 +597,28 @@ export class DSDDecoder {
 		if (read.content.fich.fi === 2 && this.mbelibReady) resetMbe();
 	}
 
+	/** dPMR results count unless a 4800 symbols/s protocol holds the lock (NXDN's short sync gives way). */
+	private acceptsDpmr(): boolean {
+		return this.lockedMode === 'unknown' || this.lockedMode === 'dpmr' || this.lockedMode === 'nxdn';
+	}
+
+	/** A dPMR block that checked, or the end of a dPMR transmission. */
+	private onDpmr(status: DpmrStatus, sync: SyncType): void {
+		if (!this.acceptsDpmr()) return;
+		if (this.lockedMode === 'nxdn') this.lockedMode = 'unknown';
+		this.status.dpmr = status;
+		this.flushDpmrVoice();
+		if (status.ended && this.mbelibReady) resetMbe();
+		this.announceSync('dpmr', sync);
+	}
+
+	/** Decode the dPMR voice frames received so far; true when there were any. */
+	private flushDpmrVoice(): boolean {
+		if (!this.dpmrVoice.length) return false;
+		this.decodeVoice(this.dpmrVoice.splice(0), (bits) => decodeAmbe(ambeFrame(bits)));
+		return true;
+	}
+
 	// ── Audio output ────────────────────────────────────────────────
 
 	/**
@@ -641,6 +690,8 @@ export class DSDDecoder {
 		this.frameDataRead = 0;
 		this.audioAccumLen = 0;
 		this.ysf.reset();
+		this.dpmr.reset();
+		this.dpmrVoice.length = 0;
 		this.status = {
 			mode: 'unknown',
 			synced: false,

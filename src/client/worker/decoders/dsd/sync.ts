@@ -40,6 +40,10 @@ const syncLabels: Readonly<Partial<Record<SyncType, string>>> = {
 	[SyncType.INV_NXDN_BS_VOICE]: '-NXDN_BS_VOICE',
 	[SyncType.YSF]: 'YSF',
 	[SyncType.INV_YSF]: '-YSF',
+	[SyncType.DPMR_FS1]: 'DPMR_FS1',
+	[SyncType.DPMR_FS2]: 'DPMR_FS2',
+	[SyncType.DPMR_FS3]: 'DPMR_FS3',
+	[SyncType.DPMR_FS4]: 'DPMR_FS4',
 };
 
 /** Human-readable label for a SyncType value. */
@@ -72,6 +76,10 @@ const syncModes: Readonly<Partial<Record<SyncType, DSDMode>>> = {
 	[SyncType.INV_NXDN_BS_VOICE]: 'nxdn',
 	[SyncType.YSF]: 'ysf',
 	[SyncType.INV_YSF]: 'ysf',
+	[SyncType.DPMR_FS1]: 'dpmr',
+	[SyncType.DPMR_FS2]: 'dpmr',
+	[SyncType.DPMR_FS3]: 'dpmr',
+	[SyncType.DPMR_FS4]: 'dpmr',
 };
 
 /** Map SyncType to DSDMode. */

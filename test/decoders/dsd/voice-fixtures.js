@@ -140,15 +140,15 @@ function lowpassTaps(cutoffHz, rate, n) {
 }
 
 /**
- * Complex white noise for a carrier-to-noise ratio in the channel bandwidth, then the channel filter.
+ * Complex white noise for a carrier-to-noise ratio in the channel bandwidth, then the channel filter (cut off at filterHz).
  * iq: interleaved I/Q at rate; a constant-envelope carrier of amplitude amp.
  */
-export function channel(iq, { rate = 48000, cnrDb = 99, bandwidthHz = 12500, amp = 1, seed = 1 } = {}) {
+export function channel(iq, { rate = 48000, cnrDb = 99, bandwidthHz = 12500, filterHz = bandwidthHz / 2, amp = 1, seed = 1 } = {}) {
 	const out = new Float32Array(iq.length);
 	const rng = rngOf(seed);
 	const sigma = cnrDb >= 99 ? 0 : Math.sqrt(((amp * amp) / 10 ** (cnrDb / 10)) * (rate / bandwidthHz) * 0.5);
 	for (let i = 0; i < iq.length; i++) out[i] = iq[i] + sigma * gaussian(rng);
-	const taps = lowpassTaps(bandwidthHz / 2, rate, 63);
+	const taps = lowpassTaps(filterHz, rate, 63);
 	const filtered = new Float32Array(out.length);
 	for (let n = 0; n < out.length / 2; n++) {
 		let re = 0;

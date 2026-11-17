@@ -341,3 +341,17 @@ file). Algorithms and protocol tables follow the OnAir source.
 | `src/client/worker/decoders/digimode/mpt1327/index.ts` | `core/src/mpt1327/mpt1327_engine.cpp` (FM audio into the decoder, message rows, summary; no call following) |
 | `test/digimode/mpt1327/fixtures.js` | `core/src/mpt1327/mpt1327_gen.cpp` (codeword builders, CCSC, control channel bits, FFSK audio, FM), `tests/mpt1327/test_mpt1327.cpp` (sampleMessages) |
 | `test/digimode/mpt1327/mpt1327.spec.js` | `tests/mpt1327/test_mpt1327.cpp`, `test_mpt1327_std.cpp` |
+| `src/client/worker/decoders/digimode/inmarsat-c/types.ts` | `core/include/dect2/inmc/inmc_tel.h` (InmcMessage, InmcNcsInfo), `inmc_code.h` (FrameDecode), `inmc_pkt.h` (FrameParser slots), `inmc_egc.h` (EgcInfo) |
+| `src/client/worker/decoders/digimode/inmarsat-c/code.ts` | `core/src/inmc/inmc_code.cpp` (unique word, scrambler, convolutional code, interleaver, soft Viterbi, unique word fit with a polarity flip, packet check bytes) |
+| `src/client/worker/decoders/digimode/inmarsat-c/tables.ts` | `core/src/inmc/inmc_pkt.cpp` (ocean regions, stations, services, descriptors, ITA2, text presentation) |
+| `src/client/worker/decoders/digimode/inmarsat-c/egc.ts` | `core/src/inmc/inmc_egc.cpp` (NAVAREA / METAREA, warning number and subject of an EGC message) |
+| `src/client/worker/decoders/digimode/inmarsat-c/packets.ts` | `core/src/inmc/inmc_pkt.cpp` (FrameParser: bulletin board, signalling channel, EGC assembly, multiframe packets) |
+| `src/client/worker/decoders/digimode/inmarsat-c/demod.ts` | `core/src/inmc/inmc_rx.cpp` (carrier search by squaring, carrier mixer, RRC matched filter, Gardner timing, Costas loop, Es/N0); no channel mixer or CIC (BrowSDR's channel filter) |
+| `src/client/worker/decoders/digimode/inmarsat-c/framer.ts` | `core/src/inmc/inmc_rx.cpp` (frame sync on the unique word, polarity slips, decodeAt) |
+| `src/client/worker/decoders/digimode/inmarsat-c/report.ts` | `app/inmc/inmc_ui.cpp` (what is shown of an EGC message), `core/include/dect2/inmc/inmc_tel.h` (inmcSummary) |
+| `src/client/worker/decoders/digimode/inmarsat-c/index.ts` | `core/src/inmc/inmc_rx.cpp` (InmcReceiver: one channel, reports, log lines; no band search) |
+| `test/digimode/inmarsat-c/fixtures.js` | `core/src/inmc/inmc_gen.cpp` (InmcFrameSource, RRC modulator), `core/src/inmc/inmc_pkt.cpp` (packet builders) |
+| `test/digimode/inmarsat-c/code.spec.js` | `tests/inmc/test_inmc_code.cpp` |
+| `test/digimode/inmarsat-c/packets.spec.js` | `tests/inmc/test_inmc_pkt.cpp`, `test_inmc_egc.cpp` |
+| `test/digimode/inmarsat-c/receiver.spec.js` | `tests/inmc/test_inmc_rx.cpp`, `test_inmc_impair.cpp`, `test_inmc_basic.cpp` |
+| `test/digimode/inmarsat-c/worker.spec.js` | `tests/inmc/test_inmc_engine.cpp` |

@@ -89,6 +89,22 @@ export const DIGIMODES: readonly DigimodeInfo[] = [
 		source: 'core/src/hfdig/hfdig_rtty.cpp, hfdig_rtty_auto.cpp, core/src/autoparam/autoparam.cpp',
 	},
 	{
+		id: 'inmarsat-c',
+		label: 'Inmarsat-C (SafetyNET, EGC)',
+		family: 'Maritime',
+		description:
+			"Maritime safety broadcasts from the Inmarsat-C NCS common channel at 1.5 GHz: 1200 symbol/s BPSK in frames of 8.64 s (unique word, interleaving, rate 1/2 code with soft Viterbi decoding). Each EGC message in full text: SafetyNET navigational and weather warnings and forecasts with their NAVAREA or METAREA and warning number, search and rescue, distress relays and FleetNET; distress and urgency messages are alerts, and a message still missing packets is listed as incomplete. The ocean region, station and frame number come from the bulletin board. The carrier is searched up to 20 kHz either side of the VFO, enough for an RTL-SDR's error at 1.5 GHz. Needs an L-band patch antenna with an LNA and a view of the satellite (the presets are the NCS channels).",
+		rate: 96000,
+		bandwidth: 44000,
+		presets: [
+			{ label: 'Alphasat 25E (Europe, Africa, IOR)', freqMHz: 1537.1 },
+			{ label: 'Inmarsat-3 F5 54W (Atlantic East)', freqMHz: 1541.45 },
+			{ label: 'Inmarsat-4 F3 98W (Americas)', freqMHz: 1537.7 },
+			{ label: 'Inmarsat-4 F1 143.5E (Pacific, Asia)', freqMHz: 1541.45 },
+		],
+		source: 'core/src/inmc/inmc_rx.cpp, inmc_code.cpp, inmc_pkt.cpp, inmc_egc.cpp',
+	},
+	{
 		id: 'ax25-sat',
 		label: 'CubeSat AX.25 telemetry',
 		family: 'Satellite',

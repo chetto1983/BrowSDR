@@ -49,6 +49,40 @@ describe('ORBCOMM public downlink', () => {
 		expect(parseOrbcommPacket(downlink).fields).not.toContainEqual(['Channels', expect.anything()]);
 	});
 
+	it('validates both ephemeris slots together and decodes the broadcast orbit position', () => {
+		// Published 24-byte downlink, 1F 14 ... CD 89 (Orbcomm downlink packet examples).
+		const ephemeris = Uint8Array.from(Buffer.from('1f141dd2a12d9dc3a0b5fe4cf7648371cc6711042004cd89', 'hex'));
+		expect(fletcherOk(ephemeris.subarray(0, 12))).toBe(false);
+		expect(fletcherOk(ephemeris)).toBe(true);
+		const parsed = parseOrbcommPacket(ephemeris);
+		expect(parsed.kind).toBe('ephemeris');
+		expect(parsed.fields).toContainEqual(['GPS week', '1056']);
+		expect(parsed.fields).toContainEqual(['GPS seconds of week', '266599']);
+		expect(parsed.fields.some(([key]) => key === 'Latitude')).toBe(true);
+
+		const records = [];
+		const receiver = new OrbcommReceiver({ record: (record) => records.push(record), status: () => {} });
+		receiver.packet(frame(7, 23)[0]);
+		receiver.packet(ephemeris.subarray(0, 12));
+		receiver.packet(ephemeris.subarray(12));
+		expect(records.filter((record) => record.text.includes('Ephemeris'))).toHaveLength(1);
+	});
+
+	it('assembles a complete system block only after every valid fragment arrives', () => {
+		const records = [];
+		const receiver = new OrbcommReceiver({ record: (record) => records.push(record), status: () => {} });
+		receiver.packet(frame(7, 23)[0]);
+		const parts = ['1c30b000056400141d0198d1', '1c3113010b097112b8000749', '1c325a00000000000000aeaa'].map((value) =>
+			Uint8Array.from(Buffer.from(value, 'hex')),
+		);
+		for (const part of parts) expect(fletcherOk(part)).toBe(true);
+		receiver.packet(parts[0]);
+		receiver.packet(parts[2]);
+		expect(records.some((record) => record.text.includes('complete downlink'))).toBe(false);
+		receiver.packet(parts[1]);
+		expect(records.some((record) => record.text.includes('complete downlink · 24 bytes'))).toBe(true);
+	});
+
 	it('does not claim a satellite from receiver noise', () => {
 		const noise = new Float32Array(48000 * 2);
 		let seed = 987654321;

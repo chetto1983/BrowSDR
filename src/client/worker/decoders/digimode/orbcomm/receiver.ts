@@ -26,6 +26,9 @@ export class OrbcommReceiver implements DigimodeDecoder {
 	private satellite = -1;
 	private good = 0;
 	private bad = 0;
+	private pendingEphemeris?: Uint8Array;
+	private readonly fragments = new Map<string, { total: number; parts: Array<Uint8Array | undefined>; lastSlot: number }>();
+	private slot = 0;
 
 	constructor(private readonly sink: DigimodeSink) {}
 
@@ -44,6 +47,9 @@ export class OrbcommReceiver implements DigimodeDecoder {
 		this.satellite = -1;
 		this.good = 0;
 		this.bad = 0;
+		this.pendingEphemeris = undefined;
+		this.fragments.clear();
+		this.slot = 0;
 		this.sink.status('Searching for ORBCOMM sync', false);
 	}
 
@@ -85,14 +91,39 @@ export class OrbcommReceiver implements DigimodeDecoder {
 	}
 
 	private packet(bytes: Uint8Array): void {
+		this.slot++;
+		if (this.pendingEphemeris) {
+			const full = new Uint8Array(2 * PACKET_BYTES);
+			full.set(this.pendingEphemeris);
+			full.set(bytes, PACKET_BYTES);
+			this.pendingEphemeris = undefined;
+			if (fletcherOk(full)) {
+				this.good += 2;
+				this.report(parseOrbcommPacket(full)!);
+				return;
+			}
+			this.bad++;
+		}
+		if (bytes[0] === 0x1f && !fletcherOk(bytes)) {
+			this.pendingEphemeris = bytes.slice();
+			return;
+		}
 		if (!fletcherOk(bytes)) {
 			this.bad++;
 			return;
 		}
 		this.good++;
 		const parsed = parseOrbcommPacket(bytes)!;
+		this.report(parsed);
+		if (parsed.kind === 'message' || parsed.kind === 'uplink' || parsed.kind === 'downlink' || parsed.kind === 'network') {
+			this.assemble(bytes, parsed.kind);
+		}
+	}
+
+	private report(parsed: NonNullable<ReturnType<typeof parseOrbcommPacket>>): void {
 		if (parsed.kind === 'sync') {
 			this.satellite = parsed.satellite!;
+			for (const [key, value] of this.fragments) if (this.slot - value.lastSlot > 500) this.fragments.delete(key);
 			this.sink.status(`ORBCOMM satellite ${this.satellite} · ${this.good} packets`, true);
 			return;
 		}
@@ -100,5 +131,32 @@ export class OrbcommReceiver implements DigimodeDecoder {
 		if (parsed.kind === 'fill') return;
 		const fields = [['Satellite', this.satellite >= 0 ? String(this.satellite) : 'Unknown'] as [string, string], ...parsed.fields];
 		this.sink.record({ text: `Sat ${this.satellite}: ${parsed.text}`, fields });
+	}
+
+	private assemble(bytes: Uint8Array, kind: string): void {
+		const total = bytes[1] >> 4;
+		const index = bytes[1] & 15;
+		if (!total || index >= total) return;
+		const key = `${this.satellite}:${kind}`;
+		let assembly = this.fragments.get(key);
+		if (!assembly || assembly.total !== total || index === 0 || this.slot - assembly.lastSlot > 500) {
+			assembly = { total, parts: Array.from({ length: total }, () => undefined as Uint8Array | undefined), lastSlot: this.slot };
+			this.fragments.set(key, assembly);
+		}
+		assembly.parts[index] = bytes.slice(2, 10);
+		assembly.lastSlot = this.slot;
+		if (assembly.parts.filter((part) => part !== undefined).length !== total) return;
+		this.fragments.delete(key);
+		const payload = new Uint8Array(8 * total);
+		assembly.parts.forEach((part, partIndex) => payload.set(part!, 8 * partIndex));
+		const payloadHex = Array.from(payload, (byte) => byte.toString(16).padStart(2, '0').toUpperCase()).join(' ');
+		const fields: Array<[string, string]> = [
+			['Satellite', String(this.satellite)],
+			['Fragments', String(total)],
+			['Payload (hex)', payloadHex],
+		];
+		const used = payload.filter((byte) => byte !== 0);
+		if (used.length >= 4 && used.every((byte) => byte >= 32 && byte <= 126)) fields.push(['Printable bytes', String.fromCharCode(...used)]);
+		this.sink.record({ text: `Sat ${this.satellite}: complete ${kind} · ${payload.length} bytes`, fields });
 	}
 }

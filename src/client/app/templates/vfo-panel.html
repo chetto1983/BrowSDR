@@ -267,12 +267,21 @@
 			</template>
 			<!-- P25 details -->
 			<template v-if="receiver.dsdStatus[i]?.mode === 'p25'">
-				<div style="color:#aaa;">
+				<div class="dsd-p25-nid" style="color:#aaa;">
 					NAC: {{ receiver.dsdStatus[i]?.nac != null ? '0x' + receiver.dsdStatus[i].nac.toString(16).toUpperCase().padStart(3,'0') : '---' }}
 					<span v-if="receiver.dsdStatus[i]?.duid" style="margin-left:8px;">DUID: {{ receiver.dsdStatus[i].duid }}</span>
 				</div>
-					<div v-if="receiver.dsdStatus[i]?.tg" style="color:#aaa;">TG: {{ receiver.dsdStatus[i].tg }} <span v-if="receiver.dsdStatus[i]?.src" style="margin-left:8px;">SRC: {{ receiver.dsdStatus[i].src }}</span></div>
-				<div v-if="receiver.dsdStatus[i]?.algid != null" style="color:#aaa;">ALGID: 0x{{ receiver.dsdStatus[i].algid.toString(16).toUpperCase().padStart(2,'0') }}</div>
+			</template>
+			<!-- P25 Phase 1 (p25/): call, control channel (site, neighbours, last grant) and recent events; kept after the carrier drops -->
+			<template v-for="p in (receiver.dsdStatus[i]?.p25 && ['p25', 'unknown'].includes(receiver.dsdStatus[i].mode) ? [receiver.dsdStatus[i].p25] : [])" :key="'p25'">
+				<div v-if="p.call" class="dsd-p25-call" style="color:#ddd;">{{ p.call.src < 0 ? '?' : p.call.src }} → {{ p.call.group ? 'TG ' : '' }}{{ p.call.dst < 0 ? '?' : p.call.dst }} · {{ p.call.active ? (p.call.lateEntry ? 'joined late' : 'on air') : (p.call.endSeen ? 'ended' : 'lost') }}<span v-if="p.call.encrypted" style="color:#ff8844;"> · ENCRYPTED 0x{{ p.call.algId.toString(16).toUpperCase() }} key {{ p.call.keyId }}</span><span v-if="p.call.emergency" style="color:#ff4444;"> · EMERGENCY</span></div>
+				<div v-if="p.site" class="dsd-p25-site" style="color:#aaa;"><template v-if="p.site.wacn >= 0">WACN: 0x{{ p.site.wacn.toString(16).toUpperCase().padStart(5,'0') }} · </template>SYS: 0x{{ p.site.sysId.toString(16).toUpperCase().padStart(3,'0') }}<template v-if="p.site.rfss >= 0"> · RFSS {{ p.site.rfss }} · site {{ p.site.site }}</template><template v-if="p.site.freqHz"> · CC {{ (p.site.freqHz / 1e6).toFixed(5) }} MHz</template></div>
+				<div v-if="p.grant" class="dsd-p25-grant" style="color:#aaa;">Grant: {{ p.grant.group ? 'TG ' : '' }}{{ p.grant.dst }} ← {{ p.grant.src }} on {{ (p.grant.channel >> 12) & 15 }}-{{ p.grant.channel & 4095 }}<template v-if="p.grant.freqHz"> ({{ (p.grant.freqHz / 1e6).toFixed(5) }} MHz)</template><span v-if="p.grant.encrypted" style="color:#ff8844;"> · encrypted</span><span v-if="p.grant.emergency" style="color:#ff4444;"> · EMERGENCY</span></div>
+				<div v-if="p.adjacent.length" class="dsd-p25-adjacent" style="color:#888;font-size:10px;">Neighbours: {{ p.adjacent.map((a) => a.rfss + '-' + a.site + (a.freqHz ? ' ' + (a.freqHz / 1e6).toFixed(5) : '')).join(', ') }}</div>
+				<details v-if="p.events.length" class="dsd-p25-events" style="color:#aaa;">
+					<summary style="cursor:pointer;">Events ({{ p.events.length }}): {{ p.events[0].text }}</summary>
+					<div v-for="event in p.events" :key="event.at + event.text" style="font-size:10px;">{{ new Date(event.at).toTimeString().slice(0, 8) }} {{ event.text }}</div>
+				</details>
 			</template>
 			<!-- P25 Phase 2 details -->
 			<template v-if="receiver.dsdStatus[i]?.mode === 'p25p2' && receiver.dsdStatus[i]?.p25p2">

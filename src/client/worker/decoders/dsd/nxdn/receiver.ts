@@ -10,7 +10,7 @@
 // there on its sync word and hands it to the same calls, the first frame of a grid read back from the buffer.
 import { SyncType } from '@/worker/decoders/dsd/types';
 import type { DsdChain, DsdSink } from '@/worker/decoders/dsd/types';
-import { frameLevels, lsFit, nearestLevel } from '@/worker/decoders/dsd/frame-timing';
+import { chainLevels, lsFit, nearestLevel } from '@/worker/decoders/dsd/frame-timing';
 import { DSD_IF_RATE } from '@/worker/decoders/dsd/constants';
 import { NxdnCalls } from './calls';
 import { FRAME_SYM, FSW, FSW_SYM, PAYLOAD_SYM, PN9 } from './proto';
@@ -268,11 +268,7 @@ export class NxdnReceiver {
 
 	/** The frame's levels re-sampled on the chain's RRC output, else (dibits fed without the chain) as the clock recovery took them. */
 	private levels96(chain: DsdChain, start: number): { x: Float32Array; g: number } | null {
-		const fit = frameLevels(chain, start - 18, FRAME_SYM, FSW);
-		if (fit) return fit;
-		const v = Float32Array.from({ length: FRAME_SYM }, (_, k) => chain.symbols[(start - 18 + k) & chain.mask]);
-		const { g, d } = lsFit(v, FSW, FSW_SYM);
-		return g ? { x: v.map((y) => (y - d) / g), g } : null;
+		return chainLevels(chain, start - 18, FRAME_SYM, FSW);
 	}
 
 	private frame96Of(fit: { x: Float32Array; g: number }, onGrid: boolean): NxdnFrame {

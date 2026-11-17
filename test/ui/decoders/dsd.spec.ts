@@ -8,6 +8,7 @@ import type { P25p2Slot, P25p2Status } from '@/worker/decoders/dsd/p25p2/types';
 import type { DmrInfo } from '@/worker/decoders/dsd/dmr/types';
 import type { DstarStatus } from '@/worker/decoders/dsd/dstar/types';
 import type { NxdnStatus } from '@/worker/decoders/dsd/nxdn/types';
+import type { P25Status } from '@/worker/decoders/dsd/p25/types';
 
 let wrapper: VueWrapper;
 afterEach(() => wrapper?.unmount());
@@ -405,5 +406,66 @@ describe('DSD status panel', () => {
 		});
 		expect(control.find('.dsd-nxdn-call').exists()).toBe(false);
 		expect(control.get('.dsd-nxdn-frame').text()).toBe('NXDN96 · RAN 5 · RCCH, CAC, outbound');
+	});
+
+	it('shows P25 Phase 1: the call, the site, the last grant with its frequency, the neighbours and the events', async () => {
+		const at = new Date(2026, 10, 17, 21, 30, 5).getTime();
+		const p25: P25Status = {
+			nac: 0x293,
+			duid: 'LDU2',
+			call: {
+				active: true,
+				src: 7654321,
+				dst: 1300,
+				group: true,
+				emergency: false,
+				encrypted: true,
+				algId: 0x84,
+				keyId: 0x1234,
+				lateEntry: false,
+				endSeen: false,
+				voiceFrames: 36,
+				durSec: 0.7,
+			},
+			control: true,
+			site: { wacn: 0xbee00, sysId: 0x3a1, rfss: 1, site: 5, nac: 0x293, channel: 0x1001, freqHz: 851018750 },
+			adjacent: [{ wacn: 0xbee00, sysId: 0x3a1, rfss: 1, site: 6, nac: -1, channel: 0x1009, freqHz: 851118750 }],
+			idens: [],
+			grant: { src: 1234567, dst: 1201, group: true, channel: 0x1010, freqHz: 851206250, emergency: false, encrypted: false },
+			blocksOk: 40,
+			blocksBad: 1,
+			inverted: false,
+			events: [
+				{ at, text: 'HDU NAC 293 talkgroup 1300, encrypted: AES-256 (0x84), key 4660' },
+				{ at: at - 1000, text: 'GRP_V_CH_GRANT 1234567 → TG 1201 on channel 1-16 (851.20625 MHz)' },
+			],
+		};
+		const panel = await panelWith({ mode: 'p25', synced: true, syncName: 'P25P1', syncCount: 9, nac: 0x293, duid: 'LDU2', p25 });
+		expect(panel.get('.dsd-p25-nid').text()).toBe('NAC: 0x293 DUID: LDU2');
+		expect(panel.get('.dsd-p25-call').text()).toBe('7654321 → TG 1300 · on air · ENCRYPTED 0x84 key 4660');
+		expect(panel.get('.dsd-p25-site').text()).toBe('WACN: 0xBEE00 · SYS: 0x3A1 · RFSS 1 · site 5 · CC 851.01875 MHz');
+		expect(panel.get('.dsd-p25-grant').text()).toBe('Grant: TG 1201 ← 1234567 on 1-16 (851.20625 MHz)');
+		expect(panel.get('.dsd-p25-adjacent').text()).toBe('Neighbours: 1-6 851.11875');
+		const events = panel.get('.dsd-p25-events');
+		expect(events.get('summary').text()).toBe('Events (2): HDU NAC 293 talkgroup 1300, encrypted: AES-256 (0x84), key 4660');
+		expect(events.findAll('div').map((d) => d.text())).toEqual([
+			'21:30:05 HDU NAC 293 talkgroup 1300, encrypted: AES-256 (0x84), key 4660',
+			'21:30:04 GRP_V_CH_GRANT 1234567 → TG 1201 on channel 1-16 (851.20625 MHz)',
+		]);
+		wrapper.unmount();
+		// after the carrier drops: the ended call and the control channel stay; another protocol hides them
+		const lost = await panelWith({
+			mode: 'unknown',
+			synced: false,
+			p25: {
+				...p25,
+				call: { ...p25.call!, active: false, endSeen: false, encrypted: false, src: 2002, dst: 2003, group: false, emergency: true },
+			},
+		});
+		expect(lost.get('.dsd-p25-call').text()).toBe('2002 → 2003 · lost · EMERGENCY');
+		expect(lost.find('.dsd-p25-nid').exists()).toBe(false);
+		wrapper.unmount();
+		const other = await panelWith({ mode: 'dmr', synced: true, p25 });
+		expect(other.find('.dsd-p25-call').exists()).toBe(false);
 	});
 });

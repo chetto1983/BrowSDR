@@ -3,6 +3,7 @@ import type { P25p2Status } from './p25p2/types';
 import type { DmrInfo } from './dmr/types';
 import type { DstarStatus } from './dstar/types';
 import type { NxdnStatus } from './nxdn/types';
+import type { P25Status } from './p25/types';
 /*
  * DSD (Digital Speech Decoder) status and sync types.
  * Ported from SDR++ Brown ch_extravhf_decoder.
@@ -68,6 +69,8 @@ export interface DSDStatus {
 	emr?: boolean;
 	/** P25 Algorithm ID (encryption) */
 	algid?: number;
+	/** P25 Phase 1 call, control channel (site, neighbours, channel identifiers, grants) and events (p25/). */
+	p25?: P25Status;
 
 	// ── P25 Phase 2 ──
 	p25p2?: P25p2Status;

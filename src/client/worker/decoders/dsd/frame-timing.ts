@@ -91,3 +91,15 @@ export function frameLevels(chain: DsdChain, first: number, n: number, known: Ar
 	if (fit.g * g > 0 && Math.abs(fit.g) > 0.5 * Math.abs(g) && Math.abs(fit.g) < 2 * Math.abs(g)) ({ g, d } = fit);
 	return { x: v.map((x) => (x - d) / g), g };
 }
+
+/**
+ * frameLevels, or, when the chain's times do not cover the frame (dibits fed without the chain), the symbol values as the
+ * clock recovery took them, fitted on the known symbols.
+ */
+export function chainLevels(chain: DsdChain, first: number, n: number, known: ArrayLike<number>): { x: Float32Array; g: number } | null {
+	const fit = frameLevels(chain, first, n, known);
+	if (fit) return fit;
+	const v = Float32Array.from({ length: n }, (_, k) => chain.symbols[(first + k) & chain.mask]);
+	const { g, d } = lsFit(v, known, known.length);
+	return g ? { x: v.map((y) => (y - d) / g), g } : null;
+}

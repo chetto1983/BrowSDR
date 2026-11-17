@@ -263,6 +263,14 @@ file). Algorithms and protocol tables follow the OnAir source.
 | `test/decoders/dsd/p25p2/proto.spec.js` | `tests/p25p2/test_p25p2_proto.cpp`, `tests/p25p2/test_p25p2_audit.cpp` (message lengths) |
 | `test/decoders/dsd/p25p2/stream.spec.js` | `tests/p25p2/test_p25p2_rx.cpp` |
 | `test/decoders/dsd/p25p2/impair.spec.js` | `tests/p25p2/test_p25p2_impair.cpp`, `tests/p25p2/test_p25p2_audit.cpp` |
+| `src/client/worker/decoders/dsd/p25/types.ts` | `core/include/dect2/p25/p25_proto.h` (Tsbk, Lc, Crypto, Iden), `core/include/dect2/p25/p25_cc.h` (CcItem, PduData), `core/include/dect2/p25/p25_tel.h` (P25Call, P25Site, P25IdenRow) |
+| `src/client/worker/decoders/dsd/p25/proto.ts` | `rust/onair_p25/src/nid.rs` (BCH NID), `golay.rs`, `trellis.rs` (trellis code, CRC-CCITT), `msg.rs` (data units, TSBK, link control, encryption sync, header, names), `core/src/p25/p25_proto.cpp` (frame sync), `core/src/p25/p25_proto_rs.cpp` (NID with a known NAC), `core/src/p25/p25_rx.cpp` (soft hexbit decision) |
+| `src/client/worker/decoders/dsd/p25/cc.ts` | `core/src/p25/p25_cc.cpp` (patches, affiliation, registration, deny / queue / acknowledge, data grants, MBT, unconfirmed data; layouts from OP25, reason codes and PDU fields from SDRTrunk as OnAir credits them) |
+| `src/client/worker/decoders/dsd/p25/tsbk.ts` | `core/src/p25/p25_rx.cpp` (onTsbk: voice grants, identifier updates, network, RFSS and adjacent site status, freqOf) |
+| `src/client/worker/decoders/dsd/p25/calls.ts` | `core/src/p25/p25_rx.cpp` (NID, HDU, LDU link control and encryption sync, TDU / TDULC, TSBK and PDU blocks, calls, events) |
+| `test/decoders/dsd/p25/fixtures.js` | `core/src/p25/p25_gen.cpp` (frame builder, LDU hexbits, TSBK frames, known voice, test schedule, C4FM), `rust/onair_p25/src/imbe.rs` (interleave) |
+| `test/decoders/dsd/p25/proto.spec.js` | `tests/p25/test_p25_proto.cpp`, `tests/p25/test_p25_cc.cpp`, `rust/onair_p25/src/tests.rs` |
+| `test/decoders/dsd/p25/stream.spec.js` | `tests/p25/test_p25_rx.cpp`, `tests/p25/test_p25_sens.cpp` |
 | `src/client/worker/decoders/dsd/dmr/types.ts` | `core/include/dect2/dmr/dmr_proto.h` (FullLc, Csbk, DataHeader, DataBlock, TalkerAlias), `dmr_tel.h` (DmrMessage, DmrLocation), `dmr_vendor.h`, `dmr_xpt.h`, `core/include/dect2/p25/trunk.h` (Grant) |
 | `src/client/worker/decoders/dsd/dmr/codes.ts` | `rust/onair_dmr/src/codes.rs` (Golay (20,8), QR (16,7,6), Hamming codes, Reed-Solomon (12,9), CRC-CCITT, CRC-8, CRC-9, CRC-32, checksum5), `rust/onair_dmr/src/bits.rs` |
 | `src/client/worker/decoders/dsd/dmr/product.ts` | `rust/onair_dmr/src/product.rs` (BPTC (196,96), embedded LC, short LC, CACH, rate 3/4 trellis, rate 1) |

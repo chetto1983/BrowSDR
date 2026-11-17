@@ -10,7 +10,7 @@ protocol carries:
 | Protocol | Shown                                                                                                                                                                                                                                                                                             | VFO bandwidth   |
 | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------- |
 | DMR      | Colour code, slot, burst types, talkgroup or unit call (also when joined late), emergency, privacy; talker alias; GPS, LRRP and NMEA positions; short data and Motorola TMS texts; Tier III, Capacity Plus, Connect Plus and Hytera XPT grants and site; CACH slot activity; the 20 latest events | 12.5 kHz        |
-| P25      | NAC, data unit, source, talkgroup, emergency, encryption algorithm                                                                                                                                                                                                                                | 12.5 kHz        |
+| P25      | NAC; source, talkgroup or unit, emergency, encryption algorithm and key; WACN, system, RFSS and site; neighbours; grants with frequencies; the 20 latest events                                                                                                                                   | 12.5 kHz        |
 | P25 Ph2  | Both time slots: source, talkgroup or unit, call state, emergency, encryption algorithm; WACN, system ID and NAC; last grant and site                                                                                                                                                             | 12.5 kHz        |
 | D-STAR   | MY with suffix, YOUR, RPT1, RPT2, flags, 20-character message, D-PRS / NMEA position, code squelch, how the call ended; the 20 latest events                                                                                                                                                      | 6.25–12.5 kHz   |
 | NXDN     | NXDN48 and NXDN96: unit ID, talkgroup or unit, call type, encryption, RAN, frame type, status and short data, site; the 20 latest events                                                                                                                                                          | 6.25 / 12.5 kHz |
@@ -20,7 +20,7 @@ protocol carries:
 M17 shows source and destination callsigns, CAN, stream type, encryption flag,
 text and CRC-checked packet messages. It plays clear Codec2 voice.
 
-D-STAR, NXDN, YSF, dPMR, M17, P25 Phase 2 and the DMR link layer are ported from
+D-STAR, NXDN, YSF, dPMR, M17, P25 (both phases) and the DMR link layer are ported from
 [OnAir](https://github.com/adswill/OnAir) (GPL-3.0-or-later, see
 `third_party/onair`).
 
@@ -43,6 +43,27 @@ and CAC with their CRCs. A frame found after a search must pass a FACCH1 or CAC
 CRC, or a SACCH CRC on a grid of two frame syncs, before anything is shown. The
 call, site and event list stay after the carrier drops and are cleared on
 retune.
+
+## P25 Phase 1
+
+P25 frames are found on the shared 4800 symbols/s chain. The decoder reads the
+NID (BCH, the site's NAC tried first), then what its data unit needs: a TSBK
+frame one block at a time, so the next frame's sync is not read over. Each
+frame is re-sampled from the chain's filter output at the timing with the
+cleanest decisions. Decoded: the header (algorithm, key, talkgroup), the link
+control (source, talkgroup or unit, emergency, encryption flag), the encryption
+sync, terminators, TSBKs (network, RFSS and adjacent site status, channel
+identifier updates, group and unit voice grants with their frequencies,
+affiliation, registration, deny, queue, patches, data grants) and PDU headers
+with multi-block trunking and unconfirmed data. A call whose header was missed
+looks for it in the buffer before its first link control. Encrypted calls are
+reported with their algorithm and key and never played. Control channels are
+decoded only: there is no trunking follower.
+
+A Phase 1 control channel's WACN, system ID and NAC are the seed of the same
+system's Phase 2 channels. They are not handed to the Phase 2 receiver: a seed
+set there stops it solving its own, so a VFO retuned to another system would
+not decode.
 
 ## P25 Phase 2
 
@@ -74,7 +95,8 @@ need no seed.
 - Tune within about 1.5 kHz of the channel; apart from P25 Phase 2 there is no
   automatic frequency correction.
 - Only the latest transmission is shown, with a short list of recent events
-  (DMR, D-STAR, NXDN); there is no call log and no PMR446 channel scan.
+  (DMR, D-STAR, NXDN, P25 Phase 1); there is no call log and no PMR446 channel
+  scan.
 - D-STAR positions (D-PRS and NMEA) are shown in the panel, not on the APRS
   map: the map takes the stations of a VFO's own APRS decoder only.
 - D-STAR voice uses the AMBE 3600x2400 codec, which BrowSDR's mbelib build
@@ -84,6 +106,10 @@ need no seed.
   not decode them either). Encrypted NXDN voice is reported, never played. A
   one-frame NXDN96 transmission (a lone status message) is missed: the 4800
   symbols/s chain reads a frame once a second sync confirms it.
+- P25 Phase 1: confirmed (rate 3/4) data packets, manufacturer link control
+  words and Phase 1 talkgroup lists are not decoded. Right after silence the
+  4800 symbols/s chain may need a frame or two to settle, so a lone one-frame
+  transmission (a data packet) can be missed.
 - Encrypted voice is not decrypted.
 - YSF and dPMR were tested on signals from OnAir's generators, not yet on
   off-air recordings.

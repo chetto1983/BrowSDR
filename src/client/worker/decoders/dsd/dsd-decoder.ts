@@ -18,7 +18,7 @@ import { DSTAR_FRAME_DIBITS } from './dsd-dstar';
 import { DstarCalls } from './dstar/call';
 import { NxdnReceiver } from './nxdn/receiver';
 import { NXDN96_READ } from './nxdn/proto';
-import { processP25Frame, P25_NID_DIBITS, P25_LDU_BODY_DIBITS } from './dsd-p25';
+import { P25Frames, P25_NID_READ } from './p25/calls';
 import { readYsfFrame } from './ysf/frame';
 import { YSF_FRAME_DIBITS, YSF_SYNC_DIBITS } from './ysf/proto';
 import { YsfCall, decodeYsfVoice } from './ysf/receiver';
@@ -62,6 +62,7 @@ export class DSDDecoder {
 	private dstar = new DstarCalls(this.sink('dstar', decodeAmbe));
 	/** NXDN48 runs beside the chain at 2400 symbols/s, like dPMR; NXDN96 frames come from the chain. */
 	private nxdn = new NxdnReceiver(this.sink('nxdn', decodeAmbe));
+	private p25 = new P25Frames(this.sink('p25', decodeImbe));
 	private dibitBufPos = 0;
 	private currentSync: SyncType = SyncType.NONE;
 	private synced = false;
@@ -226,6 +227,7 @@ export class DSDDecoder {
 
 	/** No sync for a second: the carrier has gone. */
 	private expireSync(): void {
+		this.p25.expire();
 		this.synced = false;
 		this.lockedMode = 'unknown';
 		this.modeLockCount = 0;
@@ -247,6 +249,7 @@ export class DSDDecoder {
 			dmr: this.status.dmr,
 			dstar: this.status.dstar,
 			nxdn: this.status.nxdn,
+			p25: this.status.p25,
 		};
 		this.status.syncCount = this._dbgSyncCount;
 		this.status.lastSyncName = this.lastSyncName;
@@ -387,7 +390,6 @@ export class DSDDecoder {
 		this._dbgFrameCount++;
 		const syncType = this.currentSync;
 		const mode = syncTypeToMode(syncType);
-		const startPos = this.frameStart & BUF_MASK;
 		let more = 0;
 
 		switch (mode) {
@@ -408,7 +410,7 @@ export class DSDDecoder {
 				);
 				break;
 			case 'p25':
-				processP25Frame(this.dibitBuf, startPos, this.status, this.sink('p25', decodeImbe));
+				more = this.p25.frame(this.chain, this.frameStart, this.frameDataRead);
 				break;
 			case 'dstar':
 				more = this.dstar.frame(this.chain, syncType, this.frameStart, this.frameDataRead);
@@ -572,7 +574,7 @@ export class DSDDecoder {
 				// Matches SDR++ Brown's skipDibit(120) after data — avoids false syncs in other slot's data
 				return 120;
 			case 'p25':
-				return P25_NID_DIBITS + P25_LDU_BODY_DIBITS; // ~752 dibits
+				return P25_NID_READ; // the NID, then what its data unit needs
 			case 'dstar':
 				return isVoiceSync(syncType)
 					? DSTAR_FRAME_DIBITS // 72 voice + 24 slow-data GMSK symbols
@@ -613,6 +615,7 @@ export class DSDDecoder {
 		this.p25p2.reset();
 		this.dstar.reset();
 		this.nxdn.reset();
+		this.p25.reset();
 		this.status = {
 			mode: 'unknown',
 			synced: false,

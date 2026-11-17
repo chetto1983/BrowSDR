@@ -13,9 +13,7 @@ import { FIRFilter, ClockRecovery, FourFSKSlicer, rrcTaps } from './dsd-dsp';
 import { DSD_IF_RATE, DSD_SYMBOL_RATE, RRC_ALPHA, RRC_NUM_TAPS } from './constants';
 import { SyncType } from './types';
 import { syncTypeToMode, syncTypeLabel, isVoiceSync, matchSync, lastMatchErrors } from './sync';
-import { processDMRSingleBurst } from './dsd-dmr';
-import { checkDMRBurstSync } from './dsd-dmr';
-import { decodeDmrLinkControl, DMR_IDLE, slotType } from './dmr-lc';
+import { DmrFrames } from './dsd-dmr';
 import { processNXDNVoice, NXDN_VOICE_DIBITS } from './dsd-nxdn';
 import { processDSTARVoice, DSTAR_FRAME_DIBITS } from './dsd-dstar';
 import {
@@ -95,11 +93,8 @@ export class DSDDecoder {
 
 	/** Last DMR DATA sync position — used for TDMA timing validation of voice syncs */
 	private dmrLastDataSyncPos = -1;
-	/** True until the first voice superframe is decoded after sync acquisition.
-	 *  SDR++ Brown skips burst 0 frames 1+2 only for the very first superframe
-	 *  because its history buffer uses 2-level data. Our buffer has full 4-level
-	 *  data, so we only skip on the first frame to match the reference behavior. */
-	private dmrFirstVoiceFrame = true;
+	/** DMR frames: call line, voice superframes and the link layer (dsd-dmr.ts, dmr/). */
+	private dmr = new DmrFrames();
 
 	// Audio output accumulator
 	private audioAccum: Float32Array;
@@ -239,7 +234,7 @@ export class DSDDecoder {
 		this.lockedMode = 'unknown';
 		this.modeLockCount = 0;
 		this.dmrLastDataSyncPos = -1;
-		this.dmrFirstVoiceFrame = true;
+		this.dmr.restart();
 		this.candidateMode = 'unknown';
 		this.candidatePosition = -1;
 		this.frameDataRemaining = 0;
@@ -253,6 +248,7 @@ export class DSDDecoder {
 			mbelibError: this.status.mbelibError,
 			voiceFrameCount: this.status.voiceFrameCount,
 			mbeDecoding: false,
+			dmr: this.status.dmr,
 		};
 		this.status.syncCount = this._dbgSyncCount;
 		this.status.lastSyncName = this.lastSyncName;
@@ -304,7 +300,7 @@ export class DSDDecoder {
 				this.lockedMode = 'unknown';
 				this.modeLockCount = 0;
 				this.dmrLastDataSyncPos = -1;
-				this.dmrFirstVoiceFrame = true;
+				this.dmr.restart();
 			}
 		}
 
@@ -400,7 +396,20 @@ export class DSDDecoder {
 
 		switch (mode) {
 			case 'dmr':
-				this.processDMRFrame(syncType, startPos);
+				this.dmr.process(
+					{
+						dibits: this.dibitBuf,
+						symbols: this.symbolBuf,
+						mask: BUF_MASK,
+						afterSync: this.frameStart,
+						voice: isVoiceSync(syncType),
+						bs: syncType === SyncType.DMR_BS_DATA || syncType === SyncType.DMR_BS_VOICE,
+						slot: this.status.slot ?? 0,
+						mbelibReady: this.mbelibReady,
+						audio: (samples) => this.appendAudio(samples),
+					},
+					this.status,
+				);
 				break;
 			case 'p25':
 				this.processP25Frame(syncType, startPos);
@@ -439,112 +448,6 @@ export class DSDDecoder {
 				errBar += 'X';
 			}
 		}
-		this.status.mbeErrors = errBar;
-	}
-
-	private processDMRFrame(syncType: SyncType, startPos: number): void {
-		const isVoice = isVoiceSync(syncType);
-
-		if (!isVoice) {
-			this.status.mbeDecoding = false;
-			const lc = decodeDmrLinkControl(this.dibitBuf, startPos, BUF_MASK);
-			if (lc) {
-				this.status.colorCode = lc.colourCode;
-				this.status.dmrCall = { ...lc, slot: this.status.slot ?? 0, at: Date.now() };
-			} else {
-				const slot = slotType(this.dibitBuf, startPos - 78, BUF_MASK);
-				if (slot.dataType === DMR_IDLE) this.status.colorCode = slot.colourCode;
-			}
-			return;
-		}
-
-		if (!this.mbelibReady) {
-			this.status.mbeDecoding = false;
-			this.status.mbeErrors = '(mbelib not loaded)';
-			return;
-		}
-
-		// ── DMR voice superframe extraction ──────────────────────────
-		//
-		// DMR is 2-slot TDMA. A voice superframe = 6 bursts on our slot.
-		// Only burst 0 has the full sync word; bursts 1-5 use EMB.
-		// We must read all 6 bursts at known positions.
-		//
-		// Each burst: [12 CACH][54 voice 1st half][24 SYNC/EMB][54 voice 2nd half] = 144 dibits
-		// Between our-slot bursts: 144 dibits of the other slot (skip).
-		//
-		// startPos = right after the 24-dibit sync word of burst 0.
-		//
-		// Burst 0:
-		//   1st half: startPos - 78 .. startPos - 25  (54 dibits, before sync)
-		//   2nd half: startPos + 0  .. startPos + 53  (54 dibits, after sync)
-		//   sync/EMB: startPos - 24 .. startPos - 1   (24 dibits, = the detected sync)
-		//
-		// Burst n (n=1..5):
-		//   burstBase = startPos + 54 + 144 + (n-1)*288  = startPos + 198 + (n-1)*288
-		//   CACH:      burstBase + 0  .. burstBase + 11   (12 dibits, skip)
-		//   1st half:  burstBase + 12 .. burstBase + 65   (54 dibits)
-		//   EMB:       burstBase + 66 .. burstBase + 89   (24 dibits, check for mute)
-		//   2nd half:  burstBase + 90 .. burstBase + 143  (54 dibits)
-
-		const mask = BUF_MASK;
-		this.status.mbeDecoding = true;
-		let errBar = '';
-
-		// Helper: extract 108 voice dibits from a burst and decode 3 AMBE frames
-		const decodeBurst = (v1Start: number, v2Start: number, skipFrames12: boolean) => {
-			const voiceBuf = new Uint8Array(108);
-			for (let i = 0; i < 54; i++) {
-				voiceBuf[i] = this.dibitBuf[(v1Start + i) & mask];
-				voiceBuf[54 + i] = this.dibitBuf[(v2Start + i) & mask];
-			}
-
-			const ambeFrames = processDMRSingleBurst(voiceBuf, 0, this.status);
-			for (let fi = 0; fi < ambeFrames.length; fi++) {
-				// SDR++ Brown: skip frames 1+2 of the first burst (firstframe logic)
-				// because data before the initial sync detection may be invalid
-				if (skipFrames12 && fi < 2) {
-					errBar += 's'; // skipped
-					continue;
-				}
-				try {
-					const audio = decodeAmbe(ambeFrames[fi]);
-					this.appendAudio(audio);
-					this.status.voiceFrameCount = (this.status.voiceFrameCount || 0) + 1;
-					errBar += getMbeErrors() > 0 ? 'E' : '=';
-				} catch (_e) {
-					errBar += 'X';
-				}
-			}
-		};
-
-		// Burst 0: voice data straddles the sync word.
-		// SDR++ Brown skips frames 1+2 only on the very first superframe after
-		// carrier detect (firstframe flag), because its history buffer uses 2-level
-		// quantized data. Our dibit buffer has full 4-level data, so we only need
-		// to skip on the actual first frame after acquisition.
-		const skipBurst0 = this.dmrFirstVoiceFrame;
-		this.dmrFirstVoiceFrame = false;
-		decodeBurst(startPos - 78, startPos, skipBurst0);
-
-		// Bursts 1-5: at known offsets after burst 0
-		for (let n = 1; n <= 5; n++) {
-			const burstBase = startPos + 54 + 144 + (n - 1) * 288; // = startPos + 198 + (n-1)*288
-			const v1Start = burstBase + 12; // skip 12 CACH
-			const embPos = burstBase + 66; // EMB/sync position
-			const v2Start = burstBase + 90; // skip 12 CACH + 54 voice1 + 24 EMB
-
-			// SDR++ Brown: check the EMB/sync word for each burst.
-			// If it indicates DATA, mute this burst's audio output.
-			const isMuted = checkDMRBurstSync(this.dibitBuf, embPos, mask);
-			if (isMuted) {
-				errBar += 'MMM'; // 3 muted frames
-				continue;
-			}
-
-			decodeBurst(v1Start, v2Start, /* skipFrames12 */ false);
-		}
-
 		this.status.mbeErrors = errBar;
 	}
 
@@ -769,7 +672,7 @@ export class DSDDecoder {
 		this.modeLockCount = 0;
 		this._lastSyncTime = 0;
 		this.dmrLastDataSyncPos = -1;
-		this.dmrFirstVoiceFrame = true;
+		this.dmr.reset();
 		if (this.mbelibReady) resetMbe();
 		this.onStatus(this.status);
 	}

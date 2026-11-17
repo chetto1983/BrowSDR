@@ -248,6 +248,23 @@ file). Algorithms and protocol tables follow the OnAir source.
 | `test/decoders/dsd/p25p2/proto.spec.js` | `tests/p25p2/test_p25p2_proto.cpp`, `tests/p25p2/test_p25p2_audit.cpp` (message lengths) |
 | `test/decoders/dsd/p25p2/stream.spec.js` | `tests/p25p2/test_p25p2_rx.cpp` |
 | `test/decoders/dsd/p25p2/impair.spec.js` | `tests/p25p2/test_p25p2_impair.cpp`, `tests/p25p2/test_p25p2_audit.cpp` |
+| `src/client/worker/decoders/dsd/dmr/types.ts` | `core/include/dect2/dmr/dmr_proto.h` (FullLc, Csbk, DataHeader, DataBlock, TalkerAlias), `dmr_tel.h` (DmrMessage, DmrLocation), `dmr_vendor.h`, `dmr_xpt.h`, `core/include/dect2/p25/trunk.h` (Grant) |
+| `src/client/worker/decoders/dsd/dmr/codes.ts` | `rust/onair_dmr/src/codes.rs` (Golay (20,8), QR (16,7,6), Hamming codes, Reed-Solomon (12,9), CRC-CCITT, CRC-8, CRC-9, CRC-32, checksum5), `rust/onair_dmr/src/bits.rs` |
+| `src/client/worker/decoders/dsd/dmr/product.ts` | `rust/onair_dmr/src/product.rs` (BPTC (196,96), embedded LC, short LC, CACH, rate 3/4 trellis, rate 1) |
+| `src/client/worker/decoders/dsd/dmr/burst.ts` | `rust/onair_dmr/src/burst.rs` (sync patterns, burst builders, slot type, EMB), `core/src/dmr/dmr_proto.cpp` (burstDataPayload), `core/src/dmr/dmr_link.cpp` (bptcAssisted, payloadReliability, symbol fit) |
+| `src/client/worker/decoders/dsd/dmr/lc.ts` | `rust/onair_dmr/src/lc.rs` (full LC, header / terminator Reed-Solomon, CRC blocks, CSBK); the GPS info LC is BrowSDR's after TS 102 361-2 |
+| `src/client/worker/decoders/dsd/dmr/data.ts` | `rust/onair_dmr/src/data.rs` (data headers, data blocks of rate 1/2, 3/4 and 1, CRC-9) |
+| `src/client/worker/decoders/dsd/dmr/text.ts` | `rust/onair_dmr/src/text.rs` (defined data formats, text clean-up, TalkerAlias) |
+| `src/client/worker/decoders/dsd/dmr/position.ts` | `core/src/dmr/dmr_lrrp.cpp` (LRRP parser, IPv4 check, compressed header), `core/src/dmr/dmr_nmea.cpp` (parseDmrNmea) |
+| `src/client/worker/decoders/dsd/dmr/vendor.ts` | `core/src/dmr/dmr_vendor.cpp` (Capacity Plus, Connect Plus, ARS, TMS; layouts DSD-FME's, credited there to OP25 and Eric Cottrell) |
+| `src/client/worker/decoders/dsd/dmr/xpt.ts` | `core/src/dmr/dmr_xpt.cpp` (Hytera XPT; field positions DSD-FME's) |
+| `src/client/worker/decoders/dsd/dmr/control.ts` | `core/src/p25/trunk_ctrl.cpp` (DmrModel::onCsbk, onCsbkVendor), `core/src/dmr/dmr_link.cpp` (activityName, short LC of handleCach); Tier III layouts per TS 102 361-4 as DSD-FME reads them |
+| `src/client/worker/decoders/dsd/dmr/message.ts` | `core/src/dmr/dmr_link.cpp` (Link::finishMessage) |
+| `src/client/worker/decoders/dsd/dmr/link.ts` | `core/src/dmr/dmr_link.cpp` (Link::decodeBurst classification, decodeData, voiceBurst, startCall, endCall, handleCach) |
+| `test/decoders/dsd/dmr/fixtures.js` | `core/src/dmr/dmr_gen.cpp` (SlotScript, DmrSignal, Shaper), `core/src/dmr/dmr_lrrp.cpp` (encoders), `core/src/dmr/dmr_proto.cpp` (talkerAliasPdus), `core/include/dect2/dmr/dmr_dsp.h` (rrcTaps) |
+| `test/decoders/dsd/dmr/codes.spec.js` | `tests/dmr/test_dmr_fec.cpp`, `rust/onair_dmr/src/tests.rs` |
+| `test/decoders/dsd/dmr/proto.spec.js` | `tests/dmr/test_dmr_lrrp.cpp`, `tests/dmr/test_dmr_nmea.cpp`, `tests/dmr/test_dmr_vendor.cpp`, `tests/dmr/test_dmr_xpt.cpp`, `rust/onair_dmr/src/tests.rs` |
+| `test/decoders/dsd/dmr/stream.spec.js` | `tests/dmr/test_dmr_rx.cpp`, `tests/dmr/test_dmr_xpt.cpp`, `tests/dmr/test_dmr_lrrp_air.cpp` |
 | `src/client/worker/decoders/digimode/flarm/types.ts` | `core/include/dect2/flarm/flarm_proto.h` (V6), `core/include/dect2/avroad/avroad_proto.h` (OgnPacket), `core/include/dect2/adsl/adsl_proto.h` (Traffic, Status, Parsed), `core/src/flarm/flarm_rx.cpp` (Cand, Pending) |
 | `src/client/worker/decoders/digimode/flarm/flarm-proto.ts` | `core/src/flarm/flarm_proto.cpp` (CRC, XXTEA, V6 key and packet, position and velocity fields, frame chips) |
 | `src/client/worker/decoders/digimode/flarm/ogn-proto.ts` | `core/src/avroad/avroad_air.cpp` (OGN whitening, LDPC check and repair, ognParse), `core/src/avroad/ogn_ldpc.inc` (parity checks; OGN-Tracker by Pawel Jalocha via SoftRF, GPL-3.0) |

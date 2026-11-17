@@ -1,5 +1,6 @@
 import type { M17Status } from './m17/types';
 import type { P25p2Status } from './p25p2/types';
+import type { DmrInfo } from './dmr/types';
 /*
  * DSD (Digital Speech Decoder) status and sync types.
  * Ported from SDR++ Brown ch_extravhf_decoder.
@@ -11,6 +12,7 @@ import type { P25p2Status } from './p25p2/types';
  * FusionTelemetry and DpmrTelemetry (core/include/dect2/fusion/fusion_rx.h, core/include/dect2/dpmr/dpmr_tel.h,
  * GPL-3.0-or-later, see third_party/onair); the decoding is in ysf/ and dpmr/.
  * The P25 Phase 2 status (P25p2Status) is in p25p2/types.ts with its receiver (OnAir, GPL-3.0-or-later).
+ * DmrInfo (talker alias, positions, messages, trunking, control blocks) is in dmr/types.ts (OnAir, GPL-3.0-or-later).
  */
 
 // ── Detected DSD mode ────────────────────────────────────────────────
@@ -48,6 +50,8 @@ export interface DSDStatus {
 	slot1Burst?: string;
 	/** Last DMR call addressing from a Voice LC Header or Terminator, with its slot and time. */
 	dmrCall?: DmrLinkControl & { slot: number; at: number };
+	/** DMR beyond the call header: talker alias, position, text, trunking, control blocks and recent events (dmr/). */
+	dmr?: DmrInfo;
 
 	// ── P25 ──
 	/** P25 Network Access Code (12-bit) */
@@ -160,21 +164,8 @@ export interface DmrLinkControl {
 	privacy: boolean;
 	target: number;
 	source: number;
-}
-
-/** DMR Full Link Control of a voice call (ETSI TS 102 361-2 §7.1.1). */
-export interface DmrLinkControl {
-	colourCode: number;
-	/** Terminator with LC (end of the transmission) rather than a Voice LC Header. */
-	terminator: boolean;
-	/** Group call (talkgroup in target) rather than unit-to-unit. */
-	group: boolean;
-	featureSet: number;
-	emergency: boolean;
-	/** Service option privacy flag: the voice is encrypted. */
-	privacy: boolean;
-	target: number;
-	source: number;
+	/** Learned from the embedded LC of the voice bursts: the call was joined without its header (dmr/link.ts). */
+	lateEntry?: boolean;
 }
 
 // ── Frame sync state ─────────────────────────────────────────────────

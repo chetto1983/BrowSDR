@@ -12,8 +12,15 @@
 }
 .meteor-image-tools {
 	display: flex;
+	flex-wrap: wrap;
 	gap: 8px;
 	margin-bottom: 6px;
+}
+.meteor-map {
+	height: 420px;
+	width: 100%;
+	margin-top: 8px;
+	background: #10161c;
 }
 .meteor-canvas {
 	width: 100%;

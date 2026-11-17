@@ -6,6 +6,8 @@ import type { PassRow } from '@/satellites/types';
 import * as components from '@/ui';
 import template from './panel.html?raw';
 import { meteorImage } from './controller';
+import { METEOR_SATELLITES } from '@/satellites/catalog';
+import { useMeteorMap } from './map-view';
 
 const VIEWS = [
 	{ value: 'rgb', label: 'Colour' },
@@ -43,6 +45,7 @@ export default defineComponent({
 		});
 		const imageRows = computed(() => (receiver.meteor.imageVersion, meteorImage(receiver, imageVfo.value).rows));
 		const rows = computed<PassRow[]>(() => passRows(receiver.meteor.passes, now.value));
+		const meteorMap = useMeteorMap(receiver, imageVfo);
 
 		const draw = () => {
 			const element = canvas.value;
@@ -70,6 +73,8 @@ export default defineComponent({
 		return {
 			receiver,
 			canvas,
+			...meteorMap,
+			meteorSatellites: METEOR_SATELLITES,
 			rows,
 			views: VIEWS,
 			latitude,
@@ -79,7 +84,7 @@ export default defineComponent({
 			active: computed(() => receiver.vfos.some((vfo) => vfo.meteor)),
 			isMeteorFrequency,
 			setLocation: () => receiver.meteorSetLocation(Number(latitude.value), Number(longitude.value)),
-			save: () => canvas.value && saveCanvas(canvas.value, receiver.meteor.norad),
+			save: () => canvas.value && saveCanvas(canvas.value, meteorImage(receiver, imageVfo.value).norad || receiver.meteor.norad),
 		};
 	},
 });

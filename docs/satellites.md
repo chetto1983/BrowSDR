@@ -76,6 +76,12 @@ Not corrected:
   correction: the decoder restarts on every retune, and the ±3.5 kHz shift fits
   its channel. Packets appear in **Tools → APRS**.
 - **Meteor** opens the Meteor panel; its demodulator locks onto the carrier.
+  During a new LRPT capture, **Show on map** projects the timed image rows over
+  OpenStreetMap using the satellite's TLE. **Tune** from the pass list normally
+  identifies the satellite; choose M2 3 or M2 4 in the image toolbar if it was
+  tuned manually. The map refreshes as more rows arrive. Keep the tab open:
+  image pixels and row timestamps are held in browser memory, while **Save PNG**
+  exports only the picture, without geographic metadata.
 - **ORBCOMM** passes and orbits appear on the satellite map. **Track on VFO** opens its Digital Modes decoder on the chosen example frequency; checksum-valid packet fragments appear in hex in the log. Check the spectrum for the active downlink, since Celestrak orbital data does not identify the satellite's current transmit channel.
 - Dongle frequency error: an RTL-SDR off by 1 ppm is 435 Hz off at 435 MHz.
   Correct the dongle first, or retune by ear (the tracker keeps the correction).

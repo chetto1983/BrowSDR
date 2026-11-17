@@ -73,7 +73,7 @@ emcc -O3 -std=gnu99 -DNDEBUG -DVERSION='"browsdr"' \
     -s MODULARIZE=1 \
     -s EXPORT_ES6=1 \
     -s EXPORT_NAME='MeteorModule' \
-    -s EXPORTED_FUNCTIONS='["_meteor_init","_meteor_reset","_meteor_input","_meteor_input_size","_meteor_push","_meteor_rows","_meteor_width","_meteor_channel_rows","_meteor_channel","_meteor_apid","_meteor_rs","_meteor_vit","_meteor_vcdu_seq","_meteor_mpdus"]' \
+    -s EXPORTED_FUNCTIONS='["_meteor_init","_meteor_reset","_meteor_input","_meteor_input_size","_meteor_push","_meteor_rows","_meteor_width","_meteor_channel_rows","_meteor_channel","_meteor_apid","_meteor_rs","_meteor_vit","_meteor_vcdu_seq","_meteor_mpdus","_meteor_block_time"]' \
     -s EXPORTED_RUNTIME_METHODS='["cwrap","HEAPU8","HEAP8"]' \
     -s ALLOW_MEMORY_GROWTH=1 \
     -s ENVIRONMENT='web,worker,node' \

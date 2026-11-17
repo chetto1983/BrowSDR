@@ -9,7 +9,23 @@ function validRows(value: unknown): boolean {
 	if (!isRecord(value) || !Number.isInteger(value.from) || !Number.isInteger(value.to) || value.width !== 1568) return false;
 	const [from, to] = [value.from as number, value.to as number];
 	if (from < 0 || to <= from || to > MAX_ROWS || !Array.isArray(value.channels) || value.channels.length !== 3) return false;
-	return value.channels.every((channel) => channel instanceof Uint8Array && channel.length === (to - from) * 1568);
+	if (!value.channels.every((channel) => channel instanceof Uint8Array && channel.length === (to - from) * 1568)) return false;
+	if (value.timeBlocks === undefined) return true;
+	return (
+		Array.isArray(value.timeBlocks) &&
+		value.timeBlocks.length <= Math.ceil((to - from) / 8) + 1 &&
+		value.timeBlocks.every(
+			(point: unknown) =>
+				isRecord(point) &&
+				Number.isInteger(point.row) &&
+				(point.row as number) % 8 === 0 &&
+				(point.row as number) >= Math.floor(from / 8) * 8 &&
+				(point.row as number) < to &&
+				finite(point.timeMs) &&
+				point.timeMs > 946684800000 &&
+				point.timeMs < 4102444800000,
+		)
+	);
 }
 
 /** Bounded check for Meteor decoder messages (worker output and remote peers). */

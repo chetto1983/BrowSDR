@@ -23,6 +23,7 @@ export function meteorPanelState() {
 		imageVersion: 0,
 		view: 'rgb' as 'rgb' | 0 | 1 | 2,
 		passes: [] as Pass[],
+		tles: [] as Tle[],
 		passMessage: '',
 		tleNote: '',
 		notice: '',

@@ -17,6 +17,7 @@ export interface MeteorModule {
 	_meteor_vit(): number;
 	_meteor_vcdu_seq(): number;
 	_meteor_mpdus(): number;
+	_meteor_block_time(block: number): number;
 }
 
 export type MeteorFactory = (options: { locateFile(path: string): string }) => Promise<MeteorModule>;
@@ -47,6 +48,8 @@ export interface MeteorDecoder {
 	channel(index: MeteorChannelIndex): Uint8Array;
 	/** APID shown in that channel, or -1 while it is unused. */
 	apid(index: MeteorChannelIndex): number;
+	/** UTC milliseconds carried by the packet completing an eight-row block. */
+	blockTime(block: number): number;
 	stats(): MeteorStats;
 	reset(): void;
 }
@@ -72,6 +75,8 @@ export interface MeteorRows {
 	to: number;
 	width: number;
 	channels: [Uint8Array, Uint8Array, Uint8Array];
+	/** Sparse source timestamps; row is relative to this decoder's image, not this message. */
+	timeBlocks?: Array<{ row: number; timeMs: number }>;
 }
 
 export interface MeteorMessage {

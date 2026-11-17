@@ -34,6 +34,10 @@ describe('meteor_decode on a real pass', () => {
 		const apids = [0, 1, 2].map((c) => decoder.apid(c)).filter((apid) => apid >= 0);
 		expect(apids.length).toBeGreaterThan(0);
 		expect(apids.every((apid) => apid >= 64 && apid <= 69)).toBe(true);
+		// The onboard clock from this captured pass must survive the WASM boundary for georeferencing.
+		expect(new Date(decoder.blockTime(0)).toISOString()).toBe('2026-11-16T14:55:30.965Z');
+		expect(decoder.blockTime(1) - decoder.blockTime(0)).toBeGreaterThan(1200);
+		expect(decoder.blockTime(1) - decoder.blockTime(0)).toBeLessThan(1300);
 	});
 	it('finds nothing in the same symbols without differential decoding', async () => {
 		const decoder = await createMeteorDecoder(factory, 'qpsk');

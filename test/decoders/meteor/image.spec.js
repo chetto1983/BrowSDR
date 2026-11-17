@@ -47,4 +47,26 @@ describe('Meteor image assembly', () => {
 		expect(image.rows).toBe(0);
 		expect(image.rgba('rgb')).toHaveLength(0);
 	});
+	it('interpolates packet times and leaves a restart gap without geography', () => {
+		const image = new MeteorImage();
+		image.append({
+			...rows(0, 24, 10),
+			timeBlocks: [
+				{ row: 0, timeMs: 1000 },
+				{ row: 8, timeMs: 2232 },
+				{ row: 16, timeMs: 3464 },
+			],
+		});
+		expect(image.timeAt(4)).toBe(1616);
+		expect(image.timeAt(20)).toBe(4080);
+		image.append({
+			...rows(0, 16, 20),
+			timeBlocks: [
+				{ row: 0, timeMs: 5000 },
+				{ row: 8, timeMs: 6232 },
+			],
+		});
+		expect(image.timeAt(27)).toBeNull();
+		expect(image.timeAt(36)).toBe(5616);
+	});
 });

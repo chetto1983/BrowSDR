@@ -24,12 +24,17 @@
 #define READ_RESERVE (2 * CADU_SOFT_LEN)
 #define QUEUE_SIZE (8 * CADU_SOFT_LEN)
 #define INPUT_SIZE (4 * CADU_SOFT_LEN)
+/* The UI limits a pass to 20,000 rows; each packet block contains eight rows. */
+#define MAX_TIME_BLOCKS 2500
+/* Meteor-M2 3/4 CCSDS day counter, as used by SatDump's LRPT segment parser. */
+#define METEOR_M2X_UNIX_DAYS 11322
 
 static Channel channels[NUM_CHANNELS];
 static int8_t queue[QUEUE_SIZE];
 static size_t queue_len, queue_pos;
 static int8_t input[INPUT_SIZE];
 static uint64_t first_time, last_time;
+static double block_times[MAX_TIME_BLOCKS];
 static int first, mpdus;
 
 static int
@@ -82,6 +87,7 @@ process_mpdu(Mpdu *mpdu)
 	uint8_t strip[MCU_PER_MPDU][8][8];
 	unsigned int seq = mpdu_seq(mpdu), apid = mpdu_apid(mpdu), lines_lost;
 	uint64_t time = mpdu_raw_time(mpdu);
+	unsigned long old_offset;
 	int i;
 
 	if (first) first_time = time;
@@ -98,7 +104,14 @@ process_mpdu(Mpdu *mpdu)
 		lines_lost = (last_time - first_time) / MPDU_US_PER_LINE;
 		channels[i].mpdu_seq = (seq - MPDU_PER_PERIOD * lines_lost - 1 + MPDU_MAX_SEQ) % MPDU_MAX_SEQ;
 	}
+	old_offset = channels[i].offset;
 	channel_append_strip(&channels[i], strip, mpdu->data.mcu.avhrr.seq, seq);
+	if (channels[i].offset > old_offset) {
+		unsigned long block = channels[i].offset / (MCU_PER_LINE * 8) / 8 - 1;
+		if (block < MAX_TIME_BLOCKS && block_times[block] == 0) {
+			block_times[block] = (double)METEOR_M2X_UNIX_DAYS * 86400000.0 + (double)time / 1000.0;
+		}
+	}
 }
 
 EMSCRIPTEN_KEEPALIVE int
@@ -126,6 +139,7 @@ meteor_init(int diff)
 	first = 1;
 	mpdus = 0;
 	first_time = last_time = 0;
+	memset(block_times, 0, sizeof(block_times));
 }
 
 EMSCRIPTEN_KEEPALIVE void
@@ -183,3 +197,5 @@ EMSCRIPTEN_KEEPALIVE int meteor_rs(void) { return decode_get_rs(); }
 EMSCRIPTEN_KEEPALIVE int meteor_vit(void) { return decode_get_vit(); }
 EMSCRIPTEN_KEEPALIVE uint32_t meteor_vcdu_seq(void) { return decode_get_vcdu_seq(); }
 EMSCRIPTEN_KEEPALIVE int meteor_mpdus(void) { return mpdus; }
+/* UTC Unix milliseconds for an eight-row image block, or 0 when no packet fixed its time. */
+EMSCRIPTEN_KEEPALIVE double meteor_block_time(int block) { return block >= 0 && block < MAX_TIME_BLOCKS ? block_times[block] : 0; }

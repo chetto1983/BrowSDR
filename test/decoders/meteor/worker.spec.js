@@ -111,6 +111,12 @@ describe('Meteor LRPT through the production DSP worker', () => {
 		};
 		const rows = { from: 0, to: 8, width: 1568, channels: [0, 1, 2].map(() => new Uint8Array(8 * 1568)) };
 		expect(validMeteorMessage({ type: 'meteor', freq: 137.9, status, rows })).toBe(true);
+		expect(
+			validMeteorMessage({ type: 'meteor', freq: 137.9, status, rows: { ...rows, timeBlocks: [{ row: 0, timeMs: 1794840930965 }] } }),
+		).toBe(true);
+		expect(validMeteorMessage({ type: 'meteor', freq: 137.9, status, rows: { ...rows, timeBlocks: [{ row: 0, timeMs: Infinity }] } })).toBe(
+			false,
+		);
 		expect(validMeteorMessage({ type: 'meteor', freq: 137.9, status, rows: { ...rows, to: -1 } })).toBe(false);
 		expect(validMeteorMessage({ type: 'meteor', freq: 137.9, status, rows: { ...rows, channels: rows.channels.slice(0, 2) } })).toBe(false);
 	});

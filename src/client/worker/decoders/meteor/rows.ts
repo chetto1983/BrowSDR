@@ -10,7 +10,7 @@ const STALLED_ROWS = 64;
  * wrote (no APID, or past its last row) go out as zeros rather than whatever its memory holds.
  */
 export function selectRows(
-	decoder: Pick<MeteorDecoder, 'width' | 'channelRows' | 'channel' | 'apid'>,
+	decoder: Pick<MeteorDecoder, 'width' | 'channelRows' | 'channel' | 'apid'> & Partial<Pick<MeteorDecoder, 'blockTime'>>,
 	sentRows: number,
 ): MeteorRows | undefined {
 	const active = CHANNELS.filter((index) => decoder.apid(index) >= 0);
@@ -28,5 +28,12 @@ export function selectRows(
 		if (own > from) out.set(decoder.channel(index).subarray(from * width, own * width));
 		return out;
 	};
-	return { from, to, width, channels: [channel(0), channel(1), channel(2)] };
+	const timeBlocks: NonNullable<MeteorRows['timeBlocks']> = [];
+	if (decoder.blockTime) {
+		for (let block = Math.floor(from / 8); block < Math.ceil(to / 8); block++) {
+			const timeMs = decoder.blockTime(block);
+			if (Number.isFinite(timeMs) && timeMs > 0) timeBlocks.push({ row: block * 8, timeMs });
+		}
+	}
+	return { from, to, width, channels: [channel(0), channel(1), channel(2)], timeBlocks };
 }

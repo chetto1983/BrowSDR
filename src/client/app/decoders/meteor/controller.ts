@@ -65,6 +65,17 @@ export const meteorMethods = {
 		if (this.meteor.sources[index]?.freq !== freq) this.meteor.sources[index] = { freq };
 		this.meteor.status[index] = message.status;
 		if (message.rows) {
+			const firstTime = message.rows.timeBlocks?.[0]?.timeMs;
+			if (firstTime && image.lastTimedMs && Math.abs(firstTime - image.lastTimedMs) > 30 * 60_000) image.reset();
+			if (!image.norad) {
+				const received = firstTime ?? Date.now();
+				const candidates = this.meteor.passes.filter(
+					(pass) => received >= pass.aos.getTime() - 120_000 && received <= pass.los.getTime() + 120_000,
+				);
+				image.norad =
+					candidates.find((pass) => pass.norad === this.meteor.norad)?.norad ??
+					(candidates.length === 1 ? candidates[0].norad : this.meteor.norad);
+			}
 			image.append(message.rows);
 			this.meteor.imageVersion++;
 		}
@@ -87,6 +98,7 @@ export const meteorMethods = {
 		}
 		try {
 			const { tles, note } = await meteorTles(now);
+			this.meteor.tles = tles;
 			this.meteor.passes = predictPasses(tles, this.station, now, PASS_HOURS);
 			this.meteor.tleNote = note;
 			this.meteor.passMessage = this.meteor.passes.length ? '' : 'No passes in the next 48 hours.';

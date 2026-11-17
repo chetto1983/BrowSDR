@@ -34,9 +34,16 @@
 					<option v-for="view in views" :key="view.label" :value="view.value">{{ view.label }}</option>
 				</UiSelect>
 				<UiButton :disabled="!imageRows" @click="save">Save PNG</UiButton>
+				<UiSelect v-model.number="mapNorad" aria-label="Meteor satellite for image map">
+					<option :value="0">Auto satellite</option>
+					<option v-for="satellite in meteorSatellites" :key="satellite.norad" :value="satellite.norad">{{ satellite.name }}</option>
+				</UiSelect>
+				<UiButton :disabled="!imageRows" @click="showOnMap">{{ mapOpen ? 'Update map' : 'Show on map' }}</UiButton>
 			</div>
 			<canvas v-show="imageRows" ref="canvas" class="meteor-canvas" aria-label="Meteor image"></canvas>
 			<p v-if="!imageRows" class="meteor-empty">The image appears here line by line during a pass.</p>
+			<p v-if="mapMessage" class="meteor-notice" role="status">{{ mapMessage }}</p>
+			<div v-if="mapOpen" ref="mapElement" class="meteor-map" aria-label="Georeferenced Meteor image map"></div>
 		</div>
 		<div class="meteor-passes">
 			<div class="meteor-location">

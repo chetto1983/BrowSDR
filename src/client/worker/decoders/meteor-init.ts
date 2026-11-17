@@ -44,6 +44,7 @@ function wrap(module: MeteorModule): MeteorDecoder {
 			return pointer ? module.HEAPU8.subarray(pointer, pointer + module._meteor_rows() * width) : new Uint8Array(0);
 		},
 		apid: (index: MeteorChannelIndex) => module._meteor_apid(index),
+		blockTime: (block: number) => module._meteor_block_time(block),
 		stats: () => ({
 			rs: module._meteor_rs(),
 			vit: module._meteor_vit(),

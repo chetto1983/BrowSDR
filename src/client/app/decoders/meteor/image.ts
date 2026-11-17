@@ -15,6 +15,11 @@ export class MeteorImage {
 	readonly width = WIDTH;
 	/** The downlink this picture was received on; the panel starts a new picture when it changes. */
 	freq: number | undefined;
+	/** Satellite associated with this capture, inferred from the selected pass. */
+	norad = 0;
+	private times = new Map<number, number>();
+	lastTimedMs = 0;
+	private gaps: Array<[number, number]> = [];
 	private channels: [Uint8Array, Uint8Array, Uint8Array] = [new Uint8Array(0), new Uint8Array(0), new Uint8Array(0)];
 	/** Where the current decoder's row 0 sits in the picture. */
 	private offset = 0;
@@ -25,7 +30,10 @@ export class MeteorImage {
 	 */
 	append(rows: MeteorRows): void {
 		if (rows.width !== WIDTH || rows.to <= rows.from) return;
-		if (rows.from < this.rows - this.offset) this.offset = this.rows + RESTART_GAP_ROWS;
+		if (rows.from < this.rows - this.offset) {
+			this.gaps.push([this.rows, this.rows + RESTART_GAP_ROWS]);
+			this.offset = this.rows + RESTART_GAP_ROWS;
+		}
 		const from = this.offset + rows.from;
 		const to = this.offset + rows.to;
 		this.reserve(to);
@@ -35,6 +43,38 @@ export class MeteorImage {
 			channel.set(rows.channels[c], from * WIDTH);
 		}
 		this.rows = to;
+		for (const point of rows.timeBlocks ?? []) {
+			if (point.row < rows.from || point.row >= rows.to || !Number.isFinite(point.timeMs)) continue;
+			this.times.set(this.offset + point.row, point.timeMs);
+			this.lastTimedMs = Math.max(this.lastTimedMs, point.timeMs);
+		}
+	}
+
+	/** Timestamp of a scan row, interpolated only between actual packet timestamps. */
+	timeAt(row: number): number | null {
+		if (this.gaps.some(([from, to]) => row >= from && row < to)) return null;
+		const block = Math.floor(row / 8) * 8;
+		let lo = block;
+		let hi = block + 8;
+		while (lo >= 0 && !this.times.has(lo)) lo -= 8;
+		while (hi < this.rows && !this.times.has(hi)) hi += 8;
+		if (lo < 0) return null;
+		if (hi >= this.rows) {
+			hi = lo;
+			lo -= 8;
+			while (lo >= 0 && !this.times.has(lo)) lo -= 8;
+		}
+		if (lo < 0 || hi - lo > 256) return null;
+		if (this.gaps.some(([from, to]) => lo < to && hi >= from)) return null;
+		const start = this.times.get(lo)!;
+		const end = this.times.get(hi)!;
+		if (end <= start || end - start > (hi - lo) * 1000) return null;
+		return start + ((row - lo) / (hi - lo)) * (end - start);
+	}
+
+	/** Number of eight-row blocks carrying an onboard timestamp. */
+	get timedBlocks(): number {
+		return this.times.size;
 	}
 
 	/** RGBA pixels: the colour composite, or one channel (0-2) as grey levels. */
@@ -54,6 +94,10 @@ export class MeteorImage {
 	reset(): void {
 		this.rows = 0;
 		this.offset = 0;
+		this.norad = 0;
+		this.times.clear();
+		this.lastTimedMs = 0;
+		this.gaps = [];
 		this.channels = [new Uint8Array(0), new Uint8Array(0), new Uint8Array(0)];
 	}
 

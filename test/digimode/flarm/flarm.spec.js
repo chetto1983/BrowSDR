@@ -42,6 +42,17 @@ function train(u0, n, id, { cfo = 0, gainDb = 0, t0 = 0.05, clockAhead = 0 } = {
 }
 
 describe('FLARM receiver', () => {
+	it('removes a previously visible aircraft after confirmed privacy packets', () => {
+		const clear = [mk(0.1, 0, 0xdd1234, 1500, -2000), mk(0.3, 1, 0xdd1234, 1500, -2000)];
+		const privatePackets = [mk(0.7, 0, 0xdd1234, 1500, -2000), mk(0.9, 1, 0xdd1234, 1500, -2000)];
+		for (const packet of privatePackets) packet.pkt.noTrack = true;
+		const { decoder, records } = decode(flarmScene(RATE, 1.2, [...clear, ...privatePackets], 25, { seed: 1 }));
+		expect(ids(records)).toEqual(['DD1234']);
+		expect(decoder.stats.flarm.privacyFlagged).toBe(1);
+		expect(decoder.heard().has(`flarm:${0xdd1234}`)).toBe(false);
+		expect(decoder.aircraftCount()).toBe(0);
+	});
+
 	it('lists the aircraft of clean frames, honours the privacy flags and counts the newer protocol', () => {
 		const txs = [mk(0.1, 0, 0xdd1234, 1500, -2000), mk(0.3, 1, 0xdda5b6, -4000, 3000, 2), mk(0.5, 0, 0x3f7c11, 800, 800, 8)];
 		txs[2].pkt.addrType = ADDR_ICAO;

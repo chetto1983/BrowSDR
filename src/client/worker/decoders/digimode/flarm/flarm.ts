@@ -200,6 +200,8 @@ export class FlarmProtocol {
 						s.privacyPackets += 2;
 						this.privSet.add(h);
 						s.privacyFlagged = this.privSet.size;
+						this.known.delete(id);
+						this.host.hide(`flarm:${id}`);
 						return;
 					}
 					if (pd.p) this.apply(pd.p, pd.t, pd.channel, pd.level);

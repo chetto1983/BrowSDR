@@ -45,6 +45,7 @@ export class FlarmDecoder implements DigimodeDecoder, ProtocolHost {
 	private readonly ogn = new OgnFrames(
 		this.stats,
 		(key, report, tnow) => this.report(key, report, tnow),
+		(key) => this.hide(key),
 		(frame) => this.queue(frame),
 	);
 	private readonly table = new AircraftTable();
@@ -129,6 +130,11 @@ export class FlarmDecoder implements DigimodeDecoder, ProtocolHost {
 	report(key: string, report: AircraftReport, tnow: number): void {
 		if (!this.table.update(key, report, tnow)) return;
 		this.sink.record(aircraftRecord(report, this.ref));
+		this.updateStatus();
+	}
+
+	hide(key: string): void {
+		this.table.delete(key);
 		this.updateStatus();
 	}
 

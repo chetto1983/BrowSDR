@@ -20,6 +20,15 @@ const a = ognPacket(0x111111, 1, 54.0, 25.0, 1000);
 const b = ognPacket(0x222222, 7, 55.0, 24.0, 2000);
 
 describe('OGN tracker packets', () => {
+	it('removes a previously visible tracker when its next position is stealth', () => {
+		const privatePacket = ognPacket(0x111111, 1, 54, 25, 1000, { stealth: true });
+		const { records, decoder } = run(ognScene(RATE, 100e3, [a, privatePacket]));
+		expect(records).toHaveLength(1);
+		expect(decoder.stats.ogn.privacy).toBe(1);
+		expect(decoder.heard().has('ogn:3:1118481')).toBe(false);
+		expect(decoder.aircraftCount()).toBe(0);
+	});
+
 	it('decodes both channels with carrier offsets and clock errors', () => {
 		const wrong = [];
 		for (const chan of [-100e3, 100e3])

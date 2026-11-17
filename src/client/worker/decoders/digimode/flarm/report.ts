@@ -74,6 +74,10 @@ export function aircraftRecord(
 export class AircraftTable {
 	private readonly entries = new Map<string, AircraftEntry>();
 
+	delete(key: string): void {
+		this.entries.delete(key);
+	}
+
 	/** Whether this packet's report is due as a record. */
 	update(key: string, report: AircraftReport, tnow: number): boolean {
 		const e = this.entries.get(key);

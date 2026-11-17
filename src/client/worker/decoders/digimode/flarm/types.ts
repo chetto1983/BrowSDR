@@ -182,6 +182,7 @@ export interface ProtocolHost {
 	/** Unix seconds now: the computer's clock, or the time of the first sample plus the samples since (tests). */
 	unixNow(tnow: number): number;
 	report(key: string, report: AircraftReport, tnow: number): void;
+	hide(key: string): void;
 	queue(frame: QueuedFrame): void;
 }
 

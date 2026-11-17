@@ -120,6 +120,7 @@ export class OgnFrames {
 	constructor(
 		private readonly stats: FlarmStats,
 		private readonly report: (key: string, report: AircraftReport, tnow: number) => void,
+		private readonly hide: (key: string) => void,
 		private readonly queue: (frame: QueuedFrame) => void,
 	) {}
 
@@ -168,6 +169,7 @@ export class OgnFrames {
 		}
 		if (o.stealth) {
 			this.stats.ogn.privacy++;
+			this.hide(key);
 			return;
 		}
 		base.extra.push(['Relay', String(o.relay)], ['Turn rate', `${o.turnDegS.toFixed(1)}°/s`], ['GPS fix', String(o.fixQuality)]);

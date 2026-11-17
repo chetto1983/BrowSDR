@@ -52,6 +52,8 @@ export interface VfoParams {
 	dabService?: number;
 	/** Digital Modes decoder id (DSC, VDL2 ...), '' or absent when off. */
 	digimode?: string;
+	/** The station location, for Digital Modes decoders that use one (FLARM positions, distances). */
+	digimodeStation?: { lat: number; lon: number };
 	rtl433?: boolean;
 	rtl433SampleRate?: number;
 	rtl433Protocols?: string;

@@ -43,7 +43,10 @@ export class DigimodeStream {
 			return;
 		}
 		const key = JSON.stringify([info.id, params.freq, inputRate, centerFreq]);
-		if (key === this.key) return;
+		if (key === this.key) {
+			this.applyStation(params);
+			return;
+		}
 		this.reset();
 		this.key = key;
 		this.mode = info.id;
@@ -65,6 +68,7 @@ export class DigimodeStream {
 				},
 				image: (rows) => this.addImage(rows),
 			});
+			this.applyStation(params);
 			this.status = { state: 'receiving', message: `${info.label} on ${params.freq.toFixed(3)} MHz`, records: 0, locked: false };
 			this.emit();
 		} catch (error) {
@@ -88,6 +92,12 @@ export class DigimodeStream {
 		} catch (error) {
 			this.fail(errorMessage(error));
 		}
+	}
+
+	/** The station location, for decoders that use one. */
+	private applyStation(params: VfoParams): void {
+		const station = params.digimodeStation;
+		if (station && Number.isFinite(station.lat) && Number.isFinite(station.lon)) this.decoder?.setStation?.(station.lat, station.lon);
 	}
 
 	reset(): void {

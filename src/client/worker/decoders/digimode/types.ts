@@ -57,6 +57,8 @@ export interface DigimodeSink {
 export interface DigimodeDecoder {
 	process(iq: Float32Array): void;
 	reset(): void;
+	/** The station location in degrees, for decoders that use one (positions relative to it, distances). */
+	setStation?(lat: number, lon: number): void;
 }
 
 export interface DigimodePreset {

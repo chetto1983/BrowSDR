@@ -1,8 +1,12 @@
 import type { AppInstance } from '@/app/core/receiver.types';
 import type { Vfo } from '@/app/core/types';
+import type { Site } from '@/satellites/types';
 import { makeDefaultVfo, MODE_DEFAULTS } from '@/app/core/constants';
 import { isValidDisplayFrequencyMhz, minimumDisplayFrequencyMhz } from '@/radio/frequency-shift';
 import { resetDiscoveryFollowers } from '@/app/decoders/rtk/discovery/followers';
+
+/** The station for Digital Modes decoders that use one, as a plain object (a Vue proxy does not clone). */
+const digimodeStation = (vfo: Vfo, station: Site | null) => (vfo.digimode && station ? { lat: station.lat, lon: station.lon } : undefined);
 
 /** Packet decoders run only while their VFO is inside the received band. */
 function packetDecoders(vfo: Vfo, inBandwidth: boolean) {
@@ -131,6 +135,7 @@ export const vfoMethods = {
 				rtkScanStart: vfo.rtkScanStart,
 				rtkScanEnd: vfo.rtkScanEnd,
 				digimode: inBandwidth ? (vfo.digimode ?? '') : '',
+				digimodeStation: digimodeStation(vfo, this.station),
 				dabService: vfo.dabService ?? 0,
 				rtl433: vfo.rtl433 && inBandwidth,
 				rtl433SampleRate: vfo.rtl433SampleRate,

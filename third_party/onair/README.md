@@ -220,3 +220,22 @@ file). Algorithms and protocol tables follow the OnAir source.
 | `test/decoders/dsd/dpmr/fixtures.js` | `core/src/dpmr/dpmr_gen.cpp` (Builder, dpmrKnownVoice, dpmrTxSymbols, dpmrTestSchedule, DpmrGenerator), `core/include/dect2/dpmr/dpmr_gen.h` |
 | `test/decoders/dsd/dpmr/proto.spec.js` | `tests/dpmr/test_dpmr_proto.cpp` |
 | `test/decoders/dsd/dpmr/stream.spec.js` | `tests/dpmr/test_dpmr_rx.cpp`, `tests/dpmr/test_dpmr_sens.cpp` |
+| `src/client/worker/decoders/digimode/flarm/types.ts` | `core/include/dect2/flarm/flarm_proto.h` (V6), `core/include/dect2/avroad/avroad_proto.h` (OgnPacket), `core/include/dect2/adsl/adsl_proto.h` (Traffic, Status, Parsed), `core/src/flarm/flarm_rx.cpp` (Cand, Pending) |
+| `src/client/worker/decoders/digimode/flarm/flarm-proto.ts` | `core/src/flarm/flarm_proto.cpp` (CRC, XXTEA, V6 key and packet, position and velocity fields, frame chips) |
+| `src/client/worker/decoders/digimode/flarm/ogn-proto.ts` | `core/src/avroad/avroad_air.cpp` (OGN whitening, LDPC check and repair, ognParse), `core/src/avroad/ogn_ldpc.inc` (parity checks; OGN-Tracker by Pawel Jalocha via SoftRF, GPL-3.0) |
+| `src/client/worker/decoders/digimode/flarm/adsl-rs.ts` | `core/src/adsl/adsl_proto.cpp` (GF(256), Reed-Solomon encoder and decoder) |
+| `src/client/worker/decoders/digimode/flarm/adsl-proto.ts` | `core/src/adsl/adsl_proto.cpp` (CRC-24, scrambling, exponential fields, Traffic, Status, network packet, CRC repair, names) |
+| `src/client/worker/decoders/digimode/flarm/dsp.ts` | `core/include/dect2/dsp/fast_phase.h` (fastAtan2) |
+| `src/client/worker/decoders/digimode/flarm/front.ts` | `core/src/flarm/flarm_rx.cpp` (channel mixers and low-pass) |
+| `src/client/worker/decoders/digimode/flarm/channel.ts` | `core/src/flarm/flarm_rx.cpp` (processChan, blockEnd, commitGroup), `core/src/adsl/adsl_rx.cpp` (M-band processChan, readByte, packetLevel) |
+| `src/client/worker/decoders/digimode/flarm/ogn.ts` | `core/src/avroad/avroad_air.cpp` (OgnDec: process, chip, finish) |
+| `src/client/worker/decoders/digimode/flarm/flarm.ts` | `core/src/flarm/flarm_rx.cpp` (tryJob with Chase decoding, onFrame, apply) |
+| `src/client/worker/decoders/digimode/flarm/adsl.ts` | `core/src/adsl/adsl_rx.cpp` (tryJob, tryNet, onPacket, applyTraffic) |
+| `src/client/worker/decoders/digimode/flarm/report.ts` | `core/src/geo/maidenhead.cpp` (greatCircle), `core/src/flarm/flarm_rx.cpp`, `core/src/adsl/adsl_rx.cpp` (aircraft expiry) |
+| `src/client/worker/decoders/digimode/flarm/index.ts` | `core/src/flarm/flarm_rx.cpp` (FlarmReceiver), `core/src/adsl/adsl_rx.cpp` (AdslReceiver, M-band), `core/src/avroad/avroad_air.cpp` (OgnDec) |
+| `test/digimode/flarm/fixtures.js` | `core/src/flarm/flarm_gen.cpp` (flarmBurst, flarmScene), `core/src/adsl/adsl_gen.cpp` (adslBurst, adslScene, adslTrafficNet), `core/src/adsl/adsl_proto.cpp` (frameChips), `tests/flarm/test_flarm_rx.cpp` (mk, twice) |
+| `test/digimode/flarm/ogn-fixtures.js` | `core/src/avroad/avroad_air.cpp` (ognParity), `core/src/avroad/ogn_ldpc.inc` (generator table), `tests/avroad/test_avroad_air.cpp` (ognPacket, ognChips, ognScene), `tests/avroad/avroad_gen.h` (appendFsk, addNoise) |
+| `test/digimode/flarm/proto.spec.js` | `tests/flarm/test_flarm_proto.cpp`, `tests/avroad/test_avroad_air.cpp` (OGN format), `tests/adsl/test_adsl_proto.cpp` |
+| `test/digimode/flarm/flarm.spec.js` | `tests/flarm/test_flarm_rx.cpp`, `test_flarm_impair.cpp`, `test_flarm_chase.cpp` |
+| `test/digimode/flarm/ogn.spec.js` | `tests/avroad/test_avroad_air.cpp` (testOgn) |
+| `test/digimode/flarm/adsl.spec.js` | `tests/adsl/test_adsl_rx.cpp`, `test_adsl_tone.cpp` |

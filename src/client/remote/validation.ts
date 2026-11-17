@@ -158,6 +158,7 @@ function validVfoParams(value: unknown): boolean {
 		) &&
 		optionalFields(value, ['rtl433SampleRate', 'dabService'], 'number') &&
 		optionalFields(value, ['rtl433Protocols', 'digimode'], 'string') &&
+		(value.digimodeStation === undefined || (isRecord(value.digimodeStation) && numbers(value.digimodeStation, ['lat', 'lon']))) &&
 		(value.pocsagCharset === undefined ||
 			(isRecord(value.pocsagCharset) && typedFields(value.pocsagCharset, ['vendor', 'model', 'codepage'], 'string'))) &&
 		(value.pocsagMode === undefined || (typeof value.pocsagMode === 'string' && ['auto', 'alpha', 'numeric'].includes(value.pocsagMode))) &&

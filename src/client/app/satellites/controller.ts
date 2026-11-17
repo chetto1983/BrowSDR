@@ -54,6 +54,8 @@ export const satelliteMethods = {
 		if (problem) return problem;
 		this.station = { lat, lon, altM: this.station?.altM ?? 0 };
 		saveStation(this.station);
+		// Digital Modes decoders that use the station (FLARM) take it with the VFO parameters
+		for (const [index, vfo] of this.vfos.entries()) if (vfo.digimode) this.updateBackendVfoParams(index);
 		if (this.meteor.panelOpen) void this.meteorRefreshPasses();
 		if (this.satellites.panelOpen) void this.satellitesRefresh();
 		return '';

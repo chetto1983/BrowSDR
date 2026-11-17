@@ -307,6 +307,20 @@ export const DIGIMODES: readonly DigimodeInfo[] = [
 		source: 'core/src/vdl2/vdl2_rx.cpp, vdl2_proto.cpp, rust/onair_vdl2',
 	},
 	{
+		id: 'flarm',
+		label: 'FLARM, OGN and ADS-L (868 MHz)',
+		family: 'Aviation',
+		description:
+			"Gliders and light aircraft on 868.2 and 868.4 MHz, both channels from a VFO at 868.3 MHz (100 kchip/s Manchester GFSK): FLARM's old protocol (decoded with its public key scheme; FLARM's newer protocol is only counted), OGN trackers and ADS-L (EASA, M-band). Aircraft ID and its type, aircraft type, position, altitude, climb, speed and track, with the distance once the station location is set (Tools → Satellites); FLARM positions need it. Stealth, no-track and anonymous aircraft are counted, never shown. FLARM keys follow the computer clock, which must be right to a few seconds. In North America FLARM hops over 902 - 928 MHz: one channel pair catches part of it.",
+		rate: 400000,
+		bandwidth: 360000,
+		presets: [
+			{ label: 'Europe 868.2 + 868.4', freqMHz: 868.3 },
+			{ label: 'North America 917 (hopping, partial)', freqMHz: 917 },
+		],
+		source: 'core/src/flarm/flarm_rx.cpp, flarm_proto.cpp, core/src/adsl/adsl_rx.cpp, adsl_proto.cpp, core/src/avroad/avroad_air.cpp',
+	},
+	{
 		id: 'tones',
 		label: 'Tone signalling (CTCSS, DCS, DTMF, selcall)',
 		family: 'Two-way radio',

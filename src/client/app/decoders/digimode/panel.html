@@ -19,7 +19,7 @@
 			<template v-if="selectedMode?.presets.length">
 				<UiSelect v-model.number="preset" aria-label="Frequency">
 					<option v-for="item in selectedMode.presets" :key="item.freqMHz" :value="item.freqMHz">
-						{{ item.label }} · {{ item.freqMHz.toFixed(3) }} MHz
+						{{ item.label }} · {{ item.freqMHz }} MHz
 					</option>
 				</UiSelect>
 				<UiButton variant="transcript" @click="receiver.tuneDigimodeVfo(preset)">Tune</UiButton>

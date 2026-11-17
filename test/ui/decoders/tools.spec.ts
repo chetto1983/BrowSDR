@@ -30,6 +30,7 @@ describe('decoder tools menu', () => {
 			'Radiosonde',
 			'RTK',
 			'TETRA',
+			'ORBCOMM',
 			'Meteor',
 			'Digital Modes',
 			'TetraEar',
@@ -54,6 +55,16 @@ describe('decoder tools menu', () => {
 		expect(wrapper.get('section[aria-label="IQ Recorder"]').exists()).toBe(true);
 		await wrapper.get('button[aria-label="Close IQ Recorder"]').trigger('click');
 		expect(wrapper.vm.iqRecording.panelOpen).toBe(false);
+	});
+
+	it('opens ORBCOMM directly in Digital Modes and offers its downlink presets', async () => {
+		wrapper = mount(ReceiverView);
+		await wrapper.get('.tools-trigger').trigger('click');
+		await wrapper.get('button[aria-label="ORBCOMM"]').trigger('click');
+		expect(wrapper.vm.vfos[0].digimode).toBe('orbcomm');
+		expect(wrapper.vm.digimodes.panelOpen).toBe(true);
+		expect(wrapper.get('select[aria-label="Decoder"]').element.value).toBe('orbcomm');
+		expect(wrapper.get('select[aria-label="Frequency"]').text()).toContain('· 137.2875 MHz');
 	});
 
 	it('deduplicates enabled decoders across VFOs and reopens their panels without changing configuration', async () => {

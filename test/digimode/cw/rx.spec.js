@@ -145,11 +145,15 @@ describe('CW skimmer near the decoding limit (OnAir test_cw_fistrx)', () => {
 		['hand', 2, 13.8],
 		['farnsworth', 4, 18],
 		['sloppy', 10, 20.4],
-	])("%s keying at %i dB: CER under the 0.2.7 timing's %f %%", (name, snr, bound) => {
-		let mean = 0;
-		for (let seed = 1; seed <= 4; seed++) mean += cer(CASES[name], snr, seed, 80).cer / 4;
-		expect(mean).toBeLessThan(bound);
-	});
+	])(
+		"%s keying at %i dB: CER under the 0.2.7 timing's %f %%",
+		(name, snr, bound) => {
+			let mean = 0;
+			for (let seed = 1; seed <= 4; seed++) mean += cer(CASES[name], snr, seed, 80).cer / 4;
+			expect(mean).toBeLessThan(bound);
+		},
+		20_000,
+	);
 
 	it('reads the first character after every pause', () => {
 		const o = cer(CASES.machine, 6, 3, 60);

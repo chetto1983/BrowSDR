@@ -103,6 +103,24 @@ export const DIGIMODES: readonly DigimodeInfo[] = [
 		source: 'core/src/cubesat/cubesat_rx.cpp, core/include/dect2/packet/packet_demod.h',
 	},
 	{
+		id: 'orbcomm',
+		label: 'ORBCOMM',
+		family: 'Satellite',
+		description:
+			'ORBCOMM subscriber downlinks at 137.2–137.8 MHz: satellite ID, position, orbital elements, assigned channels and packet messages. One downlink per VFO; add a second ORBCOMM VFO to receive two channels at once. 4800 bit/s SDPSK, Fletcher-checked packets. A clear view of the sky and a 137 MHz antenna help.',
+		rate: 48000,
+		bandwidth: 16000,
+		presets: [
+			{ label: 'Downlink', freqMHz: 137.25 },
+			{ label: 'Downlink', freqMHz: 137.2875 },
+			{ label: 'Downlink', freqMHz: 137.3125 },
+			{ label: 'Downlink', freqMHz: 137.4625 },
+			{ label: 'Downlink', freqMHz: 137.6625 },
+			{ label: 'Downlink', freqMHz: 137.7375 },
+		],
+		source: 'core/src/orbcomm/orbcomm_rx.cpp, core/include/dect2/orbcomm/orbcomm.h',
+	},
+	{
 		id: 'sstv-fm',
 		label: 'SSTV (FM, ISS)',
 		family: 'Satellite',

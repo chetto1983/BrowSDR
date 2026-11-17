@@ -67,5 +67,6 @@ Not corrected:
   correction: the decoder restarts on every retune, and the ±3.5 kHz shift fits
   its channel. Packets appear in **Tools → APRS**.
 - **Meteor** opens the Meteor panel; its demodulator locks onto the carrier.
+- **ORBCOMM** downlinks are available through **Tools → ORBCOMM** or the two-channel ORBCOMM station bookmark. Packet positions and channel assignments appear in the Digital Modes log; ORBCOMM is not in the TLE map catalog.
 - Dongle frequency error: an RTL-SDR off by 1 ppm is 435 Hz off at 435 MHz.
   Correct the dongle first, or retune by ear (the tracker keeps the correction).

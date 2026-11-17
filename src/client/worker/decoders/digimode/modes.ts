@@ -18,12 +18,14 @@ import { PSK_MODES, PskDecoder } from './psk';
 import { CwDecoder } from './cw';
 import { FlarmDecoder } from './flarm';
 import { Mpt1327Decoder } from './mpt1327';
+import { OrbcommReceiver } from './orbcomm/receiver';
 
 /** Worker-side constructors of the catalog's decoders. */
 export const DIGIMODE_DECODERS: Record<string, (sink: DigimodeSink) => DigimodeDecoder> = {
 	'dsc-vhf': (sink) => new DscVhfDecoder(sink),
 	navtex: (sink) => new NavtexReceiver(sink),
 	'ax25-sat': (sink) => new CubesatDecoder(sink),
+	orbcomm: (sink) => new OrbcommReceiver(sink),
 	'sstv-fm': (sink) => new SstvFmDecoder(sink),
 	'sstv-usb': (sink) => new SstvUsbDecoder(sink),
 	vdl2: (sink) => new Vdl2Decoder(sink),

@@ -69,7 +69,8 @@ export class DigimodeStream {
 				image: (rows) => this.addImage(rows),
 			});
 			this.applyStation(params);
-			this.status = { state: 'receiving', message: `${info.label} on ${params.freq.toFixed(3)} MHz`, records: 0, locked: false };
+			const frequency = params.freq.toFixed(4).replace(/0+$/, '').replace(/\.$/, '');
+			this.status = { state: 'receiving', message: `${info.label} on ${frequency} MHz`, records: 0, locked: false };
 			this.emit();
 		} catch (error) {
 			this.fail(errorMessage(error));

@@ -40,6 +40,11 @@ file). Algorithms and protocol tables follow the OnAir source.
 | `src/client/worker/decoders/digimode/dsc/index.ts` | `core/src/marine/marine_rx.cpp` (VHF DSC path) |
 | `src/client/worker/decoders/digimode/cubesat/g3ruh.ts` | `core/include/dect2/packet/packet_demod.h` (FskSlicer) |
 | `src/client/worker/decoders/digimode/cubesat/index.ts` | `core/src/cubesat/cubesat_rx.cpp` (receiver layout), `packet_demod.h` (FM front channel filter) |
+| `src/client/worker/decoders/digimode/orbcomm/protocol.ts` | `core/include/dect2/orbcomm/orbcomm.h` (packet framing, Fletcher check, fields, ephemeris) |
+| `src/client/worker/decoders/digimode/orbcomm/types.ts` | `core/include/dect2/orbcomm/orbcomm.h` (packet shapes) |
+| `src/client/worker/decoders/digimode/orbcomm/demodulator.ts` | `core/src/orbcomm/orbcomm_rx.cpp` (RRC filter, SDPSK, Gardner timing); streaming carrier estimate adapted for one VFO |
+| `src/client/worker/decoders/digimode/orbcomm/receiver.ts` | `core/src/orbcomm/orbcomm_rx.cpp` (sync, packet checks, message assembly) |
+| `test/digimode/orbcomm/fixtures.js` | `core/src/orbcomm/orbcomm_gen.cpp` (test signal and packet builders) |
 | `src/client/worker/decoders/digimode/sstv/modes.ts`, `types.ts` | `core/src/hfdig/hfdig_sstv_modes.h` |
 | `src/client/worker/decoders/digimode/sstv/phase.ts` | `core/src/hfdig/hfdig_sstv.cpp` (front end), `hfdig_usb.h` (lowpass) |
 | `src/client/worker/decoders/digimode/sstv/vis.ts` | `core/src/hfdig/hfdig_sstv.cpp` (VIS header and pulse log) |

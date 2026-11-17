@@ -10,6 +10,16 @@ describe('station bookmarks', () => {
 		expect(STATION_BOOKMARKS.every((bookmark) => bookmark.id?.startsWith('radiopi-'))).toBe(true);
 	});
 
+	it('ships two ORBCOMM downlinks inside one passband', () => {
+		const bookmark = STATION_BOOKMARKS.find((item) => item.id === 'radiopi-orbcomm');
+		expect(bookmark).toMatchObject({ centerFreq: 137.5, sampleRate: 1024000 });
+		expect(bookmark.vfos.map((vfo) => [vfo.freq, vfo.digimode])).toEqual([
+			[137.2875, 'orbcomm'],
+			[137.7375, 'orbcomm'],
+		]);
+		for (const vfo of bookmark.vfos) expect(Math.abs(vfo.freq - bookmark.centerFreq) * 1e6 + 8000).toBeLessThan(bookmark.sampleRate / 2);
+	});
+
 	it('adds station bookmarks the browser has never seen', () => {
 		const mine = { id: 'mine', type: 'individual', name: 'Mine', freq: 99, mode: 'wfm' };
 		const result = seedStationBookmarks([mine], [station('a', 120), station('b', 132)], []);

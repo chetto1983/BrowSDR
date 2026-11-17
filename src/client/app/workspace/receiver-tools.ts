@@ -91,6 +91,7 @@ function decoderTools(receiver: AppInstance): UiMenuItem[] {
 			open: receiver.rtk.panelOpen,
 		},
 		tetraTool(receiver),
+		orbcommTool(receiver),
 		meteorTool(receiver),
 		digimodeTool(receiver),
 		tetraEarTool(receiver),
@@ -124,6 +125,18 @@ function meteorTool(receiver: AppInstance): UiMenuItem {
 		icon: 'radio',
 		active: receiver.vfos.some((vfo) => vfo.meteor),
 		open: receiver.meteor.panelOpen,
+	};
+}
+
+function orbcommTool(receiver: AppInstance): UiMenuItem {
+	const active = receiver.vfos.some((vfo) => vfo.digimode === 'orbcomm');
+	return {
+		id: 'orbcomm',
+		label: 'ORBCOMM',
+		description: 'Satellite packets, position & channels · 137 MHz',
+		icon: 'satellite',
+		active,
+		open: active && receiver.digimodes.panelOpen,
 	};
 }
 
@@ -203,7 +216,10 @@ function selectTool(receiver: AppInstance, id: string, openOnly = false): void {
 	else if (id === 'discovery') receiver.discovery.panelOpen = !receiver.discovery.panelOpen;
 	else if (id === 'iqRecording') receiver.iqRecording.panelOpen = !receiver.iqRecording.panelOpen;
 	else if (id === 'satellites') receiver.toggleSatellitesPanel();
-	else {
+	else if (id === 'orbcomm') {
+		receiver.digimodes.panelOpen = true;
+		receiver.setVfoDigimode(receiver.activeVfoIndex, 'orbcomm');
+	} else {
 		const panels = {
 			whisper: receiver.whisper,
 			pocsag: receiver.pager,

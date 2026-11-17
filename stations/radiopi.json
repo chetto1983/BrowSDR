@@ -137,6 +137,37 @@
 		]
 	},
 	{
+		"id": "radiopi-orbcomm",
+		"type": "group",
+		"category": "satellites",
+		"name": "ORBCOMM 137 MHz (two downlinks)",
+		"centerFreq": 137.5,
+		"sampleRate": 1024000,
+		"activeVfoIndex": 0,
+		"vfos": [
+			{
+				"freq": 137.2875,
+				"mode": "nfm",
+				"bandwidth": 16000,
+				"snapInterval": 2500,
+				"deEmphasis": "none",
+				"digimode": "orbcomm",
+				"enabled": false,
+				"volume": 0
+			},
+			{
+				"freq": 137.7375,
+				"mode": "nfm",
+				"bandwidth": 16000,
+				"snapInterval": 2500,
+				"deEmphasis": "none",
+				"digimode": "orbcomm",
+				"enabled": false,
+				"volume": 0
+			}
+		]
+	},
+	{
 		"id": "radiopi-meteor-lrpt",
 		"type": "group",
 		"category": "satellites",

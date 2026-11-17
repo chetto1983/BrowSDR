@@ -47,7 +47,7 @@ Enjoy the power of a desktop SDR platform fully within your web browser.
   [the DAB+ guide](docs/dab.md).
 - **📡 Digital Modes (ported from OnAir)**
   Tools → Digital Modes: DSC on VHF channel 70, NAVTEX, HF weather fax, VDL Mode 2 with ACARS, CubeSat
-  AX.25 telemetry (1200 AFSK, 9600/4800 G3RUH), SSTV (ISS on FM, HF on USB) and tone
+  AX.25 telemetry (1200 AFSK, 9600/4800 G3RUH), ORBCOMM satellite downlinks, SSTV (ISS on FM, HF on USB) and tone
   signalling (CTCSS, DCS, DTMF, selcall, SELCAL), Wireless M-Bus meters and LoRa
   (Meshtastic, MeshCore, LoRaWAN headers, LoRa APRS), FLARM/OGN/ADS-L aircraft, MPT 1327 trunking, FT8, FT4, WSPR, CW, RTTY and PSK31/63/125, in one log with pictures. See
   [the guide](docs/digital-modes.md).

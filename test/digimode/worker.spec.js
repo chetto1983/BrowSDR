@@ -8,6 +8,7 @@ import { vhfDscSignal } from './fixtures';
 import { navtexBits, navtexSignal } from './marine-fixtures';
 import { avlcFrame, controlI } from '@/worker/decoders/digimode/vdl2/avlc';
 import { vdl2AcarsInfo, vdl2Signal } from './vdl2-fixtures';
+import { signal as orbcommSignal } from './orbcomm/fixtures';
 
 const binary = readFileSync(new URL('../../wasm/dsp/pkg/browsdr_dsp_bg.wasm', import.meta.url));
 vi.mock('/wasm/dsp/browsdr_dsp.js', async () => {
@@ -34,6 +35,25 @@ async function startWorker() {
 const digimodeMessages = (messages) => messages.filter((message) => message.type === 'digimode');
 
 describe('Digital Modes through the production DSP worker', () => {
+	it('decodes an ORBCOMM satellite through the 240 kS/s IQ and VFO path', async () => {
+		const { messages, send } = await startWorker();
+		const params = { freq: 137.2875, mode: 'nfm', bandwidth: 16000, enabled: false, digimode: 'orbcomm' };
+		await send({ type: 'init', sampleRate: 240000, centerFreq: 137.2625, params });
+		const iq = orbcommSignal({ seconds: 2.5, rate: 240000, offsetHz: 26200, satellite: 23 });
+		const input = Int8Array.from(iq, (value) => Math.max(-127, Math.min(127, Math.round(value * 60))));
+		let clock = performance.now();
+		vi.spyOn(performance, 'now').mockImplementation(() => (clock += 300));
+		for (let i = 0, chunkId = 1; i < input.length; i += 48000, chunkId++) {
+			const block = input.slice(i, i + 48000);
+			await send({ type: 'process', params, chunk: block.buffer, chunkLen: block.length, floatIq: false, chunkId });
+		}
+		const output = digimodeMessages(messages);
+		expect(output.every(validDigimodeMessage)).toBe(true);
+		expect(output.some((message) => message.status?.message.includes('137.2875 MHz'))).toBe(true);
+		const records = output.flatMap((message) => message.records);
+		expect(records.some((record) => record.text.includes('HELLO WORLD'))).toBe(true);
+		expect(records.some((record) => record.text.includes('Position'))).toBe(true);
+	}, 20_000);
 	it('decodes a channel 70 distress alert 50 kHz from the centre at 240 kS/s', async () => {
 		const { messages, send } = await startWorker();
 		const params = { freq: 156.525, mode: 'nfm', bandwidth: 12500, enabled: false, digimode: 'dsc-vhf' };

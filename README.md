@@ -46,7 +46,7 @@ Enjoy the power of a desktop SDR platform fully within your web browser.
   through faad2 in WebAssembly. The receiver is ported from OnAir. See
   [the DAB+ guide](docs/dab.md).
 - **📡 Digital Modes (ported from OnAir)**
-  Tools → Digital Modes: DSC on VHF channel 70, NAVTEX, HF weather fax, VDL Mode 2 with ACARS, HFDL, CubeSat
+  Tools → Digital Modes: DSC on VHF channel 70, NAVTEX, HF weather fax, VDL Mode 2 with ACARS, HFDL, Inmarsat-C and Aero, CubeSat
   AX.25 telemetry (1200 AFSK, 9600/4800 G3RUH), ORBCOMM satellite downlinks, SSTV (ISS on FM, HF on USB) and tone
   signalling (CTCSS, DCS, DTMF, selcall, SELCAL), Wireless M-Bus meters and LoRa
   (Meshtastic, MeshCore, LoRaWAN headers, LoRa APRS, MeshCom), FLARM/OGN/ADS-L and FANET aircraft, MPT 1327 trunking, FT8, FT4, WSPR, CW, RTTY and PSK31/63/125, in one log with pictures. See

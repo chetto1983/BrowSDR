@@ -4,6 +4,7 @@ import { nextTick } from 'vue';
 import { ReceiverView } from '../helpers/receiver-view';
 import { makeDefaultVfo } from '@/app/core/constants';
 import type { DSDStatus, DpmrStatus, YsfStatus } from '@/worker/decoders/dsd/types';
+import type { P25p2Slot, P25p2Status } from '@/worker/decoders/dsd/p25p2/types';
 
 let wrapper: VueWrapper;
 afterEach(() => wrapper?.unmount());
@@ -139,5 +140,65 @@ describe('DSD status panel', () => {
 		expect(text).toContain('SNR: 18.5 dB');
 		expect(text).toContain('Data: HELLO');
 		expect(text).toContain('Codec2 voice ready');
+	});
+
+	it('shows P25 Phase 2: the seed, both slots with talkgroup, source and encryption, the grant and the site', async () => {
+		const slot: P25p2Slot = {
+			active: true,
+			src: 1234567,
+			dst: 1001,
+			group: true,
+			emergency: false,
+			encrypted: false,
+			cryptoKnown: true,
+			algId: 0x80,
+			keyId: 0,
+			mi: '',
+			essMissing: false,
+			lateEntry: false,
+			endSeen: false,
+			voiceFrames: 40,
+			clearFrames: 40,
+			voice: true,
+			startSec: 0.4,
+			durSec: 1.2,
+		};
+		const p25p2: P25p2Status = {
+			slots: [slot, { ...slot, active: false, endSeen: true, src: 777, dst: 2002, encrypted: true, algId: 0x84, emergency: true }],
+			audioSlot: 1,
+			slotNow: 4,
+			wacn: 0xbee00,
+			sysId: 0x3a5,
+			nac: 0x293,
+			seed: 'recovered',
+			endNac: 0x293,
+			site: { wacn: 0xbee00, sysId: 0x3a5, rfss: 1, site: 7, channel: 0x1005, freqHz: 851075000 },
+			grant: { dst: 3003, src: 55555, group: true, channel: 0x1005, freqHz: 851075000, emergency: false, encrypted: false, at: 2 },
+			cfoHz: 12,
+			snrDb: 25,
+			macOk: 40,
+			macBad: 0,
+			essOk: 4,
+			essBad: 0,
+			voiceFrames: 80,
+			encryptedSkipped: 40,
+		};
+		const panel = await panelWith({ mode: 'p25p2', synced: true, syncName: 'P25P2', syncCount: 30, p25p2 });
+		expect(panel.text()).toContain('Mode: P25P2');
+		expect(panel.get('.dsd-p25p2-system').text()).toBe('WACN: 0xBEE00 · SYS: 0x3A5 · NAC: 0x293 · seed found');
+		const slots = panel.findAll('.dsd-p25p2-slot').map((s) => s.text());
+		expect(slots).toEqual(['S1: 1234567 → TG 1001 · on air · playing', 'S2: 777 → TG 2002 · ended · ENCRYPTED 0x84 · EMERGENCY']);
+		expect(panel.get('.dsd-p25p2-grant').text()).toBe('Grant: TG 3003 ← 55555 on 1-5 (851.07500 MHz)');
+		expect(panel.text()).toContain('Site: SYS 0x3A5 · RFSS 1 · site 7');
+		wrapper.unmount();
+		const unknown = { ...slot, src: -1, dst: -1, cryptoKnown: false, essMissing: true, lateEntry: true, voiceFrames: 60 };
+		const empty = { ...slot, active: false, src: -1, dst: -1, voiceFrames: 0 };
+		const scrambled = await panelWith({
+			mode: 'p25p2',
+			synced: true,
+			p25p2: { ...p25p2, slots: [empty, unknown], seed: 'none', wacn: 0, sysId: 0, nac: 0, macOk: 0, site: undefined, grant: undefined },
+		});
+		expect(scrambled.get('.dsd-p25p2-system').text()).toBe('Scrambled, seed not found yet · NAC: 0x293');
+		expect(scrambled.findAll('.dsd-p25p2-slot').map((s) => s.text())).toEqual(['S2: ? → TG ? · joined late · encryption unknown']);
 	});
 });

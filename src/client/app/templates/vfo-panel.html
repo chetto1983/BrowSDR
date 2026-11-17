@@ -261,6 +261,22 @@
 					<div v-if="receiver.dsdStatus[i]?.tg" style="color:#aaa;">TG: {{ receiver.dsdStatus[i].tg }} <span v-if="receiver.dsdStatus[i]?.src" style="margin-left:8px;">SRC: {{ receiver.dsdStatus[i].src }}</span></div>
 				<div v-if="receiver.dsdStatus[i]?.algid != null" style="color:#aaa;">ALGID: 0x{{ receiver.dsdStatus[i].algid.toString(16).toUpperCase().padStart(2,'0') }}</div>
 			</template>
+			<!-- P25 Phase 2 details -->
+			<template v-if="receiver.dsdStatus[i]?.mode === 'p25p2' && receiver.dsdStatus[i]?.p25p2">
+				<div class="dsd-p25p2-system" style="color:#aaa;">
+					<template v-if="receiver.dsdStatus[i].p25p2.seed !== 'none'">WACN: 0x{{ receiver.dsdStatus[i].p25p2.wacn.toString(16).toUpperCase().padStart(5,'0') }} · SYS: 0x{{ receiver.dsdStatus[i].p25p2.sysId.toString(16).toUpperCase().padStart(3,'0') }} · NAC: 0x{{ receiver.dsdStatus[i].p25p2.nac.toString(16).toUpperCase().padStart(3,'0') }} · seed {{ receiver.dsdStatus[i].p25p2.seed === 'recovered' ? 'found' : 'set' }}</template>
+					<template v-else>{{ receiver.dsdStatus[i].p25p2.macOk ? 'Not scrambled' : 'Scrambled, seed not found yet' }}<template v-if="receiver.dsdStatus[i].p25p2.endNac >= 0"> · NAC: 0x{{ receiver.dsdStatus[i].p25p2.endNac.toString(16).toUpperCase().padStart(3,'0') }}</template></template>
+				</div>
+				<template v-for="(call, k) in receiver.dsdStatus[i].p25p2.slots" :key="k">
+					<div v-if="call.src >= 0 || call.dst >= 0 || call.voiceFrames" class="dsd-p25p2-slot" style="color:#ddd;">
+						S{{ k + 1 }}: {{ call.src < 0 ? '?' : call.src }} → {{ call.group ? 'TG ' : '' }}{{ call.dst < 0 ? '?' : call.dst }} · {{ call.active ? (call.lateEntry ? 'joined late' : 'on air') : (call.endSeen ? 'ended' : 'lost') }}<span v-if="call.encrypted" style="color:#ff8844;"> · ENCRYPTED 0x{{ call.algId.toString(16).toUpperCase() }}</span><span v-else-if="call.essMissing" style="color:#ff8844;"> · encryption unknown</span><span v-if="call.emergency" style="color:#ff4444;"> · EMERGENCY</span><span v-if="call.active && receiver.dsdStatus[i].p25p2.audioSlot === k + 1" style="color:#44cc44;"> · playing</span>
+					</div>
+				</template>
+				<div v-if="receiver.dsdStatus[i].p25p2.grant" class="dsd-p25p2-grant" style="color:#aaa;">
+					Grant: {{ receiver.dsdStatus[i].p25p2.grant.group ? 'TG ' : '' }}{{ receiver.dsdStatus[i].p25p2.grant.dst }} ← {{ receiver.dsdStatus[i].p25p2.grant.src }} on {{ (receiver.dsdStatus[i].p25p2.grant.channel >> 12) & 15 }}-{{ receiver.dsdStatus[i].p25p2.grant.channel & 4095 }}<template v-if="receiver.dsdStatus[i].p25p2.grant.freqHz"> ({{ (receiver.dsdStatus[i].p25p2.grant.freqHz / 1e6).toFixed(5) }} MHz)</template>
+				</div>
+				<div v-if="receiver.dsdStatus[i].p25p2.site" style="color:#aaa;">Site: SYS 0x{{ receiver.dsdStatus[i].p25p2.site.sysId.toString(16).toUpperCase().padStart(3,'0') }} · RFSS {{ receiver.dsdStatus[i].p25p2.site.rfss }} · site {{ receiver.dsdStatus[i].p25p2.site.site }}</div>
+			</template>
 			<!-- D-STAR details -->
 			<template v-if="receiver.dsdStatus[i]?.mode === 'dstar'">
 				<div v-if="receiver.dsdStatus[i]?.callsign" style="color:#aaa;">Callsign: {{ receiver.dsdStatus[i].callsign }}</div>

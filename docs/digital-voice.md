@@ -1,15 +1,17 @@
 # Digital Voice (DSD mode)
 
 Set a VFO to the DSD mode and it finds the protocol by itself: DMR, P25 Phase 1,
-D-STAR, NXDN, Yaesu System Fusion (YSF), dPMR mode 1 and M17. DMR, P25, D-STAR,
-NXDN, YSF and dPMR voice plays through mbelib (AMBE, AMBE+2 and IMBE); M17
-voice uses Codec2 3200 or 1600 in separate WebAssembly. The VFO panel shows the
-protocol, the voice frame error bar and what each protocol carries:
+P25 Phase 2, D-STAR, NXDN, Yaesu System Fusion (YSF), dPMR mode 1 and M17. DMR,
+P25 (both phases), D-STAR, NXDN, YSF and dPMR voice plays through mbelib (AMBE,
+AMBE+2 and IMBE); M17 voice uses Codec2 3200 or 1600 in separate WebAssembly.
+The VFO panel shows the protocol, the voice frame error bar and what each
+protocol carries:
 
 | Protocol | Shown                                                                                                                                      | VFO bandwidth     |
 | -------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ----------------- |
 | DMR      | Colour code, slot, burst types, talkgroup or unit call, privacy flag                                                                       | 12.5 kHz          |
 | P25      | NAC, data unit, source, talkgroup, emergency, encryption algorithm                                                                         | 12.5 kHz          |
+| P25 Ph2  | Both time slots: source, talkgroup or unit, call state, emergency, encryption algorithm; WACN, system ID and NAC; last grant and site      | 12.5 kHz          |
 | D-STAR   | Callsign from the header                                                                                                                   | 6.25–12.5 kHz     |
 | NXDN     | Frame type                                                                                                                                 | 12.5 kHz (NXDN96) |
 | YSF      | Source, destination, uplink and downlink callsigns, DG-ID, DN / VW / data mode, slow-data text, GPS position. Voice in DN and VW modes.    | 12.5 kHz          |
@@ -18,13 +20,32 @@ protocol, the voice frame error bar and what each protocol carries:
 M17 shows source and destination callsigns, CAN, stream type, encryption flag,
 text and CRC-checked packet messages. It plays clear Codec2 voice.
 
-YSF, dPMR and M17 are ported from [OnAir](https://github.com/adswill/OnAir)
-(GPL-3.0-or-later, see `third_party/onair`).
+YSF, dPMR, M17 and P25 Phase 2 are ported from
+[OnAir](https://github.com/adswill/OnAir) (GPL-3.0-or-later, see
+`third_party/onair`).
+
+## P25 Phase 2
+
+Phase 2 is a two-slot TDMA voice channel at 6000 symbols/s (H-DQPSK). Its
+receiver runs on the complex channel beside the other DSD receivers and rests
+while another protocol holds the lock. It finds the sync word, measures and
+corrects the carrier offset itself (up to about ±4 kHz inside the 12.5 kHz
+channel) and reads the slot of the superframe from the I-ISCH. Both slots are
+shown; the first slot heard plays. Voice is AMBE+2 half rate through mbelib.
+
+Each channel is scrambled with a sequence seeded by the system's WACN, system
+ID and NAC. OnAir takes these from the Phase 1 control channel (its trunking
+follower) or from the user. BrowSDR has neither, so it solves them from the
+first error-free scrambled SACCH or FACCH burst: the scrambler and the MAC code
+are both linear, so one burst gives the 44 seed bits, and the burst must then
+pass its Reed-Solomon and CRC-12 checks. The panel then shows the WACN, system
+ID and NAC with "seed found". Channels whose MAC bursts are sent unscrambled
+need no seed.
 
 ## Limits
 
-- Tune within about 1.5 kHz of the channel; there is no automatic frequency
-  correction.
+- Tune within about 1.5 kHz of the channel; apart from P25 Phase 2 there is no
+  automatic frequency correction.
 - Only the latest transmission is shown; there is no call log and no PMR446
   channel scan.
 - Encrypted voice is not decrypted.
@@ -33,6 +54,12 @@ YSF, dPMR and M17 are ported from [OnAir](https://github.com/adswill/OnAir)
 - M17 was compared with OnAir's frame generator and tested through the DSD
   symbol clock; it has not yet been validated on an off-air recording. A
   signal more than about 1.5 kHz off centre may not acquire.
-- P25 Phase 2 burst primitives are under development and are not yet connected
-  to the DSD receiver. Phase 2 requires a separate 6000-symbol/s IQ chain and
-  the system WACN, system ID and NAC for descrambling.
+- P25 Phase 2 was tested on signals from OnAir's generator, not yet on an
+  off-air recording. Its MAC PDU layout is OnAir's reading of the standard: if a
+  real system differs, its MAC messages (talkgroup, source, grants) are not
+  decoded and the seed is not found. Without the seed the encryption sync cannot
+  be read, so voice stays muted ("encryption unknown") instead of playing noise.
+- P25 Phase 2 decodes voice channels only (4V and 2V voice, SACCH and FACCH).
+  Phase 2 control channels (LCCH), the inbound H-CPM signal, talkgroup lists and
+  adjacent sites are not decoded. The voice of a call joined late is held until
+  its encryption sync says it is clear.

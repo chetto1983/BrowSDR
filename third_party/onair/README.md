@@ -195,3 +195,11 @@ file). Algorithms and protocol tables follow the OnAir source.
 | `test/digimode/cw/fixtures.js` | `core/src/cw/cw_gen.cpp` (cwKeying, CwGenerator, cwTestSignals), `tests/cw/test_cw_fistrx.cpp` (decode, norm, editDistance) |
 | `test/digimode/cw/fist.spec.js` | `tests/cw/test_cw_morse.cpp`, `tests/cw/test_cw_fistrx.cpp` (the decoder alone) |
 | `test/digimode/cw/rx.spec.js` | `tests/cw/test_cw_rx.cpp`, `tests/cw/test_cw_fistrx.cpp` (the receiver) |
+| `src/client/worker/decoders/digimode/psk/types.ts` | `core/include/dect2/psk/psk_tel.h` (kPskModes, pskModeName, pskBaud, pskQpsk) |
+| `src/client/worker/decoders/digimode/psk/varicode.ts` | `core/src/psk/psk_varicode.cpp` (varicode, VaricodeRx, ConvEncoder, Viterbi, QPSK mapping), `core/include/dect2/psk/psk_varicode.h` |
+| `src/client/worker/decoders/digimode/psk/channel.ts` | `core/src/psk/psk_rx.cpp` (Chan, chanSample, sample1k, symbol) |
+| `src/client/worker/decoders/digimode/psk/receiver.ts` | `core/src/psk/psk_rx.cpp` (PskReceiver::Impl: setupMode, window spectrum, peak search, new signals and their replay, drop and merge) |
+| `src/client/worker/decoders/digimode/psk/index.ts` | `core/src/psk/psk_rx.cpp` (PskReceiver: feed, the report of every signal, pskPresets), `core/include/dect2/psk/psk_tel.h` |
+| `test/digimode/psk/fixtures.js` | `core/src/psk/psk_gen.cpp` (PskGenerator, pskTestSignals), `tests/psk/test_psk_rx.cpp` (sig, run) |
+| `test/digimode/psk/varicode.spec.js` | `tests/psk/test_psk_proto.cpp` |
+| `test/digimode/psk/psk.spec.js` | `tests/psk/test_psk_rx.cpp` |

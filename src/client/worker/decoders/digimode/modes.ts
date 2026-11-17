@@ -14,6 +14,7 @@ import { LoraAprsDecoder } from './lora-aprs';
 import { Ft4Decoder, Ft8Decoder } from './ftx';
 import { WsprDecoder } from './wspr';
 import { RTTY_AMATEUR, RttyReceiver } from './rtty';
+import { PSK_MODES, PskDecoder } from './psk';
 import { CwDecoder } from './cw';
 
 /** Worker-side constructors of the catalog's decoders. */
@@ -38,4 +39,9 @@ export const DIGIMODE_DECODERS: Record<string, (sink: DigimodeSink) => DigimodeD
 	rtty: (sink) => new RttyReceiver(sink, { start: RTTY_AMATEUR }),
 	'rtty-dwd': (sink) => new RttyReceiver(sink, { start: { baudIdx: 1, shiftIdx: 3, reverse: false } }),
 	'rtty-dwd-lf': (sink) => new RttyReceiver(sink, { start: { baudIdx: 1, shiftIdx: 5, reverse: false } }),
+	psk31: (sink) => new PskDecoder(sink, PSK_MODES[0]),
+	psk63: (sink) => new PskDecoder(sink, PSK_MODES[1]),
+	psk125: (sink) => new PskDecoder(sink, PSK_MODES[4]),
+	qpsk31: (sink) => new PskDecoder(sink, PSK_MODES[2]),
+	qpsk63: (sink) => new PskDecoder(sink, PSK_MODES[3]),
 };

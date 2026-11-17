@@ -1,4 +1,18 @@
-import type { DigimodeInfo } from './types';
+import type { DigimodeInfo, DigimodePreset } from './types';
+
+/** OnAir's PSK calling frequencies (USB dial). */
+const PSK_PRESETS: DigimodePreset[] = [
+	{ label: '80 m', freqMHz: 3.58 },
+	{ label: '40 m', freqMHz: 7.04 },
+	{ label: '40 m (7.070)', freqMHz: 7.07 },
+	{ label: '30 m', freqMHz: 10.142 },
+	{ label: '20 m', freqMHz: 14.07 },
+	{ label: '17 m', freqMHz: 18.1 },
+	{ label: '15 m', freqMHz: 21.07 },
+	{ label: '10 m', freqMHz: 28.12 },
+];
+const PSK_NOTE =
+	' Every signal between 100 and 3900 Hz above the dial is decoded at once, each with its own AFC and symbol clock; one record per line of a signal, the line being received in the status. Tune the VFO to the USB dial frequency (the presets). Needs HF reception, e.g. an RTL-SDR in direct sampling mode or behind an upconverter.';
 
 /** Decoders of the Digital Modes panel. Each is ported from OnAir (see third_party/onair). */
 export const DIGIMODES: readonly DigimodeInfo[] = [
@@ -216,6 +230,61 @@ export const DIGIMODES: readonly DigimodeInfo[] = [
 			{ label: '10 m', freqMHz: 28.08 },
 		],
 		source: 'core/src/hfdig/hfdig_rtty.cpp, hfdig_rtty_auto.cpp, core/src/autoparam/autoparam.cpp',
+	},
+	{
+		id: 'psk31',
+		label: 'PSK31',
+		family: 'Amateur',
+		description: 'Keyboard-to-keyboard chat in BPSK at 31.25 Bd (G3PLX varicode), the most used PSK mode.' + PSK_NOTE,
+		rate: 24000,
+		bandwidth: 4000,
+		offsetHz: 2000,
+		presets: PSK_PRESETS,
+		source: 'core/src/psk/psk_rx.cpp, psk_varicode.cpp',
+	},
+	{
+		id: 'psk63',
+		label: 'PSK63',
+		family: 'Amateur',
+		description: 'BPSK at 62.5 Bd, twice as fast as PSK31.' + PSK_NOTE,
+		rate: 24000,
+		bandwidth: 4000,
+		offsetHz: 2000,
+		presets: PSK_PRESETS,
+		source: 'core/src/psk/psk_rx.cpp, psk_varicode.cpp',
+	},
+	{
+		id: 'psk125',
+		label: 'PSK125',
+		family: 'Amateur',
+		description: 'BPSK at 125 Bd, used in contests.' + PSK_NOTE,
+		rate: 24000,
+		bandwidth: 4000,
+		offsetHz: 2000,
+		presets: PSK_PRESETS,
+		source: 'core/src/psk/psk_rx.cpp, psk_varicode.cpp',
+	},
+	{
+		id: 'qpsk31',
+		label: 'QPSK31',
+		family: 'Amateur',
+		description: 'QPSK at 31.25 Bd with the K = 5 convolutional code (Viterbi decoding), for weak and fading paths.' + PSK_NOTE,
+		rate: 24000,
+		bandwidth: 4000,
+		offsetHz: 2000,
+		presets: PSK_PRESETS,
+		source: 'core/src/psk/psk_rx.cpp, psk_varicode.cpp',
+	},
+	{
+		id: 'qpsk63',
+		label: 'QPSK63',
+		family: 'Amateur',
+		description: 'QPSK at 62.5 Bd with the K = 5 convolutional code (Viterbi decoding).' + PSK_NOTE,
+		rate: 24000,
+		bandwidth: 4000,
+		offsetHz: 2000,
+		presets: PSK_PRESETS,
+		source: 'core/src/psk/psk_rx.cpp, psk_varicode.cpp',
 	},
 	{
 		id: 'vdl2',

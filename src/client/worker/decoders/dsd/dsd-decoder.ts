@@ -28,7 +28,7 @@ import type { M17Frame } from './m17/types';
 import { decodeM17Voice, ensureM17Codec2, m17Codec2Ready, resetM17Voice } from './m17/codec2';
 import { P25p2Receiver } from './p25p2/receiver';
 import { ambeFrame } from './ambe';
-import { decodeAmbe, decodeImbe, ensureMbelibInitialized, getMbeErrors, resetMbe } from '@/worker/decoders/mbelib-init';
+import { decodeAmbe, decodeAmbe2400, decodeImbe, ensureMbelibInitialized, getMbeErrors, resetMbe } from '@/worker/decoders/mbelib-init';
 
 /** Nominal slicer levels of the four dibits, for dibits fed without their symbol value. */
 const DIBIT_LEVELS = [1, 3, -1, -3];
@@ -59,7 +59,7 @@ export class DSDDecoder {
 	private rrcN = 0;
 	private chain: DsdChain = { dibits: this.dibitBuf, symbols: this.symbolBuf, times: this.timeBuf, samples: this.rrcBuf, mask: BUF_MASK };
 	/** D-STAR, NXDN and P25 Phase 1 frames (ported from OnAir, see dstar/, nxdn/, p25/). */
-	private dstar = new DstarCalls(this.sink('dstar', decodeAmbe));
+	private dstar = new DstarCalls(this.sink('dstar', decodeAmbe2400));
 	/** NXDN48 runs beside the chain at 2400 symbols/s, like dPMR; NXDN96 frames come from the chain. */
 	private nxdn = new NxdnReceiver(this.sink('nxdn', decodeAmbe));
 	private p25 = new P25Frames(this.sink('p25', decodeImbe));

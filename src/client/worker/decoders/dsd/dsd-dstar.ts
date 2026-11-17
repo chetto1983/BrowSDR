@@ -2,9 +2,8 @@
  * D-STAR frame processor for DSD.
  * Ported from SDR++ Brown dsd_dstar.cpp.
  *
- * D-STAR uses AMBE 3600x2400 and a 72-element interleave schedule.
- * The current WASM wrapper only exposes 2450 decoding, so correcting this
- * matrix alone does not provide complete D-STAR voice support.
+ * D-STAR uses AMBE 3600x2400 (decodeAmbe2400, not the AMBE+2 of DMR) and a
+ * 72-element interleave schedule.
  */
 
 import { DSTAR_W, DSTAR_X } from './constants';

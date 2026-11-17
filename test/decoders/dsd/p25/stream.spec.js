@@ -16,6 +16,7 @@ const codec = vi.hoisted(() => ({ frames: [] }));
 vi.mock('@/worker/decoders/mbelib-init', () => ({
 	ensureMbelibInitialized: async () => {},
 	decodeAmbe: () => new Float32Array(160),
+	decodeAmbe2400: () => new Float32Array(160),
 	decodeImbe: (frame) => {
 		codec.frames.push(Array.from(frame).join(''));
 		return new Float32Array(160);

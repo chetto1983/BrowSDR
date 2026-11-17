@@ -99,9 +99,7 @@ need no seed.
   scan.
 - D-STAR positions (D-PRS and NMEA) are shown in the panel, not on the APRS
   map: the map takes the stations of a VFO's own APRS decoder only.
-- D-STAR voice uses the AMBE 3600x2400 codec, which BrowSDR's mbelib build
-  does not include: its voice frames reach the AMBE+2 decoder and do not sound
-  right. D-STAR fast data is not decoded.
+- D-STAR fast data is not decoded.
 - NXDN: FACCH2 / UDCH and inbound control channels are not decoded (OnAir does
   not decode them either). Encrypted NXDN voice is reported, never played. A
   one-frame NXDN96 transmission (a lone status message) is missed: the 4800

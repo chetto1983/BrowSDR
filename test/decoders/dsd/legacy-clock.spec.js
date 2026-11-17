@@ -7,6 +7,7 @@ vi.mock('@/worker/decoders/mbelib-init', () => ({
 		codec.frames.push(Array.from(frame));
 		return new Float32Array(160);
 	},
+	decodeAmbe2400: () => new Float32Array(160),
 	decodeImbe: () => new Float32Array(160),
 	resetMbe: vi.fn(),
 	getMbeErrors: () => 0,

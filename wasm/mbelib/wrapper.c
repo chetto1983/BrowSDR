@@ -1,7 +1,7 @@
 /*
  * Thin WASM wrapper for mbelib voice codec library.
- * Exposes AMBE 3600x2450 and IMBE 7200x4400 decoding for DSD, and AMBE 2450
- * parameter decoding for 49 bits whose error correction was done by the caller
+ * Exposes AMBE+2 3600x2450, AMBE 3600x2400 (D-STAR) and IMBE 7200x4400
+ * decoding for DSD, and AMBE 2450 parameter decoding for 49 bits whose error correction was done by the caller
  * (Yaesu System Fusion V/D mode 2).
  *
  * Build: emcc -O3 -s WASM=1 -s MODULARIZE=1 -s EXPORT_NAME='MbelibModule' \
@@ -33,15 +33,10 @@ void mbelib_reset(void) {
     mbe_initMbeParms(&curMp, &prevMp, &prevMpEnhanced);
 }
 
-/*
- * Decode an AMBE 3600x2450 voice frame (DMR, D-STAR, NXDN).
- *
- * ambe_fr: 4x24 bit matrix (96 bytes, row-major)
- * audio:   output buffer for 160 float samples
- *
- * Returns error count.
- */
-int mbelib_decode_ambe(const char *ambe_fr_flat, float *audio) {
+typedef void (*ambe_frame_fn)(short *, int *, int *, char *, char[4][24], char[49],
+                              mbe_parms *, mbe_parms *, mbe_parms *, int);
+
+static int decode_ambe_frame(ambe_frame_fn process, const char *ambe_fr_flat, float *audio) {
     if (!initialized) mbelib_init();
 
     char ambe_fr[4][24];
@@ -54,15 +49,34 @@ int mbelib_decode_ambe(const char *ambe_fr_flat, float *audio) {
     errs = 0;
     errs2 = 0;
 
-    mbe_processAmbe3600x2450Frame(audio_out, &errs, &errs2, err_str,
-                                   ambe_fr, ambe_d,
-                                   &curMp, &prevMp, &prevMpEnhanced, 3);
+    process(audio_out, &errs, &errs2, err_str, ambe_fr, ambe_d,
+            &curMp, &prevMp, &prevMpEnhanced, 3);
 
     /* Convert int16 to float */
     for (int i = 0; i < 160; i++)
         audio[i] = (float)audio_out[i] / 32768.0f;
 
     return errs + errs2;
+}
+
+/*
+ * Decode an AMBE+2 3600x2450 voice frame (DMR, NXDN, dPMR, YSF V/D mode 1).
+ *
+ * ambe_fr: 4x24 bit matrix (96 bytes, row-major)
+ * audio:   output buffer for 160 float samples
+ *
+ * Returns error count.
+ */
+int mbelib_decode_ambe(const char *ambe_fr_flat, float *audio) {
+    return decode_ambe_frame(mbe_processAmbe3600x2450Frame, ambe_fr_flat, audio);
+}
+
+/*
+ * Decode an AMBE 3600x2400 voice frame (D-STAR), the same 4x24 matrix as DSD's
+ * dstar.c fills it with its dW/dX schedule.
+ */
+int mbelib_decode_ambe2400(const char *ambe_fr_flat, float *audio) {
+    return decode_ambe_frame(mbe_processAmbe3600x2400Frame, ambe_fr_flat, audio);
 }
 
 /*

@@ -4,18 +4,22 @@
 // https://github.com/adswill/OnAir; see third_party/onair.
 // Changes: the generated signal goes through BrowSDR's DSD stream at 48 kHz instead of OnAir's DstarReceiver, and the
 // calls are found in the stream's status reports instead of a call log; the voice bits are the AMBE matrices that reach
-// mbelib (mocked: BrowSDR's mbelib build has no D-STAR AMBE 3600x2400 decoder); "swapped I/Q" is an inverted frequency.
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+// mbelib (mocked: its AMBE 3600x2400 decoder is checked on the real codec in codec.spec.js); "swapped I/Q" is an inverted frequency.
+import { beforeEach, describe, expect, it, vi, afterEach } from 'vitest';
 import { DSTAR_W, DSTAR_X } from '@/worker/decoders/dsd/constants';
 import { DSDStream } from '@/worker/decoders/dsd/dsd-stream';
 import { noiseIq } from '../voice-fixtures.js';
 import { dstarSignal, dstarTestSchedule } from './fixtures.js';
 
-const codec = vi.hoisted(() => ({ frames: [] }));
+const codec = vi.hoisted(() => ({ frames: [], ambePlus: 0 }));
 vi.mock('@/worker/decoders/mbelib-init', () => ({
 	ensureMbelibInitialized: async () => {},
-	decodeAmbe: (frame) => {
+	decodeAmbe2400: (frame) => {
 		codec.frames.push(Array.from(frame).join(''));
+		return new Float32Array(160);
+	},
+	decodeAmbe: () => {
+		codec.ambePlus++;
 		return new Float32Array(160);
 	},
 	decodeImbe: () => new Float32Array(160),
@@ -25,7 +29,10 @@ vi.mock('@/worker/decoders/mbelib-init', () => ({
 
 beforeEach(() => {
 	codec.frames.length = 0;
+	codec.ambePlus = 0;
 });
+// D-STAR voice is AMBE 3600x2400: none of it may reach the AMBE+2 decoder of DMR and NXDN.
+afterEach(() => expect(codec.ambePlus).toBe(0));
 
 const ambeKey = (bits) => {
 	const fr = new Int8Array(96);

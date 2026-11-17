@@ -12,6 +12,7 @@ let lastErrors = 0;
 
 // C function wrappers (set after init)
 let _decode_ambe: (frPtr: number, audioPtr: number) => number;
+let _decode_ambe2400: (frPtr: number, audioPtr: number) => number;
 let _decode_imbe: (frPtr: number, audioPtr: number) => number;
 let _decode_ambe2450_data: (dataPtr: number, errors: number, audioPtr: number) => number;
 let _mbelib_init: () => void;
@@ -40,6 +41,7 @@ export async function ensureMbelibInitialized(factory?: MbelibFactory): Promise<
 		});
 
 		_decode_ambe = module.cwrap('mbelib_decode_ambe', 'number', ['number', 'number']);
+		_decode_ambe2400 = module.cwrap('mbelib_decode_ambe2400', 'number', ['number', 'number']);
 		_decode_imbe = module.cwrap('mbelib_decode_imbe', 'number', ['number', 'number']);
 		_decode_ambe2450_data = module.cwrap('mbelib_decode_ambe2450_data', 'number', ['number', 'number', 'number']);
 		_mbelib_init = module.cwrap('mbelib_init', null, []);
@@ -70,17 +72,30 @@ export async function ensureMbelibInitialized(factory?: MbelibFactory): Promise<
 }
 
 /**
- * Decode an AMBE 3600x2450 voice frame (DMR, D-STAR, NXDN).
+ * Decode an AMBE+2 3600x2450 voice frame (DMR, NXDN, dPMR, YSF V/D mode 1).
  * @param ambeFr 4x24 bit matrix as flat Int8Array (96 bytes, row-major)
  * @returns Float32Array of 160 audio samples at 8 kHz
  */
 export function decodeAmbe(ambeFr: Int8Array | Uint8Array): Float32Array {
+	return decodeAmbeFrame(ambeFr, _decode_ambe);
+}
+
+/**
+ * Decode an AMBE 3600x2400 voice frame (D-STAR's original AMBE codec, not AMBE+2).
+ * @param ambeFr 4x24 bit matrix as flat Int8Array (96 bytes, row-major), as DSD's dW/dX schedule fills it
+ * @returns Float32Array of 160 audio samples at 8 kHz
+ */
+export function decodeAmbe2400(ambeFr: Int8Array | Uint8Array): Float32Array {
+	return decodeAmbeFrame(ambeFr, _decode_ambe2400);
+}
+
+function decodeAmbeFrame(ambeFr: Int8Array | Uint8Array, decode: (frPtr: number, audioPtr: number) => number): Float32Array {
 	if (!mbelibModule) throw new Error('mbelib is not ready');
 	if (ambeFr.length !== 96) throw new Error('AMBE frame must contain 96 bits');
 	const heap8 = new Int8Array(mbelibModule.HEAP8.buffer);
 	heap8.set(ambeFr.subarray(0, 96), ambeFramePtr);
 
-	lastErrors = _decode_ambe(ambeFramePtr, audioOutPtr);
+	lastErrors = decode(ambeFramePtr, audioOutPtr);
 
 	const heapF32 = new Float32Array(mbelibModule.HEAPF32.buffer);
 	return new Float32Array(heapF32.buffer, audioOutPtr, 160).slice();

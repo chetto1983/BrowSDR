@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('@/worker/decoders/mbelib-init', () => ({
 	ensureMbelibInitialized: async () => {},
 	decodeAmbe: () => new Float32Array(160),
+	decodeAmbe2400: () => new Float32Array(160),
 	decodeImbe: () => new Float32Array(160),
 	resetMbe: vi.fn(),
 	getMbeErrors: () => 0,

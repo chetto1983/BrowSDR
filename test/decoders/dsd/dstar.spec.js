@@ -2,11 +2,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { processDSTARVoice, DSTAR_FRAME_DIBITS } from '@/worker/decoders/dsd/dsd-dstar';
 import { DSDDecoder } from '@/worker/decoders/dsd/dsd-decoder';
 import { SYNC_WORDS } from '@/worker/decoders/dsd/constants';
-import { decodeAmbe } from '@/worker/decoders/mbelib-init';
+import { decodeAmbe, decodeAmbe2400 } from '@/worker/decoders/mbelib-init';
 
 vi.mock('@/worker/decoders/mbelib-init', () => ({
 	ensureMbelibInitialized: async () => {},
 	decodeAmbe: vi.fn(() => new Float32Array(160)),
+	decodeAmbe2400: vi.fn(() => new Float32Array(160)),
 	decodeImbe: vi.fn(),
 	resetMbe: vi.fn(),
 	getMbeErrors: () => 0,
@@ -51,11 +52,13 @@ describe('D-STAR symbol interleave', () => {
 		const positiveBit = sync === 'DSTAR' ? 1 : 3;
 		decoder.feedDibit(negativeBit);
 		for (let i = 1; i < 95; i++) decoder.feedDibit(positiveBit);
-		expect(decodeAmbe).not.toHaveBeenCalled();
+		expect(decodeAmbe2400).not.toHaveBeenCalled();
 		decoder.feedDibit(positiveBit);
 		const expected = new Int8Array(96);
 		expected[10] = 1;
-		expect(decodeAmbe).toHaveBeenCalledExactlyOnceWith(expected);
+		// D-STAR is AMBE 3600x2400, not the AMBE+2 of DMR and NXDN.
+		expect(decodeAmbe2400).toHaveBeenCalledExactlyOnceWith(expected);
+		expect(decodeAmbe).not.toHaveBeenCalled();
 		expect(decoder.status.voiceFrameCount).toBe(1);
 	});
 });

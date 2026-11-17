@@ -24,7 +24,7 @@ export function useSatelliteMap(
 	);
 	const select = (norad: number) => {
 		receiver.satelliteSelect(norad);
-		map?.focus(norad);
+		void nextTick(() => map?.focus(norad, selection.value.passTrack, receiver.station));
 	};
 	const refresh = () => map?.update(satellites.value, receiver.satellites.selected);
 	const refreshSelection = () => map?.setSelection(selection.value.track, selection.value.passTrack, selection.value.coverage);

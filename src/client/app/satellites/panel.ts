@@ -3,6 +3,7 @@ import type { AppInstance } from '@/app/core/receiver.types';
 import * as components from '@/ui';
 import { formatKHz, formatMHz, pointing, useSatelliteLive } from './live';
 import { useSatelliteMap } from './map-view';
+import { useSatelliteTable } from './table';
 import template from './panel.html?raw';
 
 const TRACK_REFRESH_MS = 15_000;
@@ -52,11 +53,19 @@ export default defineComponent({
 			() => state.hours,
 			() => void receiver.satellitesRefresh(),
 		);
-		watch([passFilter, () => state.orbcomm.length], ([filter]) => {
-			if (filter === -1 && state.orbcomm.length) receiver.satelliteSelect(state.orbcomm[0].norad);
-		});
 		const live = useSatelliteLive(receiver, now, trackFrom, passFilter);
 		const map = useSatelliteMap(receiver, showMap, mapElement, live.mapSatellites, live.selection, error);
+		const orbcommIds = computed(() => new Set(state.orbcomm.map((satellite) => satellite.norad)));
+		const nextOrbcommPass = computed(() => live.upcoming.value.find((row) => orbcommIds.value.has(row.pass.norad)));
+		const showNextOrbcomm = () => {
+			if (!nextOrbcommPass.value) return;
+			if (passFilter.value === -1) map.select(nextOrbcommPass.value.pass.norad);
+			else passFilter.value = -1;
+		};
+		watch([passFilter, () => state.orbcomm.length], ([filter]) => {
+			if (filter === -1 && nextOrbcommPass.value) map.select(nextOrbcommPass.value.pass.norad);
+		});
+		const table = useSatelliteTable(live.rows, now, passFilter, orbcommIds);
 
 		return {
 			receiver,
@@ -67,12 +76,15 @@ export default defineComponent({
 			latitude,
 			longitude,
 			passFilter,
+			nextOrbcommPass,
+			showNextOrbcomm,
+			...table,
 			...live,
 			...map,
 			passList: computed(() => {
-				const orbcommIds = new Set(state.orbcomm.map((satellite) => satellite.norad));
 				return live.upcoming.value.filter(
-					(row) => !passFilter.value || (passFilter.value === -1 ? orbcommIds.has(row.pass.norad) : row.pass.norad === passFilter.value),
+					(row) =>
+						!passFilter.value || (passFilter.value === -1 ? orbcommIds.value.has(row.pass.norad) : row.pass.norad === passFilter.value),
 				);
 			}),
 			pointing,

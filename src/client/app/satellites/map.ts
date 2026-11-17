@@ -85,7 +85,15 @@ export class SatelliteMap {
 			: null;
 	}
 
-	focus(norad: number): void {
+	/** Fit the next visible pass near the station; otherwise follow the satellite's current position. */
+	focus(norad: number, passTrack: LatLon[], site: Site | null): void {
+		if (site && passTrack.length > 1) {
+			const bounds = this.leaflet.latLngBounds(passTrack.map(([lat, lon]): Leaflet.LatLngTuple => [lat, lon]));
+			const stationLon = site.lon + 360 * Math.round((passTrack[0][1] - site.lon) / 360);
+			bounds.extend([site.lat, stationLon]);
+			this.map.fitBounds(bounds, { padding: [24, 24], maxZoom: 5, animate: false });
+			return;
+		}
 		const marker = this.markers.get(norad);
 		if (marker) this.map.panTo(marker.getLatLng());
 	}

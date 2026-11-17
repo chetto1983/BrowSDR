@@ -20,6 +20,26 @@
 .satellites-panel .adsb-table td:last-child {
 	white-space: normal;
 }
+.satellites-panel table[aria-label='Satellites'] thead {
+	position: sticky;
+	top: 0;
+	z-index: 2;
+	background: var(--bg-panel);
+}
+.satellite-filter-row input,
+.satellite-filter-row select {
+	box-sizing: border-box;
+	width: 100%;
+	min-width: 0;
+}
+.satellite-name-filter {
+	display: flex;
+	align-items: center;
+	gap: 3px;
+}
+.satellite-name-filter input {
+	flex: 1;
+}
 .satellites-panel.adsb-fullscreen .adsb-content {
 	grid-template-columns: minmax(0, 1fr) minmax(400px, 32%);
 }
@@ -55,6 +75,12 @@
 }
 .satellite-tracking {
 	color: var(--text-main);
+}
+.satellite-next-pass {
+	color: var(--text-main);
+}
+.satellite-next-pass button {
+	margin-left: 8px;
 }
 .leaflet-tooltip.satellite-label {
 	padding: 0 4px;

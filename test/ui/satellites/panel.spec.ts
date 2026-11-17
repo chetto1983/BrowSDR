@@ -87,16 +87,41 @@ describe('Satellites panel', () => {
 	});
 	it('shows ORBCOMM passes and satellite positions on the map', async () => {
 		await openPanel();
-		await wrapper.find('select[aria-label="Passes of"]').setValue('-1');
+		expect(wrapper.text()).toContain('Next ORBCOMM:');
+		await wrapper.find('button[aria-label="Show next ORBCOMM pass"]').trigger('click');
 		await wrapper.vm.$nextTick();
 		const panel = wrapper.findComponent({ name: 'SatellitesPanel' }).vm;
-		expect(wrapper.vm.satellites.selected).toBe(25118);
+		expect(wrapper.find('select[aria-label="Passes of"]').element.value).toBe('-1');
+		expect(wrapper.vm.satellites.selected).toBe(panel.passList[0].pass.norad);
 		expect(panel.mapSatellites.map((item) => item.state.norad)).toEqual([25118, 25159]);
 		expect(panel.passList.length).toBeGreaterThan(0);
 		expect(panel.passList.every((row) => [25118, 25159].includes(row.pass.norad))).toBe(true);
+		expect(panel.displayRows[0].satellite.norad).toBe(panel.passList[0].pass.norad);
+		expect(wrapper.text()).toContain('Next ORBCOMM:');
 		const orbit = panel.selection.track;
 		expect(orbit.length).toBeGreaterThan(10);
 		expect(panel.selection.passTrack.length).toBeGreaterThan(10);
+	});
+	it('filters and sorts satellite columns like a spreadsheet', async () => {
+		await openPanel();
+		const names = () => wrapper.findAll('table[aria-label="Satellites"] tbody tr button').map((button) => button.text());
+		await wrapper.get('input[aria-label="Filter satellites by name or NORAD ID"]').setValue('ORBCOMM');
+		expect(names()).toEqual(['ORBCOMM FM06', 'ORBCOMM FM04']);
+		await wrapper.get('input[aria-label="Filter satellites by name or NORAD ID"]').setValue('25159');
+		expect(names()).toEqual(['ORBCOMM FM04']);
+		await wrapper.get('button[aria-label="Clear satellite table filters"]').trigger('click');
+		await wrapper.get('select[aria-label="Filter satellite visibility"]').setValue('above');
+		expect(wrapper.findAll('table[aria-label="Satellites"] tbody tr').every((row) => row.classes().includes('satellite-up'))).toBe(true);
+		await wrapper.get('select[aria-label="Filter satellite visibility"]').setValue('all');
+		await wrapper.get('select[aria-label="Filter next pass time"]').setValue('24h');
+		const panel = wrapper.findComponent({ name: 'SatellitesPanel' }).vm;
+		expect(panel.displayRows.length).toBeGreaterThan(0);
+		expect(panel.displayRows.every((row) => row.next && row.next.pass.aos.getTime() < DURING_SO50.getTime() + 86_400_000)).toBe(true);
+		await wrapper.get('button[aria-label="Sort next pass"]').trigger('click');
+		const times = panel.displayRows.map((row) => row.next.pass.aos.getTime());
+		expect(times).toEqual([...times].sort((a, b) => a - b));
+		await wrapper.get('button[aria-label="Clear satellite table filters"]').trigger('click');
+		expect(names()[0]).toBe('ISS');
 	});
 	it('asks for the station before predicting passes', async () => {
 		await openPanel({ station: null });

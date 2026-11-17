@@ -42,6 +42,9 @@ The ORBCOMM satellites come from Celestrak's current ORBCOMM group. Choose
 **ORBCOMM constellation (map and passes)** in the pass filter to see only their
 markers and upcoming passes; selecting one draws its orbit and coverage area.
 The map uses TLE predictions, not positions reported in decoded packets.
+The satellite table has column filters for name/NORAD ID, horizon visibility and
+next pass time. Click a column heading to sort it; the × button clears these
+table filters.
 
 ## Passes
 

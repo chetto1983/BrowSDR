@@ -14,3 +14,17 @@ export interface SatelliteRow {
 	/** The next pass above the chosen peak elevation, or the one in progress. */
 	next: PassRow | undefined;
 }
+
+export type SatelliteVisibility = 'all' | 'above' | 'below';
+export type SatellitePassWindow = 'all' | 'today' | '24h' | 'none';
+export type SatelliteTableSort = 'catalog' | 'name' | 'elevation' | 'next';
+
+export interface SatelliteTableFilters {
+	query: string;
+	visibility: SatelliteVisibility;
+	window: SatellitePassWindow;
+	time: number;
+	tomorrow: number;
+	orbcommOnly: boolean;
+	orbcommIds: Set<number>;
+}

@@ -19,6 +19,11 @@
 		>
 		<span v-if="state.notice" class="meteor-notice">{{ state.notice }}</span>
 		<span v-if="state.message">{{ state.message }}</span>
+		<span v-if="nextOrbcommPass" class="satellite-next-pass"
+			>Next ORBCOMM: {{ nextOrbcommPass.label }} · {{ nextOrbcommPass.inProgress ? 'now' : nextOrbcommPass.when }} · {{
+			nextOrbcommPass.detail }}
+			<UiButton variant="transcript" aria-label="Show next ORBCOMM pass" @click="showNextOrbcomm">Show on map</UiButton></span
+		>
 	</div>
 	<div class="adsb-content" :class="{ 'adsb-list-only': !showMap }">
 		<div v-if="showMap" class="adsb-map-wrap">
@@ -35,14 +40,49 @@
 			<table class="adsb-table" aria-label="Satellites">
 				<thead>
 					<tr>
-						<th>Satellite</th>
-						<th>Az · El</th>
-						<th>Next pass</th>
+						<th :aria-sort="tableSort === 'name' ? (sortDescending ? 'descending' : 'ascending') : 'none'">
+							<UiButton variant="transcript" aria-label="Sort satellites" @click="sortTable('name')"
+								>Satellite {{ tableSort === 'name' ? (sortDescending ? '↓' : '↑') : '↕' }}</UiButton
+							>
+						</th>
+						<th :aria-sort="tableSort === 'elevation' ? (sortDescending ? 'descending' : 'ascending') : 'none'">
+							<UiButton variant="transcript" aria-label="Sort elevation" @click="sortTable('elevation')"
+								>Az · El {{ tableSort === 'elevation' ? (sortDescending ? '↓' : '↑') : '↕' }}</UiButton
+							>
+						</th>
+						<th :aria-sort="tableSort === 'next' ? (sortDescending ? 'descending' : 'ascending') : 'none'">
+							<UiButton variant="transcript" aria-label="Sort next pass" @click="sortTable('next')"
+								>Next pass {{ tableSort === 'next' ? (sortDescending ? '↓' : '↑') : '↕' }}</UiButton
+							>
+						</th>
+					</tr>
+					<tr class="satellite-filter-row">
+						<th>
+							<div class="satellite-name-filter">
+								<input v-model="satelliteQuery" aria-label="Filter satellites by name or NORAD ID" placeholder="Name / ID" />
+								<UiButton variant="transcript" aria-label="Clear satellite table filters" @click="clearTableFilters">×</UiButton>
+							</div>
+						</th>
+						<th>
+							<UiSelect v-model="visibilityFilter" aria-label="Filter satellite visibility">
+								<option value="all">All</option>
+								<option value="above">Above horizon</option>
+								<option value="below">Below horizon</option>
+							</UiSelect>
+						</th>
+						<th>
+							<UiSelect v-model="passWindowFilter" aria-label="Filter next pass time">
+								<option value="all">All</option>
+								<option value="today">Today</option>
+								<option value="24h">Next 24 h</option>
+								<option value="none">No pass</option>
+							</UiSelect>
+						</th>
 					</tr>
 				</thead>
 				<tbody>
 					<tr
-						v-for="row in rows"
+						v-for="row in displayRows"
 						:key="row.satellite.norad"
 						:class="{ selected: state.selected === row.satellite.norad, 'satellite-up': (row.state?.look?.elevation ?? -90) > 0 }"
 					>

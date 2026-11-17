@@ -59,7 +59,7 @@ export class DSDStream {
 		this.squelched = false;
 		const fmAudio = new Float32Array(output.length);
 		this.discriminator.process(iq, fmAudio);
-		this.decoder.process(fmAudio);
+		this.decoder.process(fmAudio, iq);
 		const count = Math.min(output.length, this.queued);
 		this.audioActive = count > 0;
 		for (let i = 0; i < count; i++) {

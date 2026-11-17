@@ -44,7 +44,8 @@ file). Algorithms and protocol tables follow the OnAir source.
 | `src/client/worker/decoders/digimode/orbcomm/types.ts` | `core/include/dect2/orbcomm/orbcomm.h` (packet shapes) |
 | `src/client/worker/decoders/digimode/orbcomm/demodulator.ts` | `core/src/orbcomm/orbcomm_rx.cpp` (RRC filter, SDPSK, Gardner timing); streaming carrier estimate adapted for one VFO |
 | `src/client/worker/decoders/digimode/orbcomm/receiver.ts` | `core/src/orbcomm/orbcomm_rx.cpp` (sync, packet checks, message assembly) |
-| `src/client/worker/decoders/dsd/p25p2/data.ts`, `protocol.ts` | `core/src/p25p2/p25p2_proto.cpp` (ISCH, DUID, superframe scrambler and AMBE bit order) |
+| `src/client/worker/decoders/dsd/p25p2/data.ts` | `core/src/p25p2/p25p2_proto.cpp` (ISCH words, DUID table, AMBE bit order, MAC message lengths) |
+| `src/client/worker/decoders/dsd/p25p2/protocol.ts` | `core/src/p25p2/p25p2_proto.cpp` (ISCH, DUID, superframe scrambler and AMBE bit order; ISCH and DUID encoders, ESS, MAC PDU codewords as on the air, message lengths), `core/include/dect2/p25p2/p25p2_proto.h` (burst layout, opcodes, field offsets, rrcImpulse) |
 | `src/client/worker/decoders/dsd/m17/protocol.ts` | `core/src/m17/m17_proto.cpp` (CRC, callsigns, Golay, convolutional code, puncturing, randomizer and interleaver) |
 | `src/client/worker/decoders/dsd/m17/receiver.ts` | `core/src/m17/m17_rx.cpp` (symbol sync, LSF/stream/packet assembly) |
 | `test/digimode/orbcomm/fixtures.js` | `core/src/orbcomm/orbcomm_gen.cpp` (test signal and packet builders) |
@@ -228,6 +229,18 @@ file). Algorithms and protocol tables follow the OnAir source.
 | `test/decoders/dsd/dpmr/fixtures.js` | `core/src/dpmr/dpmr_gen.cpp` (Builder, dpmrKnownVoice, dpmrTxSymbols, dpmrTestSchedule, DpmrGenerator), `core/include/dect2/dpmr/dpmr_gen.h` |
 | `test/decoders/dsd/dpmr/proto.spec.js` | `tests/dpmr/test_dpmr_proto.cpp` |
 | `test/decoders/dsd/dpmr/stream.spec.js` | `tests/dpmr/test_dpmr_rx.cpp`, `tests/dpmr/test_dpmr_sens.cpp` |
+| `src/client/worker/decoders/dsd/p25p2/types.ts` | `core/include/dect2/p25p2/p25p2_tel.h` (P25p2Call, P25p2Telemetry), `core/include/dect2/p25/p25_tel.h` (P25Site, P25IdenRow), `core/src/p25p2/p25p2_rx.cpp` (Ess) |
+| `src/client/worker/decoders/dsd/p25p2/rs.ts` | `rust/onair_p25/src/gf.rs`, `rust/onair_p25/src/rs.rs` (GF(64), Reed-Solomon encoder and decoder), `core/src/p25p2/p25p2_proto.cpp` (rs63Decode with erasures, crc12) |
+| `src/client/worker/decoders/dsd/p25p2/demod.ts` | `core/src/p25p2/p25p2_rx.cpp` (carrier search and AFC, spectrum look, matched filter, parallel differential demodulators, sync search, symbol clock, ISCH framing) |
+| `src/client/worker/decoders/dsd/p25p2/calls.ts` | `core/src/p25p2/p25p2_rx.cpp` (startCall, endCall, userMsg, PTT, voiceFrame, keyed, essKnown, ESS-A / ESS-B, play, call expiry) |
+| `src/client/worker/decoders/dsd/p25p2/mac.ts` | `core/src/p25p2/p25p2_rx.cpp` (macPdu, controlMsg, grant, freqOf) |
+| `src/client/worker/decoders/dsd/p25p2/seed.ts` | `core/src/p25p2/p25p2_rx.cpp` (setSystem, applySystem), `core/src/p25p2/p25p2_proto.cpp` (scrambler, MAC coding); the seed solver is BrowSDR's |
+| `src/client/worker/decoders/dsd/p25p2/receiver.ts` | `core/src/p25p2/p25p2_rx.cpp` (processBurst, applySystem, setSystem, setListenSlot, resetState), `core/include/dect2/p25p2/p25p2_rx.h` |
+| `test/decoders/dsd/p25p2/fixtures.js` | `core/src/p25p2/p25p2_gen.cpp` (p25p2VoiceBits, p25p2Dibits, p25p2Modulate, p25p2VoiceFrames), `core/include/dect2/p25p2/p25p2_gen.h`, `core/src/p25p2/p25p2_proto.cpp` (MAC PDU builders), `tests/p25p2/test_p25p2_impair.cpp` (impairments) |
+| `test/decoders/dsd/p25p2/helpers.js` | `tests/p25p2/test_p25p2_rx.cpp` (baseConfig, run, findCall, checkDecode) |
+| `test/decoders/dsd/p25p2/proto.spec.js` | `tests/p25p2/test_p25p2_proto.cpp`, `tests/p25p2/test_p25p2_audit.cpp` (message lengths) |
+| `test/decoders/dsd/p25p2/stream.spec.js` | `tests/p25p2/test_p25p2_rx.cpp` |
+| `test/decoders/dsd/p25p2/impair.spec.js` | `tests/p25p2/test_p25p2_impair.cpp`, `tests/p25p2/test_p25p2_audit.cpp` |
 | `src/client/worker/decoders/digimode/flarm/types.ts` | `core/include/dect2/flarm/flarm_proto.h` (V6), `core/include/dect2/avroad/avroad_proto.h` (OgnPacket), `core/include/dect2/adsl/adsl_proto.h` (Traffic, Status, Parsed), `core/src/flarm/flarm_rx.cpp` (Cand, Pending) |
 | `src/client/worker/decoders/digimode/flarm/flarm-proto.ts` | `core/src/flarm/flarm_proto.cpp` (CRC, XXTEA, V6 key and packet, position and velocity fields, frame chips) |
 | `src/client/worker/decoders/digimode/flarm/ogn-proto.ts` | `core/src/avroad/avroad_air.cpp` (OGN whitening, LDPC check and repair, ognParse), `core/src/avroad/ogn_ldpc.inc` (parity checks; OGN-Tracker by Pawel Jalocha via SoftRF, GPL-3.0) |

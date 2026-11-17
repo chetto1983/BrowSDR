@@ -18,6 +18,7 @@ export function invertDibit(d: number): number {
 const syncLabels: Readonly<Partial<Record<SyncType, string>>> = {
 	[SyncType.P25P1]: 'P25P1',
 	[SyncType.INV_P25P1]: '-P25P1',
+	[SyncType.P25P2]: 'P25P2',
 	[SyncType.DMR_BS_DATA]: 'DMR_BS_DATA',
 	[SyncType.DMR_BS_VOICE]: 'DMR_BS_VOICE',
 	[SyncType.DMR_MS_DATA]: 'DMR_MS_DATA',
@@ -54,6 +55,7 @@ export function syncTypeLabel(st: SyncType): string {
 const syncModes: Readonly<Partial<Record<SyncType, DSDMode>>> = {
 	[SyncType.P25P1]: 'p25',
 	[SyncType.INV_P25P1]: 'p25',
+	[SyncType.P25P2]: 'p25p2',
 	[SyncType.DMR_BS_DATA]: 'dmr',
 	[SyncType.DMR_BS_VOICE]: 'dmr',
 	[SyncType.DMR_MS_DATA]: 'dmr',

@@ -1,4 +1,5 @@
 import type { M17Status } from './m17/types';
+import type { P25p2Status } from './p25p2/types';
 /*
  * DSD (Digital Speech Decoder) status and sync types.
  * Ported from SDR++ Brown ch_extravhf_decoder.
@@ -9,10 +10,11 @@ import type { M17Status } from './m17/types';
  * The Yaesu System Fusion and dPMR statuses (YsfStatus, DpmrStatus) describe what BrowSDR shows of OnAir's
  * FusionTelemetry and DpmrTelemetry (core/include/dect2/fusion/fusion_rx.h, core/include/dect2/dpmr/dpmr_tel.h,
  * GPL-3.0-or-later, see third_party/onair); the decoding is in ysf/ and dpmr/.
+ * The P25 Phase 2 status (P25p2Status) is in p25p2/types.ts with its receiver (OnAir, GPL-3.0-or-later).
  */
 
 // ── Detected DSD mode ────────────────────────────────────────────────
-export type DSDMode = 'dmr' | 'dstar' | 'p25' | 'nxdn' | 'ysf' | 'dpmr' | 'm17' | 'unknown';
+export type DSDMode = 'dmr' | 'dstar' | 'p25' | 'p25p2' | 'nxdn' | 'ysf' | 'dpmr' | 'm17' | 'unknown';
 
 export interface DSDStatus {
 	mode: DSDMode;
@@ -60,6 +62,9 @@ export interface DSDStatus {
 	emr?: boolean;
 	/** P25 Algorithm ID (encryption) */
 	algid?: number;
+
+	// ── P25 Phase 2 ──
+	p25p2?: P25p2Status;
 
 	// ── D-STAR ──
 	/** D-STAR callsign (if decoded from header) */
@@ -177,6 +182,8 @@ export const enum SyncType {
 	NONE = -1,
 	P25P1 = 0,
 	INV_P25P1 = 1,
+	/** P25 Phase 2 (found by its own receiver, p25p2/) */
+	P25P2 = 40,
 	X2TDMA_BS_VOICE = 2,
 	X2TDMA_BS_DATA = 3,
 	X2TDMA_MS_VOICE = 4,

@@ -5,7 +5,8 @@ import type { DSDMode, DSDStatus, DpmrStatus } from './types';
  * Ported from SDR++ Brown dsd.h / dsd_demod.cpp.
  *
  * Yaesu System Fusion frames are handed to ysf/, and dPMR runs beside the 4800 symbols/s chain in dpmr/
- * (both ported from OnAir, GPL-3.0-or-later, see third_party/onair).
+ * (both ported from OnAir, GPL-3.0-or-later, see third_party/onair). P25 Phase 2 runs on the complex channel in p25p2/
+ * (ported from OnAir as well).
  */
 
 import { FIRFilter, ClockRecovery, FourFSKSlicer, rrcTaps } from './dsd-dsp';
@@ -39,6 +40,7 @@ import { DpmrReceiver } from './dpmr/receiver';
 import { M17Receiver } from './m17/receiver';
 import type { M17Frame } from './m17/types';
 import { decodeM17Voice, ensureM17Codec2, m17Codec2Ready, resetM17Voice } from './m17/codec2';
+import { P25p2Receiver } from './p25p2/receiver';
 import { ambeFrame } from './ambe';
 import { decodeAmbe, decodeImbe, ensureMbelibInitialized, getMbeErrors, resetMbe } from '@/worker/decoders/mbelib-init';
 
@@ -79,6 +81,12 @@ export class DSDDecoder {
 	private dpmrResting = false;
 	private m17: M17Receiver;
 	private m17CodecPending = false;
+	/** P25 Phase 2 (H-DQPSK at 6000 symbols/s) on the complex channel, beside the 4800 symbols/s chain. */
+	private p25p2 = new P25p2Receiver({
+		status: () => this.status,
+		synced: () => this.announceSync('p25p2', SyncType.P25P2),
+		voice: (frames) => this.decodeVoice(frames, decodeAmbe),
+	});
 
 	/** Count of consecutive syncs for the current mode — used for mode locking */
 	private modeLockCount = 0;
@@ -172,7 +180,8 @@ export class DSDDecoder {
 	private _dbgAudioEmits = 0;
 	private _dbgLastLog = 0;
 
-	process(fmAudio: Float32Array): void {
+	/** iq: the complex channel at DSD_IF_RATE (interleaved), for P25 Phase 2. */
+	process(fmAudio: Float32Array, iq?: Float32Array): void {
 		this._dbgProcessCalls++;
 		this.samplesSinceSync += fmAudio.length;
 		if (this.status.synced && this.samplesSinceSync > DSD_IF_RATE) this.expireSync();
@@ -185,6 +194,7 @@ export class DSDDecoder {
 			this.dpmr.process(fmAudio);
 		}
 		if (this.flushDpmrVoice()) this.onStatus({ ...this.status });
+		if (this.p25p2.process(iq, this.lockedMode)) this.onStatus({ ...this.status });
 
 		// Step 1: RRC filter
 		const filtered = new Float32Array(fmAudio.length);
@@ -743,6 +753,7 @@ export class DSDDecoder {
 		this.m17.reset();
 		this.dpmr.reset();
 		this.dpmrVoice.length = 0;
+		this.p25p2.reset();
 		this.status = {
 			mode: 'unknown',
 			synced: false,

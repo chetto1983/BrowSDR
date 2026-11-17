@@ -17,6 +17,7 @@ import { RTTY_AMATEUR, RttyReceiver } from './rtty';
 import { PSK_MODES, PskDecoder } from './psk';
 import { CwDecoder } from './cw';
 import { FlarmDecoder } from './flarm';
+import { Mpt1327Decoder } from './mpt1327';
 
 /** Worker-side constructors of the catalog's decoders. */
 export const DIGIMODE_DECODERS: Record<string, (sink: DigimodeSink) => DigimodeDecoder> = {
@@ -46,4 +47,5 @@ export const DIGIMODE_DECODERS: Record<string, (sink: DigimodeSink) => DigimodeD
 	qpsk31: (sink) => new PskDecoder(sink, PSK_MODES[2]),
 	qpsk63: (sink) => new PskDecoder(sink, PSK_MODES[3]),
 	flarm: (sink) => new FlarmDecoder(sink),
+	mpt1327: (sink) => new Mpt1327Decoder(sink),
 };

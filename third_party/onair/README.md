@@ -239,3 +239,9 @@ file). Algorithms and protocol tables follow the OnAir source.
 | `test/digimode/flarm/flarm.spec.js` | `tests/flarm/test_flarm_rx.cpp`, `test_flarm_impair.cpp`, `test_flarm_chase.cpp` |
 | `test/digimode/flarm/ogn.spec.js` | `tests/avroad/test_avroad_air.cpp` (testOgn) |
 | `test/digimode/flarm/adsl.spec.js` | `tests/adsl/test_adsl_rx.cpp`, `test_adsl_tone.cpp` |
+| `src/client/worker/decoders/digimode/mpt1327/types.ts` | `core/include/dect2/mpt1327/mpt1327_proto.h` (Address, Message), `mpt1327_rx.h` (SyncMode, Event, Stats) |
+| `src/client/worker/decoders/digimode/mpt1327/proto.ts` | `core/src/mpt1327/mpt1327_proto.cpp` (check bits, single-error repair, fields, special idents, CCSC, address codeword messages) |
+| `src/client/worker/decoders/digimode/mpt1327/rx.ts` | `core/src/mpt1327/mpt1327_rx.cpp` (FFSK demodulator, sync search, standard and tolerant framing) |
+| `src/client/worker/decoders/digimode/mpt1327/index.ts` | `core/src/mpt1327/mpt1327_engine.cpp` (FM audio into the decoder, message rows, summary; no call following) |
+| `test/digimode/mpt1327/fixtures.js` | `core/src/mpt1327/mpt1327_gen.cpp` (codeword builders, CCSC, control channel bits, FFSK audio, FM), `tests/mpt1327/test_mpt1327.cpp` (sampleMessages) |
+| `test/digimode/mpt1327/mpt1327.spec.js` | `tests/mpt1327/test_mpt1327.cpp`, `test_mpt1327_std.cpp` |

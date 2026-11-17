@@ -335,6 +335,17 @@ export const DIGIMODES: readonly DigimodeInfo[] = [
 		source: 'core/src/tones/tones_rx.cpp, tones_proto.cpp',
 	},
 	{
+		id: 'mpt1327',
+		label: 'MPT 1327 trunking (control channel)',
+		family: 'Two-way radio',
+		description:
+			'The control channel of an MPT 1327 trunked radio network on an FM voice channel: 1200 bit/s FFSK (1200 / 1800 Hz), 64-bit codewords with their (63,48) check code (one wrong bit repaired). Calls (go to channel: calling and called unit, traffic channel number, speech or data), ahoys, acknowledgements, short data headers and the system identity and broadcasts; the Aloha invitations of nearly every slot go to the status line. Networks with another sync word (as in France) are found by the codeword check after 8 s. Tune the VFO to the control channel; the traffic channels are not followed.',
+		rate: 16000,
+		bandwidth: 12500,
+		presets: [],
+		source: 'core/src/mpt1327/mpt1327_rx.cpp, mpt1327_proto.cpp, mpt1327_engine.cpp',
+	},
+	{
 		id: 'wmbus',
 		label: 'Wireless M-Bus (meters)',
 		family: 'IoT & meters',

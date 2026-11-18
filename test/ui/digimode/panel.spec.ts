@@ -3,6 +3,7 @@ import { mount, type VueWrapper } from '@vue/test-utils';
 import { ReceiverView } from '../helpers/receiver-view';
 import { makeDefaultVfo } from '@/app/core/constants';
 import type { DigimodeMessage } from '@/worker/decoders/digimode/types';
+import { clnp, dataTpduAtn, dataTsdu, plainUplink, uplinkContact, x25Data } from '../../digimode/aviation/atn-wire.js';
 
 let wrapper: VueWrapper;
 afterEach(() => {
@@ -117,6 +118,36 @@ describe('Digital Modes panel', () => {
 		await rows[0].trigger('click');
 		expect(wrapper.text()).toContain('the last of 2 blocks (M01A, M01B)');
 		expect(wrapper.text()).toContain('15:56:32 UTC');
+	});
+	it('reads an ATN CPDLC message from the X.25 packets of VDL2 records', async () => {
+		await mountPanel({ ...makeDefaultVfo(136.975), digimode: 'vdl2' });
+		const air = [0x47, 0x00, 0x27, 0x81, 0x81, 0x3c, 0x66, 0x4b, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0x20];
+		const ground = [0x47, 0x00, 0x27, 0x41, 0x20, 0x44, 0x45, 0x55, 0, 0, 0, 2, 0, 0, 0, 0, 0, 3, 0x21];
+		const addresses = { source: Uint8Array.from(ground), destination: Uint8Array.from(air) };
+		const contact = dataTpduAtn(0x0777, 0, dataTsdu(plainUplink(uplinkContact())), addresses);
+		const hex = (bytes: number[]) => bytes.map((b) => b.toString(16).toUpperCase().padStart(2, '0')).join('');
+		const atn = (id: number, downlink: boolean, packet: number[]) => ({
+			id,
+			time: Date.UTC(2026, 10, 18, 12, 34, id),
+			mode: 'vdl2',
+			text: downlink ? '3C664B → GS 10A000 · I · X.25 call request, LCN 1' : 'GS 10A000 → 3C664B · I · X.25 data, LCN 1',
+			application: {
+				kind: 'atn' as const,
+				direction: downlink ? ('downlink' as const) : ('uplink' as const),
+				source: downlink ? { address: '3C664B', type: 1 } : { address: '10A000', type: 4 },
+				destination: downlink ? { address: '10A000', type: 4 } : { address: '3C664B', type: 1 },
+				hex: hex(packet),
+			},
+		});
+		const vdl2 = (records: DigimodeMessage['records']) => ({ ...message(records), freq: 136.975, mode: 'vdl2' });
+		wrapper.vm._onDigimodeMessage(0, 136.975, vdl2([atn(1, true, [0x10, 0x01, 0x0b, 0x00, 0x00, 0xc1, 0x00])]));
+		wrapper.vm._onDigimodeMessage(0, 136.975, vdl2([atn(2, false, x25Data(1, 0, 0, clnp({ src: ground, dst: air, payload: contact })))]));
+		await wrapper.vm.$nextTick();
+		const row = wrapper.find('table[aria-label="Decoded messages"] tbody tr');
+		expect(row.text()).toContain('X.25 data, LCN 1: CPDLC UM117 CONTACT EDYY center 132.6 MHz');
+		await row.trigger('click');
+		expect(wrapper.text()).toContain('CPDLC, identified by trial');
+		expect(wrapper.text()).toContain('2026-11-18 12:34:56 UTC');
 	});
 	it('ignores output for a mode the VFO no longer runs', async () => {
 		await mountPanel({ ...makeDefaultVfo(156.525), digimode: '' });

@@ -6,8 +6,10 @@
 //
 // The protocols an AVLC information field carries, as text: ISO 8208 / X.25 packets (data, call set-up, clear, reset,
 // restart, flow control), ISO 8473 CLNP headers with the NSAP addresses and the ISO 8073 COTP TPDU around ATN
-// application data (ASN.1 PER, not decoded). ICAO Doc 9880, Doc 9776, ISO 8208, ISO 8473, ISO 8073.
+// application data. ICAO Doc 9880, Doc 9776, ISO 8208, ISO 8473, ISO 8073. The packet itself goes with the record to
+// the app (atnApplication), which reassembles the ATN layers and decodes CM and CPDLC with the ACARS library.
 
+import type { DigimodeAtnApplication } from '@/worker/decoders/digimode/types';
 import type { Vdl2Message } from './types';
 
 /** Upper case hex, zero padded to `width` digits. */
@@ -72,7 +74,7 @@ function readCotp(q: Uint8Array, m: Vdl2Message): void {
 	m.detail.push(['COTP (ISO 8073)', `${name}, ${qn - q[0] - 1} octets of user data`]);
 	m.summary += `, COTP ${name.slice(0, 2)}`;
 	if ((q[1] & 0xf0) === 0xf0 && qn > q[0] + 1) {
-		m.detail.push(['ATN application data', `CPDLC, ADS-C, CM over ATN (ASN.1 PER, not decoded): ${hexs(q.subarray(q[0] + 1))}`]);
+		m.detail.push(['ATN application data', `CPDLC, ADS-C, CM over ATN (ASN.1 PER): ${hexs(q.subarray(q[0] + 1))}`]);
 		m.summary += ', ATN application data';
 	}
 }
@@ -214,4 +216,25 @@ export function readX25(p: Uint8Array, m: Vdl2Message): void {
 	if ((pt & 1) === 0) readData(p, m, lcn);
 	else if (pt === 0x0b || pt === 0x0f) readCall(p, m, lcn);
 	else readOther(p, m, lcn);
+}
+
+/** Octets of an X.25 packet sent to the app (VDL2's default N1, 8312 bits, is about 1040 octets). */
+const ATN_MAX_OCTETS = 2000;
+const isGround = (type: number): boolean => type === 4 || type === 5;
+
+/**
+ * The X.25 packet of an I frame between an aircraft and a ground station (the frame's check sequence was good), for the
+ * app's ATN stack; aircraft to ground is downlink.
+ */
+export function atnApplication(m: Vdl2Message): DigimodeAtnApplication | undefined {
+	if (m.frameKind !== 'I' || m.acarsAt >= 0 || m.info.length < 3 || m.info.length > ATN_MAX_OCTETS) return undefined;
+	const down = m.srcType === 1 && isGround(m.dstType);
+	if (!down && !(m.dstType === 1 && isGround(m.srcType))) return undefined;
+	return {
+		kind: 'atn',
+		direction: down ? 'downlink' : 'uplink',
+		source: { address: hexNum(m.src, 6), type: m.srcType },
+		destination: { address: hexNum(m.dst, 6), type: m.dstType },
+		hex: Array.from(m.info, (byte) => hexNum(byte, 2)).join(''),
+	};
 }

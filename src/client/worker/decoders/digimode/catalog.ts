@@ -141,7 +141,7 @@ export const DIGIMODES: readonly DigimodeInfo[] = [
 		label: 'VDL Mode 2',
 		family: 'Aviation',
 		description:
-			'VHF data link between aircraft and ground stations: D8PSK bursts at 10.5 ksymbol/s carrying AVLC frames with ACARS messages (multi-block messages reassembled, then read with the ACARS library: FANS-1/A CPDLC, ADS-C and airline formats), ATN packets and link management (ICAO Annex 10, Doc 9776).',
+			'VHF data link between aircraft and ground stations: D8PSK bursts at 10.5 ksymbol/s carrying AVLC frames with ACARS messages (multi-block messages reassembled, then read with the ACARS library: FANS-1/A CPDLC, ADS-C and airline formats), ATN packets (read with the same library up to CM logons and CPDLC messages, protected PM-CPDLC without its integrity check) and link management (ICAO Annex 10, Doc 9776).',
 		rate: 84000,
 		bandwidth: 25000,
 		presets: [

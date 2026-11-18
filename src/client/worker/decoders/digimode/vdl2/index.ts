@@ -4,11 +4,12 @@
 // channel), https://github.com/adswill/OnAir; see third_party/onair. Changes: each AVLC frame of a decoded burst is one
 // record (addresses, frame type, the protocols it carries; ATN and XID frames with a hex dump); the aircraft and
 // ground station tables, the feeds and the automations of OnAir are left out. A good ACARS block goes with its record
-// to the app, which reassembles multi-block messages and interprets them with the ACARS library it already loads.
+// to the app, which reassembles multi-block messages and interprets them with the ACARS library it already loads; so
+// does the X.25 packet of an ATN frame, which the app reads up to CM and CPDLC with the same library.
 
 import type { DigimodeDecoder, DigimodeSink } from '@/worker/decoders/digimode/types';
 import { acarsApplication } from './acars';
-import { hexNum } from './proto';
+import { atnApplication, hexNum } from './proto';
 import { VDL2_RATE, Vdl2Receiver } from './receiver';
 import type { Vdl2Burst, Vdl2Line, Vdl2Message } from './types';
 
@@ -87,7 +88,7 @@ export class Vdl2Decoder implements DigimodeDecoder {
 		]);
 		const fec = `${burst.rsFixed} octet(s) corrected by Reed-Solomon${burst.headerFixed ? ', header corrected' : ''}`;
 		fields.push(['FEC', fec + (burst.bad ? `, ${burst.bad} frame(s) of the burst failed their check` : '')]);
-		const application = m.acars ? acarsApplication(m.acars, aircraftAddress(m)) : undefined;
+		const application = m.acars ? acarsApplication(m.acars, aircraftAddress(m)) : atnApplication(m);
 		this.sink.record({
 			text: `${from} → ${to} · ${kind}${m.summary || m.frameName}`.slice(0, 2000),
 			fields: uniqueFields(fields),

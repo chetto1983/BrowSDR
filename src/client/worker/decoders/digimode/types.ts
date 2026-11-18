@@ -20,7 +20,7 @@ export interface DigimodeRecord {
 }
 
 /** An ATS application or a data link unit carried by a record, decoded in the app. */
-export type DigimodeApplication = DigimodeCpdlcApplication | DigimodeAcarsApplication;
+export type DigimodeApplication = DigimodeCpdlcApplication | DigimodeAcarsApplication | DigimodeAtnApplication;
 
 /** A FANS-1/A CPDLC message body (ARINC 622, CRC checked), as hex without its CRC (Aero). */
 export interface DigimodeCpdlcApplication {
@@ -55,6 +55,25 @@ export interface DigimodeAcarsBlock {
 	flight?: string;
 	/** ETB: more blocks of the message follow. */
 	continuation: boolean;
+}
+
+/** The information field of a VDL2 AVLC I frame that carries X.25 (ATN), the frame's check sequence good. */
+export interface DigimodeAtnApplication {
+	kind: 'atn';
+	/** Aircraft to ground is downlink. */
+	direction: 'uplink' | 'downlink';
+	source: DigimodeAvlcAddress;
+	destination: DigimodeAvlcAddress;
+	/** The X.25 packet, upper case hex. */
+	hex: string;
+}
+
+/** An AVLC address. */
+export interface DigimodeAvlcAddress {
+	/** 24-bit address, six upper case hex digits. */
+	address: string;
+	/** 1 aircraft, 4 and 5 ground station (ADM, DEL); the frames sent are between an aircraft and a ground station. */
+	type: number;
 }
 
 /** A position a record reports. */

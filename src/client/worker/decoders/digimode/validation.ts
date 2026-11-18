@@ -13,7 +13,7 @@ function validPosition(value: unknown): boolean {
 	return Math.abs(value.lat) <= 90 && Math.abs(value.lon) <= 180 && (value.label === undefined || text(value.label, 32));
 }
 
-const hexText = (value: unknown, max: number): boolean => text(value, max) && value.length % 2 === 0 && /^[0-9A-F]*$/.test(value);
+const hexText = (value: unknown, max: number): value is string => text(value, max) && value.length % 2 === 0 && /^[0-9A-F]*$/.test(value);
 const optionalText = (value: unknown, max: number): boolean => value === undefined || text(value, max);
 const direction = (value: unknown): boolean => value === 'uplink' || value === 'downlink';
 
@@ -25,6 +25,20 @@ function validAcarsBlock(value: unknown): boolean {
 	return optionalText(value.messageNumber, 4) && optionalText(value.flight, 6);
 }
 
+const validAvlcAddress = (value: unknown): boolean =>
+	isRecord(value) &&
+	text(value.address, 6) &&
+	/^[0-9A-F]{6}$/.test(value.address) &&
+	Number.isInteger(value.type) &&
+	Number(value.type) >= 0 &&
+	Number(value.type) <= 7;
+
+/** An X.25 packet from an AVLC frame between an aircraft and a ground station: at least an X.25 header, at most 2000 octets. */
+function validAtn(value: Record<string, unknown>): boolean {
+	if (!direction(value.direction) || !validAvlcAddress(value.source) || !validAvlcAddress(value.destination)) return false;
+	return hexText(value.hex, 4000) && value.hex.length >= 6;
+}
+
 function validApplication(value: unknown): boolean {
 	if (value === undefined) return true;
 	if (!isRecord(value)) return false;
@@ -33,6 +47,7 @@ function validApplication(value: unknown): boolean {
 		return (
 			(value.aircraft === undefined || (text(value.aircraft, 6) && /^[0-9A-F]{6}$/.test(value.aircraft))) && validAcarsBlock(value.block)
 		);
+	if (value.kind === 'atn') return validAtn(value);
 	return false;
 }
 

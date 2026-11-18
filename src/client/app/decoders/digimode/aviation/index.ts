@@ -1,15 +1,16 @@
 import { toRaw } from 'vue';
 import type { DigimodeRecord } from '@/worker/decoders/digimode/types';
 import { AcarsBlocks } from './acars';
+import { AtnStack } from './atn';
 import type { AviationPart } from './types';
 
 /**
- * The aviation data link state of one VFO: the ACARS reassembly, kept while the VFO runs the same mode on the same
- * frequency. It lives in the app (main thread) with the ACARS library the app already loads, so the DSP workers (one
- * per VFO) stay small.
+ * The aviation data link state of one VFO: the ACARS reassembly and the ATN stack, kept while the VFO runs the same
+ * mode on the same frequency. It lives in the app (main thread) with the ACARS library the app already loads, so the
+ * DSP workers (one per VFO) stay small.
  */
 class AviationState {
-	private readonly parts: Record<string, AviationPart> = { acars: new AcarsBlocks() };
+	private readonly parts: Record<string, AviationPart> = { acars: new AcarsBlocks(), atn: new AtnStack() };
 
 	constructor(readonly key: string) {}
 
@@ -28,11 +29,12 @@ class AviationState {
 /** Per receiver, per VFO index; outside Vue's reactivity. */
 const states = new WeakMap<object, Map<number, AviationState>>();
 
-const KINDS = new Set(['acars']);
+const KINDS = new Set(['acars', 'atn']);
 
 /**
- * A VDL2 or HFDL record with what the app reads from it: the ACARS library's interpretation of its block, and of the
- * message the block completes. The state starts again when the VFO's mode or frequency changes.
+ * A VDL2 or HFDL record with what the app reads from it: the ACARS library's interpretation of its block and of the
+ * message the block completes, or what the ATN stack read from its X.25 packet. The state starts again when the VFO's
+ * mode or frequency changes.
  */
 export function readAviation<T extends DigimodeRecord>(receiver: object, vfo: number, mode: string, freq: number, record: T): T {
 	if (!KINDS.has(record.application?.kind ?? '')) return record;

@@ -36,3 +36,17 @@ export function hexOf(bytes: Uint8Array, max = 64): string {
 
 /** Bytes of an even-length hex string (the worker's records carry bytes as upper case hex). */
 export const bytesOf = (hex: string): Uint8Array => Uint8Array.from(hex.match(/../g) ?? [], (pair) => parseInt(pair, 16));
+
+/** Entries a state map keeps (links, connections); the oldest goes first. */
+const MAX_ENTRIES = 512;
+
+/** Sets `key` in a bounded map, as its newest entry. */
+export function remember<K, V>(map: Map<K, V>, key: K, value: V): void {
+	map.delete(key);
+	if (map.size >= MAX_ENTRIES) map.delete(map.keys().next().value!);
+	map.set(key, value);
+}
+
+/** A decoded scalar (number, string, boolean) as text; '' for anything else. */
+export const scalar = (value: unknown): string =>
+	typeof value === 'number' || typeof value === 'string' || typeof value === 'boolean' ? String(value) : '';

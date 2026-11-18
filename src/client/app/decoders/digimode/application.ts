@@ -1,10 +1,9 @@
 import { decodeCpdlc } from '@jlynx_/acars-decoder';
 import type { DigimodeRecord } from '@/worker/decoders/digimode/types';
+import { bytesOf } from './aviation/fields';
 
 const MAX_FIELDS = 64;
 const MAX_TEXT = 2000;
-
-const bytesOf = (hex: string): Uint8Array => Uint8Array.from(hex.match(/../g) ?? [], (pair) => parseInt(pair, 16));
 
 /**
  * A record with the FANS-1/A CPDLC body it carries decoded: the message elements as fields and their summary in the

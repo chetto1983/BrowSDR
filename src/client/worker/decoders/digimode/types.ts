@@ -15,16 +15,46 @@ export interface DigimodeRecord {
 	alert?: boolean;
 	/** Where what the record is about was, for maps (an aircraft's reported position). */
 	position?: DigimodePosition;
-	/** An ATS application carried by the record, decoded in the app (where the ACARS library is already loaded). */
+	/** What the record carries for the app to decode (where the ACARS library is already loaded). */
 	application?: DigimodeApplication;
 }
 
-/** A FANS-1/A CPDLC message body (ARINC 622, CRC checked), as hex without its CRC. */
-export interface DigimodeApplication {
+/** An ATS application or a data link unit carried by a record, decoded in the app. */
+export type DigimodeApplication = DigimodeCpdlcApplication | DigimodeAcarsApplication;
+
+/** A FANS-1/A CPDLC message body (ARINC 622, CRC checked), as hex without its CRC (Aero). */
+export interface DigimodeCpdlcApplication {
 	kind: 'cpdlc';
 	/** Ground to aircraft; the CPDLC message sets differ by direction. */
 	uplink: boolean;
 	hex: string;
+}
+
+/** An ACARS block whose check sequence is good (VDL2, HFDL), for the app to reassemble and interpret. */
+export interface DigimodeAcarsApplication {
+	kind: 'acars';
+	/** The aircraft's 24-bit address, six hex digits, when the link names it (VDL2); the registration keys it otherwise. */
+	aircraft?: string;
+	block: DigimodeAcarsBlock;
+}
+
+/** The ARINC 618 envelope of one block, as the ACARS library's records have it. */
+export interface DigimodeAcarsBlock {
+	/** Two characters; the DEL of "_<DEL>" as 'd'. */
+	label: string;
+	/** The text as received (parity removed), after the downlink's message number and flight. */
+	text: string;
+	direction: 'uplink' | 'downlink';
+	registration: string;
+	mode: string;
+	/** 'NAK', or the block id acknowledged. */
+	acknowledgement: string;
+	blockId: string;
+	/** Downlink: message number and block sequence letter ("M01A"). */
+	messageNumber?: string;
+	flight?: string;
+	/** ETB: more blocks of the message follow. */
+	continuation: boolean;
 }
 
 /** A position a record reports. */

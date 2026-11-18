@@ -141,7 +141,7 @@ export const DIGIMODES: readonly DigimodeInfo[] = [
 		label: 'VDL Mode 2',
 		family: 'Aviation',
 		description:
-			'VHF data link between aircraft and ground stations: D8PSK bursts at 10.5 ksymbol/s carrying AVLC frames with ACARS messages, ATN packets and link management (ICAO Annex 10, Doc 9776).',
+			'VHF data link between aircraft and ground stations: D8PSK bursts at 10.5 ksymbol/s carrying AVLC frames with ACARS messages (multi-block messages reassembled, then read with the ACARS library: FANS-1/A CPDLC, ADS-C and airline formats), ATN packets and link management (ICAO Annex 10, Doc 9776).',
 		rate: 84000,
 		bandwidth: 25000,
 		presets: [
@@ -161,7 +161,7 @@ export const DIGIMODES: readonly DigimodeInfo[] = [
 		label: 'HFDL',
 		family: 'Aviation',
 		description:
-			'HF Data Link (ARINC 635, ICAO Doc 9741) between aircraft and ground stations over the oceans and polar routes: 1800 symbols/s PSK bursts at 300 to 1800 bit/s (BPSK, QPSK, 8PSK) in 32 s TDMA frames. Squitters with the ground station, its TDMA frame and the frequencies in use of it and two other stations; logons with the aircraft address; performance and frequency data with the aircraft position; ACARS both ways; system table parts. One channel per VFO: tune the VFO to the published frequency itself, which is the USB dial frequency (the carrier is 1440 Hz above it, the signal fills about 0.2 to 2.7 kHz above it). Each ground station sends a squitter every 32 s on each of its frequencies in use. The distances need the station location (Tools → Satellites). Needs HF reception, e.g. an RTL-SDR in direct sampling mode or behind an upconverter.',
+			'HF Data Link (ARINC 635, ICAO Doc 9741) between aircraft and ground stations over the oceans and polar routes: 1800 symbols/s PSK bursts at 300 to 1800 bit/s (BPSK, QPSK, 8PSK) in 32 s TDMA frames. Squitters with the ground station, its TDMA frame and the frequencies in use of it and two other stations; logons with the aircraft address; performance and frequency data with the aircraft position; ACARS both ways (multi-block messages reassembled, then read with the ACARS library: FANS-1/A CPDLC, ADS-C and airline formats); system table parts. One channel per VFO: tune the VFO to the published frequency itself, which is the USB dial frequency (the carrier is 1440 Hz above it, the signal fills about 0.2 to 2.7 kHz above it). Each ground station sends a squitter every 32 s on each of its frequencies in use. The distances need the station location (Tools → Satellites). Needs HF reception, e.g. an RTL-SDR in direct sampling mode or behind an upconverter.',
 		rate: 7200,
 		bandwidth: 3400,
 		offsetHz: 1440,

@@ -11,7 +11,7 @@
 // a ground address of 7 (or 4) characters, the IMI, the aircraft address as 7 characters, the binary part as hex and the
 // CRC-16 (polynomial 0x1021, start 0xFFFF; the register over everything including the CRC ends at 0x1D0F).
 
-import type { DigimodeApplication } from '@/worker/decoders/digimode/types';
+import type { DigimodeCpdlcApplication } from '@/worker/decoders/digimode/types';
 import type { AeroCpdlcMessage } from './types';
 
 export const ARINC_CRC_GOOD = 0x1d0f;
@@ -80,7 +80,7 @@ export function aeroDecodeCpdlc(text: string): AeroCpdlcMessage | null {
 }
 
 /** The CPDLC body of an ACARS text for the app to decode, when there is one and its CRC is good. */
-export function cpdlcApplication(text: string, uplink: boolean): DigimodeApplication | undefined {
+export function cpdlcApplication(text: string, uplink: boolean): DigimodeCpdlcApplication | undefined {
 	const m = aeroDecodeCpdlc(text);
 	return m?.crcOk && m.bodyHex ? { kind: 'cpdlc', uplink, hex: m.bodyHex } : undefined;
 }

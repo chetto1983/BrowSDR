@@ -11,12 +11,13 @@
 // centred on the carrier 1440 Hz above it. Each squitter (SPDU) and each LPDU of a good burst is one record (OnAir's
 // messages), with the ground station, the aircraft (its address from the logon, registration and flight once heard),
 // its position and the decoded layers; an LPDU with a bad check sequence and an ACARS block with a bad one are shown
-// dimmed. A record with an aircraft position carries it for the aircraft map of the ADS-B tool. Bursts that fail are
+// dimmed. A good ACARS block goes with its record to the app, which reassembles multi-block messages and interprets
+// them with the ACARS library (the aircraft keyed by registration). A record with an aircraft position carries it for the aircraft map of the ADS-B tool. Bursts that fail are
 // counted in the status line. The burst decoding is spread over the input blocks: at most 40 % of a block's duration
 // (4 to 40 ms) each time.
 
 import type { DigimodeDecoder, DigimodeSink } from '@/worker/decoders/digimode/types';
-import { cpdlcApplication } from '@/worker/decoders/digimode/aero/arinc';
+import { acarsApplication } from '@/worker/decoders/digimode/vdl2/acars';
 import { HFDL_RATE } from './front';
 import { HFDL_CARRIER_HZ } from './phy';
 import { HfdlReceiver } from './receiver';
@@ -79,7 +80,7 @@ export class HfdlDecoder implements DigimodeDecoder {
 		for (const m of b.messages) {
 			const a = this.book.note(m, now);
 			const position = recordPosition(m, a);
-			const application = m.acars?.crcOk ? cpdlcApplication(m.acars.text, !m.acars.downlink) : undefined;
+			const application = m.acars ? acarsApplication(m.acars) : undefined;
 			this.sink.record({
 				text: recordText(m, a),
 				fields: recordFields(m, a, b, this.station),

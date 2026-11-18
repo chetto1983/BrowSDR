@@ -1,9 +1,11 @@
-// FANS-1/A CPDLC bodies carried by Aero, HFDL and VDL2 ACARS messages and decoded in the app with the ACARS library.
+// FANS-1/A CPDLC bodies carried by Aero, HFDL and VDL2 ACARS messages and decoded in the app with the ACARS library
+// (Aero sends the CPDLC body; VDL2 and HFDL send the ACARS block, which the app interprets as a whole).
 // The CPDLC messages are libacars' real ones (Tomasz Lemiech, MIT), as OnAir's tests/aero/test_aero_cpdlc.cpp and
 // tests/hfdl/test_hfdl_fans.cpp use them.
 
 import { describe, expect, it } from 'vitest';
 import { readApplication } from '@/app/decoders/digimode/application';
+import { readAviation } from '@/app/decoders/digimode/aviation';
 import { cpdlcApplication } from '@/worker/decoders/digimode/aero/arinc';
 import { validDigimodeMessage } from '@/worker/decoders/digimode/validation';
 import { VDL2_RATE, Vdl2Decoder } from '@/worker/decoders/digimode/vdl2';
@@ -76,8 +78,11 @@ describe('CPDLC decoding in the app', () => {
 	});
 });
 
+/** The app's reading of a VDL2 or HFDL record that carries an ACARS block. */
+const inApp = (r, mode) => readAviation({}, 0, mode, 1, { ...r, id: 1, time: Date.UTC(2026, 10, 18), mode });
+
 describe('CPDLC in the decoders’ records', () => {
-	it('VDL2: an ACARS downlink carries its CPDLC body', () => {
+	it('VDL2: an ACARS downlink carries its block, whose CPDLC message the app decodes', () => {
 		const GS = { addr: 0x10a000, type: 4, status: false };
 		const AIR = { addr: 0x71be19, type: 1, status: false };
 		const frame = avlcFrame(GS, AIR, controlI(2, 1, false), vdl2AcarsInfo('HL8251', 'AA', '3', `M01AKE0907${POSITION_REPORT}`));
@@ -86,9 +91,12 @@ describe('CPDLC in the decoders’ records', () => {
 		const decoder = new Vdl2Decoder({ record: (r) => records.push(r), status: () => {} });
 		for (let i = 0; i < iq.length; i += 8192) decoder.process(iq.subarray(i, i + 8192));
 		expect(records).toHaveLength(1);
-		expect(records[0].application).toEqual({ kind: 'cpdlc', uplink: false, hex: BODY });
+		expect(records[0].application).toMatchObject({ kind: 'acars', aircraft: '71BE19', block: { label: 'AA', text: POSITION_REPORT } });
+		const r = inApp(records[0], 'vdl2');
+		expect(r.text).toContain(': POSITION REPORT Position 52.123333°, 3.641667°');
+		expect(field(r, 'CPDLC time')).toBe('15:56:32 UTC');
 	});
-	it('HFDL: an ACARS downlink carries its CPDLC body', () => {
+	it('HFDL: an ACARS downlink carries its block, whose CPDLC message the app decodes', () => {
 		const records = [];
 		const decoder = new HfdlDecoder({ record: (r) => records.push(r), status: () => {} }, Infinity);
 		const pdu = mpduDown(7, 45, [unnumbered(acarsHfnpdu('HL8251', 'AA', '2', `M01AKE0907${POSITION_REPORT}`))]);
@@ -96,6 +104,7 @@ describe('CPDLC in the decoders’ records', () => {
 		decoder.flush();
 		const acars = records.filter((r) => r.application);
 		expect(acars).toHaveLength(1);
-		expect(acars[0].application).toEqual({ kind: 'cpdlc', uplink: false, hex: BODY });
+		expect(acars[0].application).toMatchObject({ kind: 'acars', block: { registration: 'HL8251', text: POSITION_REPORT } });
+		expect(inApp(acars[0], 'hfdl').text).toContain(': POSITION REPORT Position 52.123333°, 3.641667°');
 	});
 });

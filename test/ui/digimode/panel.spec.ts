@@ -81,6 +81,43 @@ describe('Digital Modes panel', () => {
 		await row.trigger('click');
 		expect(wrapper.text()).toContain('15:56:32 UTC');
 	});
+	it('reassembles a VDL2 ACARS message split over two blocks and shows its CPDLC message', async () => {
+		await mountPanel({ ...makeDefaultVfo(136.975), digimode: 'vdl2' });
+		const report = '/SOUCAYA.AT1.HL8251243F880C3D903BB412903604FE326C2479F4A64F7F62528B1A9CF8382738186AC28B16668E013DF464D8A7F0';
+		const block = (id: number, part: string, text: string, continuation: boolean) => ({
+			id,
+			time: Date.UTC(2026, 10, 18, 15, 56, id),
+			mode: 'vdl2',
+			text: `71BE19 (HL8251) → GS 10A000 · I · ACARS AA KE0907: ${text.slice(0, 20)}`,
+			fields: [['Label', 'AA']] as Array<[string, string]>,
+			application: {
+				kind: 'acars' as const,
+				aircraft: '71BE19',
+				block: {
+					label: 'AA',
+					text,
+					direction: 'downlink' as const,
+					registration: 'HL8251',
+					mode: '2',
+					acknowledgement: 'NAK',
+					blockId: String(id + 2),
+					messageNumber: `M01${part}`,
+					flight: 'KE0907',
+					continuation,
+				},
+			},
+		});
+		const vdl2 = (records: DigimodeMessage['records']) => ({ ...message(records), freq: 136.975, mode: 'vdl2' });
+		wrapper.vm._onDigimodeMessage(0, 136.975, vdl2([block(1, 'A', report.slice(0, 50), true)]));
+		wrapper.vm._onDigimodeMessage(0, 136.975, vdl2([block(2, 'B', report.slice(50), false)]));
+		await wrapper.vm.$nextTick();
+		const rows = wrapper.findAll('table[aria-label="Decoded messages"] tbody tr');
+		expect(rows[0].text()).toContain('message of 2 blocks: POSITION REPORT');
+		expect(rows[1].text()).toContain('part 1 of a message, waiting for more blocks');
+		await rows[0].trigger('click');
+		expect(wrapper.text()).toContain('the last of 2 blocks (M01A, M01B)');
+		expect(wrapper.text()).toContain('15:56:32 UTC');
+	});
 	it('ignores output for a mode the VFO no longer runs', async () => {
 		await mountPanel({ ...makeDefaultVfo(156.525), digimode: '' });
 		wrapper.vm._onDigimodeMessage(0, 156.525, message([distress]));

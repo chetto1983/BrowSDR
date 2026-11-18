@@ -13,10 +13,27 @@ function validPosition(value: unknown): boolean {
 	return Math.abs(value.lat) <= 90 && Math.abs(value.lon) <= 180 && (value.label === undefined || text(value.label, 32));
 }
 
+const hexText = (value: unknown, max: number): boolean => text(value, max) && value.length % 2 === 0 && /^[0-9A-F]*$/.test(value);
+const optionalText = (value: unknown, max: number): boolean => value === undefined || text(value, max);
+const direction = (value: unknown): boolean => value === 'uplink' || value === 'downlink';
+
+/** An ACARS block envelope: the ACARS library's record fields, bounded as ARINC 618 blocks are. */
+function validAcarsBlock(value: unknown): boolean {
+	if (!isRecord(value) || !text(value.label, 2) || value.label.length !== 2 || !text(value.text, 240)) return false;
+	if (!direction(value.direction) || !text(value.registration, 7) || !text(value.mode, 1) || !text(value.blockId, 1)) return false;
+	if (!text(value.acknowledgement, 3) || typeof value.continuation !== 'boolean') return false;
+	return optionalText(value.messageNumber, 4) && optionalText(value.flight, 6);
+}
+
 function validApplication(value: unknown): boolean {
 	if (value === undefined) return true;
-	if (!isRecord(value) || value.kind !== 'cpdlc' || typeof value.uplink !== 'boolean' || !text(value.hex, 4000)) return false;
-	return value.hex.length % 2 === 0 && /^[0-9A-F]*$/.test(value.hex);
+	if (!isRecord(value)) return false;
+	if (value.kind === 'cpdlc') return typeof value.uplink === 'boolean' && hexText(value.hex, 4000);
+	if (value.kind === 'acars')
+		return (
+			(value.aircraft === undefined || (text(value.aircraft, 6) && /^[0-9A-F]{6}$/.test(value.aircraft))) && validAcarsBlock(value.block)
+		);
+	return false;
 }
 
 function validRecord(value: unknown): boolean {

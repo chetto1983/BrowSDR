@@ -56,6 +56,8 @@ export interface Vdl2Acars {
 	mfi: string;
 	/** Printable text; line breaks are '\n'. */
 	text: string;
+	/** The text as received (parity removed), for the app's reassembly. */
+	raw: string;
 	/** Short reading of fixed-format text (OOOI times, media advisory), else empty. */
 	decoded: string;
 }

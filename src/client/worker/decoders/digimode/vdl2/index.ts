@@ -3,10 +3,11 @@
 // Ported to TypeScript for BrowSDR from OnAir core/src/vdl2/vdl2_rx.cpp (Vdl2Receiver's message bookkeeping, one
 // channel), https://github.com/adswill/OnAir; see third_party/onair. Changes: each AVLC frame of a decoded burst is one
 // record (addresses, frame type, the protocols it carries; ATN and XID frames with a hex dump); the aircraft and
-// ground station tables, the multi-block ACARS reassembly, the feeds and the automations of OnAir are left out.
+// ground station tables, the feeds and the automations of OnAir are left out. A good ACARS block goes with its record
+// to the app, which reassembles multi-block messages and interprets them with the ACARS library it already loads.
 
 import type { DigimodeDecoder, DigimodeSink } from '@/worker/decoders/digimode/types';
-import { cpdlcApplication } from '@/worker/decoders/digimode/aero/arinc';
+import { acarsApplication } from './acars';
 import { hexNum } from './proto';
 import { VDL2_RATE, Vdl2Receiver } from './receiver';
 import type { Vdl2Burst, Vdl2Line, Vdl2Message } from './types';
@@ -27,6 +28,9 @@ function station(addr: number, type: number, reg: string | undefined): string {
 	if (type === 4 || type === 5) return `GS ${hex}`;
 	return type === 7 ? 'all' : `${hex} (type ${type})`;
 }
+
+/** The 24-bit address of the aircraft end of a frame. */
+const aircraftAddress = (m: Vdl2Message): number | undefined => (m.srcType === 1 ? m.src : m.dstType === 1 ? m.dst : undefined);
 
 /** Labels made unique (the log keys fields by label). */
 function uniqueFields(lines: Vdl2Line[]): Vdl2Line[] {
@@ -83,7 +87,7 @@ export class Vdl2Decoder implements DigimodeDecoder {
 		]);
 		const fec = `${burst.rsFixed} octet(s) corrected by Reed-Solomon${burst.headerFixed ? ', header corrected' : ''}`;
 		fields.push(['FEC', fec + (burst.bad ? `, ${burst.bad} frame(s) of the burst failed their check` : '')]);
-		const application = m.acars?.crcOk ? cpdlcApplication(m.acars.text, !m.acars.downlink) : undefined;
+		const application = m.acars ? acarsApplication(m.acars, aircraftAddress(m)) : undefined;
 		this.sink.record({
 			text: `${from} → ${to} · ${kind}${m.summary || m.frameName}`.slice(0, 2000),
 			fields: uniqueFields(fields),

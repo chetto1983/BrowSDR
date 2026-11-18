@@ -10,11 +10,15 @@
 // A downlink (block id is a digit) starts its text with the message number (3), the block sequence letter (1) and the
 // flight id (6).
 
+import type { DigimodeAcarsApplication } from '@/worker/decoders/digimode/types';
+import { hexNum } from './proto';
 import type { Vdl2Acars, Vdl2Line, Vdl2Message } from './types';
 
 const STX = 0x02;
 /** Longest text kept (characters). */
 const TEXT_CAP = 220;
+/** Longest block text sent to the app (ARINC 618 allows 220 characters; the ACARS library's frames are 240 octets at most). */
+const BLOCK_TEXT_MAX = 240;
 
 const CRC_TABLE = Uint16Array.from({ length: 256 }, (_, i) => {
 	let c = i;
@@ -257,6 +261,7 @@ export function acarsParseBlock(t: Uint8Array, crcOk = true): Vdl2Acars | undefi
 		sublabel: '',
 		mfi: '',
 		text: '',
+		raw: '',
 		decoded: '',
 	};
 	if (12 >= n) return a; // an acknowledgement without text
@@ -269,9 +274,35 @@ export function acarsParseBlock(t: Uint8Array, crcOk = true): Vdl2Acars | undefi
 		p = p.subarray(10);
 	}
 	a.text = printable(p);
+	a.raw = String.fromCharCode(...p);
 	if (label === 'H1') sublabelAndMfi(a);
 	a.decoded = acarsDecodeText(label, a.text);
 	return a;
+}
+
+/**
+ * A good block as the app's ACARS reassembly takes it (the ACARS library's record envelope), with the 24-bit address of
+ * the aircraft when the link names it (VDL2). Undefined for a block whose check failed or whose text is too long.
+ */
+export function acarsApplication(a: Vdl2Acars, aircraft?: number): DigimodeAcarsApplication | undefined {
+	if (!a.crcOk || a.raw.length > BLOCK_TEXT_MAX) return undefined;
+	const flight = a.flight.trim();
+	return {
+		kind: 'acars',
+		...(aircraft === undefined ? {} : { aircraft: hexNum(aircraft & 0xffffff, 6) }),
+		block: {
+			label: a.label,
+			text: a.raw,
+			direction: a.downlink ? 'downlink' : 'uplink',
+			registration: a.reg.replace(/[. ]+$/, ''),
+			mode: a.mode,
+			acknowledgement: a.ack === '!' ? 'NAK' : a.ack,
+			blockId: a.blockId,
+			...(a.msgNum ? { messageNumber: a.msgNum + a.msgSeq } : {}),
+			...(flight ? { flight } : {}),
+			continuation: !a.finalBlock,
+		},
+	};
 }
 
 /** The ACARS summary line: label, its meaning, flight and the start of the text. */

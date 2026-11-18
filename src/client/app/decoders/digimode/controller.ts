@@ -4,6 +4,7 @@ import type { DigimodeMessage, DigimodeStatus } from '@/worker/decoders/digimode
 import { digimodeInfo } from '@/worker/decoders/digimode/catalog';
 import { mergeHfdlPositions } from '@/app/decoders/adsb/hfdl';
 import { readApplication } from './application';
+import { readAviation, resetAviation } from './aviation';
 import { DigimodePicture } from './image';
 import type { DigimodeLogEntry } from './types';
 
@@ -38,7 +39,9 @@ export const digimodeMethods = {
 		if (!vfo?.digimode || vfo.digimode !== message.mode || vfo.freq !== freq || message.freq !== freq) return;
 		this.digimodes.status[index] = message.status;
 		if (message.records.length) {
-			const entries = message.records.map((record) => ({ ...readApplication(record), vfo: index, freq })).reverse();
+			const entries = message.records
+				.map((record) => ({ ...readAviation(this, index, message.mode, freq, readApplication(record)), vfo: index, freq }))
+				.reverse();
 			this.digimodes.log = [...entries, ...this.digimodes.log].slice(0, LOG_LIMIT);
 		}
 		// HFDL aircraft positions go to the ADS-B tool's aircraft map
@@ -61,6 +64,7 @@ export const digimodeMethods = {
 		if (!vfo) return;
 		vfo.digimode = digimodeInfo(mode) ? mode : '';
 		this.digimodes.status[index] = null;
+		resetAviation(this, index);
 		this.updateBackendVfoParams(index);
 	},
 	tuneDigimodeVfo(this: AppInstance, frequency: number, index = this.activeVfoIndex): void {

@@ -180,11 +180,45 @@ describe('CM over ATN', () => {
 		expect(field(second, 'ATN X.25')).toBe(`NSDU reassembled from 2 packets (${nsdu.length} octets)`);
 		expect(field(second, 'CM flight')).toBe('BAW77K');
 	});
-	it('reads compressed CLNP only after its context was set up', () => {
+	it('reads compressed CLNP whose context was set up before listening, its NSAPs not known', () => {
+		// an aircraft keeps its local references across ground stations: the plain CLNP that set them up came long before
 		const c = circuit(AIR);
-		const out = app()(decode([c.call(), c.down(clnpCompressed(5, dataTpdu(0x0202, 0, aarqTsdu({ calling: 1, user: cmLogonRequest() }))))]));
-		expect(field(out[1], 'ATN CLNP')).toBe('compressed, local reference 5: ignored (its context was not set up while listening)');
-		expect(field(out[1], 'CM message')).toBeUndefined();
+		const contact = dataTsdu(plainUplink(uplinkContact()));
+		const atn = { source: Uint8Array.from(GND_NSAP), destination: Uint8Array.from(AIR_NSAP) };
+		const out = app()(decode([c.call(), c.up(clnpCompressed(7, dataTpduAtn(0x0777, 3, contact, atn)))]));
+		expect(field(out[1], 'ATN CLNP')).toBe('compressed, local reference 7: set up before listening, its NSAPs not known');
+		expect(field(out[1], 'ATN COTP')).toBe('Data (ATN checksum not verified: NSAPs not known)');
+		expect(fields(out[1], 'ATN COTP')[1]).toBe('DT read on its own: the set-up of its connection was not followed');
+		expect(field(out[1], 'CPDLC element 1')).toBe('UM117 CONTACT EDYY center 132.6 MHz');
+	});
+	it('reads the COTP of a real circuit opened at a handoff, its compression set up before listening', () => {
+		// 502D7D (YL-ABS) to ground station 109C2A on 136.975 MHz, 2026-11-18 14:33:51Z: the call, then its first two data
+		// packets, already compressed with local reference 66 (X.25 packets as received)
+		const hex = (text) => text.split(' ').map((pair) => parseInt(pair, 16));
+		const air = { addr: 0x502d7d, type: 1, status: false };
+		const ground = { addr: 0x109c2a, type: 4, status: false };
+		const down = (packet) => avlcFrame(ground, air, controlI(0, 0, false), hex(packet));
+		const call =
+			'1b ff 0b 80 24 02 65 75 13 42 0a 0a 43 04 04 01 80 00 0f c9 07 8c 58 41 41 06 00 ff c1 06 01 00 00 13 80 00 82 1e 01 00' +
+			' 04 00 1e 00 00 14 47 00 27 41 42 54 49 00 50 2d 7d 00 01 00 00 00 00 00 01 00';
+		const out = app()(
+			decode([
+				down(call),
+				down('1b ff 20 1b 28 f6 42 01 37 0a 63 81 d9 04 08 04 b3 03 75 15'),
+				down('1b ff 22 1b 28 f6 42 01 38 0a f0 81 d9 83 08 04 e5 f8 67 af 00 a7 16 4e e0 c4 3d 51 74 4e 03 21 02 a2 6e 3b c8'),
+			]),
+		);
+		expect(field(out[0], 'ATN X.25')).toMatch(/^call request/);
+		expect(field(out[1], 'ATN CLNP')).toBe('compressed, local reference 66: set up before listening, its NSAPs not known');
+		expect(field(out[1], 'ATN COTP')).toBe('Data Ack (ATN checksum not verified: NSAPs not known)');
+		expect(field(out[2], 'ATN COTP')).toBe('Data (ATN checksum not verified: NSAPs not known)');
+		expect(fields(out[2], 'ATN COTP')[1]).toBe('DT read on its own: the set-up of its connection was not followed');
+		// the aircraft's logical acknowledgement, stamped two seconds before the frame was received
+		expect(field(out[2], 'ATN application')).toMatch(/^PM-CPDLC, identified by trial/);
+		expect(field(out[2], 'CPDLC integrity')).toBe('ATN integrity check not verified');
+		expect(field(out[2], 'CPDLC message')).toBe('DM100 LOGICAL ACKNOWLEDGEMENT');
+		expect([field(out[2], 'CPDLC message id'), field(out[2], 'CPDLC reference')]).toEqual(['3', '4']);
+		expect(field(out[2], 'CPDLC time')).toBe('2026-11-18 14:34:28 UTC');
 	});
 	it('keeps two aircraft apart, their frames interleaved', () => {
 		const one = logon(circuit(AIR), AIR_NSAP, 'DLH4AB');

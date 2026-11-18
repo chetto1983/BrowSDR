@@ -25,11 +25,13 @@ export interface AtnLayer<T> {
 	up?: T;
 }
 
-/** A complete network service data unit (a COTP NSDU) with the NSAPs of the CLNP PDU (or compression context) it came in. */
+/** A complete network service data unit (a COTP NSDU) and where it came from. */
 export interface AtnNsdu {
 	bytes: Uint8Array;
-	source: Uint8Array;
-	destination: Uint8Array;
+	/** The NSAPs of the CLNP PDU or compression context; absent for compressed CLNP whose context was set up before listening. */
+	nsaps?: { source: Uint8Array; destination: Uint8Array };
+	/** The AVLC addresses of the aircraft and the ground station ('air:ground'), the link when the NSAPs are not known. */
+	stations: string;
 }
 
 /** A complete transport service data unit. */

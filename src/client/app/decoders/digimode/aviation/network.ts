@@ -2,6 +2,7 @@ import {
 	createClnpCompressedReassembler,
 	createClnpReassembler,
 	createX25Reassembler,
+	type ClnpCompressed,
 	type EsisPdu,
 	type IdrpHeader,
 	type X25Assembly,
@@ -20,6 +21,11 @@ const CIRCUIT_PACKETS: Record<number, string> = {
 	0xfb: 'restart request',
 	0xff: 'restart confirmation',
 };
+
+/** The compressed CLNP reassembler's reason for a local reference it has no context for. */
+const NO_CONTEXT = 'No matching compression context.';
+/** The AVLC addresses ('air:ground') of a circuit link ('air:ground:lcn:direction'). */
+const stationsOf = (link: string): string => link.split(':', 2).join(':');
 
 const nsap = (bytes: Uint8Array | undefined): string => (bytes ? hexOf(bytes, 20) : '-');
 const idrpLine = (idrp: IdrpHeader): Field => [
@@ -147,21 +153,44 @@ export class AtnNetwork {
 		if (result.status !== 'complete' || !result.payload || !pdu.source || !pdu.destination)
 			return { fields: [...fields, ['ATN CLNP', `${result.status}${result.reason ? `: ${result.reason}` : ''}`]] };
 		if (result.idrp) return { fields: [...fields, idrpLine(result.idrp)] };
-		return { fields, up: { bytes: result.payload, source: pdu.source, destination: pdu.destination } };
+		return {
+			fields,
+			up: { bytes: result.payload, nsaps: { source: pdu.source, destination: pdu.destination }, stations: stationsOf(link) },
+		};
 	}
 
 	private packed(payload: Uint8Array, link: string, time: number): AtnLayer<AtnNsdu> {
 		const result = this.compressed.push(payload, { link, receivedAt: time, linkIntegrity: 'verified' });
 		const reference = result.packet.localReference;
 		const context = result.context;
+		if (result.status === 'ignored' && result.reason === NO_CONTEXT) return this.unknownContext(result.packet, link);
 		if (result.status !== 'complete' || !result.payload || !context) {
-			const why = result.reason === 'No matching compression context.' ? 'its context was not set up while listening' : result.reason;
-			return { fields: [['ATN CLNP', `compressed, local reference ${reference}: ${result.status}${why ? ` (${why})` : ''}`]] };
+			return {
+				fields: [['ATN CLNP', `compressed, local reference ${reference}: ${result.status}${result.reason ? ` (${result.reason})` : ''}`]],
+			};
 		}
 		const fields: Field[] = [
 			['ATN CLNP', `compressed, local reference ${reference}: ${nsap(context.source)} → ${nsap(context.destination)}`],
 		];
 		if (result.idrp) return { fields: [...fields, idrpLine(result.idrp)] };
-		return { fields, up: { bytes: result.payload, source: context.source, destination: context.destination } };
+		return {
+			fields,
+			up: { bytes: result.payload, nsaps: { source: context.source, destination: context.destination }, stations: stationsOf(link) },
+		};
+	}
+
+	/**
+	 * Compressed CLNP whose local reference was set up before listening: an aircraft keeps its references across ground
+	 * stations, so the plain CLNP that set them up may have come long before. The header still gives the payload of a
+	 * whole PDU, read without its NSAPs; a fragment is not read.
+	 */
+	private unknownContext(packet: ClnpCompressed, link: string): AtnLayer<AtnNsdu> {
+		const name = `compressed, local reference ${packet.localReference}`;
+		if (packet.derived || packet.more || packet.offset || !packet.payload.length)
+			return { fields: [['ATN CLNP', `${name}: a fragment of a PDU whose context was set up before listening: not read`]] };
+		return {
+			fields: [['ATN CLNP', `${name}: set up before listening, its NSAPs not known`]],
+			up: { bytes: packet.payload, stations: stationsOf(link) },
+		};
 	}
 }

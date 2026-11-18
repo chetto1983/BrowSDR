@@ -49,6 +49,17 @@
 	cursor: default;
 	background: var(--bg-header);
 }
+/* the log table is nowrap and the list-only grid has 140px columns: long values (hex, X.25) ran over their neighbours */
+.digimode-log .digimode-fields td {
+	white-space: normal;
+}
+.digimode-log .digimode-fields .adsb-detail-grid {
+	grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+	gap: 8px 16px;
+}
+.digimode-log .digimode-fields dd {
+	overflow-wrap: anywhere;
+}
 .digimode-log td:first-child small {
 	white-space: normal;
 }

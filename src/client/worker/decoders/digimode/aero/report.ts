@@ -7,7 +7,7 @@
 // set; an ADS-C emergency report is an alert.
 
 import { adscFields } from './adsc';
-import { aeroDecodeCpdlc, aeroDescribeCpdlc } from './arinc';
+import { aeroDecodeCpdlc, aeroDescribeCpdlc, cpdlcApplication } from './arinc';
 import { aeroPositionFromMessage } from './pos';
 import { geoLook, satelliteAt } from './satellites';
 import { lonText } from './su';
@@ -87,7 +87,13 @@ export function acarsRecord(m: AeroAcars, heard: AeroHeard, station: [number, nu
 			? `CPDLC ${cpdlc.imi}`
 			: '';
 	return {
-		rec: { text: headline(m, pos, what, station), fields: fields.slice(0, 64), damaged: !m.crcOk, alert: pos?.emergency ?? false },
+		rec: {
+			text: headline(m, pos, what, station),
+			fields: fields.slice(0, 64),
+			damaged: !m.crcOk,
+			alert: pos?.emergency ?? false,
+			...(cpdlc ? { application: cpdlcApplication(m.text, m.uplink) } : {}),
+		},
 		pos,
 	};
 }

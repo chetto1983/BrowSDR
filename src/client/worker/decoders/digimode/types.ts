@@ -15,6 +15,16 @@ export interface DigimodeRecord {
 	alert?: boolean;
 	/** Where what the record is about was, for maps (an aircraft's reported position). */
 	position?: DigimodePosition;
+	/** An ATS application carried by the record, decoded in the app (where the ACARS library is already loaded). */
+	application?: DigimodeApplication;
+}
+
+/** A FANS-1/A CPDLC message body (ARINC 622, CRC checked), as hex without its CRC. */
+export interface DigimodeApplication {
+	kind: 'cpdlc';
+	/** Ground to aircraft; the CPDLC message sets differ by direction. */
+	uplink: boolean;
+	hex: string;
 }
 
 /** A position a record reports. */

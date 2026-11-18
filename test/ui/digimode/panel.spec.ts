@@ -64,6 +64,23 @@ describe('Digital Modes panel', () => {
 		expect(wrapper.text()).toContain('Flooding');
 		expect(wrapper.text()).toContain('VFO 1 · DSC (VHF channel 70)');
 	});
+	it('shows the CPDLC message an Aero record carries, decoded in the app', async () => {
+		await mountPanel({ ...makeDefaultVfo(1545.1225), digimode: 'aero' });
+		const body = '243F880C3D903BB412903604FE326C2479F4A64F7F62528B1A9CF8382738186AC28B16668E013DF464D8A7F0'.slice(0, -4);
+		const cpdlc = {
+			id: 1,
+			time: Date.UTC(2026, 10, 16, 15, 56),
+			mode: 'aero',
+			text: 'Downlink from HL8251 · CPDLC AT1',
+			application: { kind: 'cpdlc' as const, uplink: false, hex: body },
+		};
+		wrapper.vm._onDigimodeMessage(0, 1545.1225, { ...message([cpdlc]), freq: 1545.1225, mode: 'aero' });
+		await wrapper.vm.$nextTick();
+		const row = wrapper.find('table[aria-label="Decoded messages"] tbody tr');
+		expect(row.text()).toContain('CPDLC AT1: POSITION REPORT');
+		await row.trigger('click');
+		expect(wrapper.text()).toContain('15:56:32 UTC');
+	});
 	it('ignores output for a mode the VFO no longer runs', async () => {
 		await mountPanel({ ...makeDefaultVfo(156.525), digimode: '' });
 		wrapper.vm._onDigimodeMessage(0, 156.525, message([distress]));

@@ -13,10 +13,16 @@ function validPosition(value: unknown): boolean {
 	return Math.abs(value.lat) <= 90 && Math.abs(value.lon) <= 180 && (value.label === undefined || text(value.label, 32));
 }
 
+function validApplication(value: unknown): boolean {
+	if (value === undefined) return true;
+	if (!isRecord(value) || value.kind !== 'cpdlc' || typeof value.uplink !== 'boolean' || !text(value.hex, 4000)) return false;
+	return value.hex.length % 2 === 0 && /^[0-9A-F]*$/.test(value.hex);
+}
+
 function validRecord(value: unknown): boolean {
 	if (!isRecord(value) || !Number.isInteger(value.id) || !finite(value.time) || !text(value.mode, 64) || !text(value.text, 2000))
 		return false;
-	if (!validPosition(value.position)) return false;
+	if (!validPosition(value.position) || !validApplication(value.application)) return false;
 	if (value.fields === undefined) return true;
 	return (
 		Array.isArray(value.fields) &&

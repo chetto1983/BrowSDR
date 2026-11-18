@@ -6,6 +6,7 @@
 // ground station tables, the multi-block ACARS reassembly, the feeds and the automations of OnAir are left out.
 
 import type { DigimodeDecoder, DigimodeSink } from '@/worker/decoders/digimode/types';
+import { cpdlcApplication } from '@/worker/decoders/digimode/aero/arinc';
 import { hexNum } from './proto';
 import { VDL2_RATE, Vdl2Receiver } from './receiver';
 import type { Vdl2Burst, Vdl2Line, Vdl2Message } from './types';
@@ -82,10 +83,12 @@ export class Vdl2Decoder implements DigimodeDecoder {
 		]);
 		const fec = `${burst.rsFixed} octet(s) corrected by Reed-Solomon${burst.headerFixed ? ', header corrected' : ''}`;
 		fields.push(['FEC', fec + (burst.bad ? `, ${burst.bad} frame(s) of the burst failed their check` : '')]);
+		const application = m.acars?.crcOk ? cpdlcApplication(m.acars.text, !m.acars.downlink) : undefined;
 		this.sink.record({
 			text: `${from} → ${to} · ${kind}${m.summary || m.frameName}`.slice(0, 2000),
 			fields: uniqueFields(fields),
 			damaged: m.acars ? !m.acars.crcOk : false,
+			...(application ? { application } : {}),
 		});
 	}
 }

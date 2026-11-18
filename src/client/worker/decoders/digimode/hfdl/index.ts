@@ -16,6 +16,7 @@
 // (4 to 40 ms) each time.
 
 import type { DigimodeDecoder, DigimodeSink } from '@/worker/decoders/digimode/types';
+import { cpdlcApplication } from '@/worker/decoders/digimode/aero/arinc';
 import { HFDL_RATE } from './front';
 import { HFDL_CARRIER_HZ } from './phy';
 import { HfdlReceiver } from './receiver';
@@ -78,11 +79,13 @@ export class HfdlDecoder implements DigimodeDecoder {
 		for (const m of b.messages) {
 			const a = this.book.note(m, now);
 			const position = recordPosition(m, a);
+			const application = m.acars?.crcOk ? cpdlcApplication(m.acars.text, !m.acars.downlink) : undefined;
 			this.sink.record({
 				text: recordText(m, a),
 				fields: recordFields(m, a, b, this.station),
 				damaged: m.bad || (m.acars ? !m.acars.crcOk : false),
 				...(position ? { position } : {}),
+				...(application ? { application } : {}),
 			});
 		}
 		if (b.ok) this.last = `last ${b.rate.bps} bit/s, SNR ${b.snrDb.toFixed(1)} dB, carrier ${signedHz(b.cfoHz)} Hz`;

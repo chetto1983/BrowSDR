@@ -3,6 +3,7 @@ import type { AppInstance } from '@/app/core/receiver.types';
 import type { DigimodeMessage, DigimodeStatus } from '@/worker/decoders/digimode/types';
 import { digimodeInfo } from '@/worker/decoders/digimode/catalog';
 import { mergeHfdlPositions } from '@/app/decoders/adsb/hfdl';
+import { readApplication } from './application';
 import { DigimodePicture } from './image';
 import type { DigimodeLogEntry } from './types';
 
@@ -37,7 +38,7 @@ export const digimodeMethods = {
 		if (!vfo?.digimode || vfo.digimode !== message.mode || vfo.freq !== freq || message.freq !== freq) return;
 		this.digimodes.status[index] = message.status;
 		if (message.records.length) {
-			const entries = message.records.map((record) => ({ ...record, vfo: index, freq })).reverse();
+			const entries = message.records.map((record) => ({ ...readApplication(record), vfo: index, freq })).reverse();
 			this.digimodes.log = [...entries, ...this.digimodes.log].slice(0, LOG_LIMIT);
 		}
 		// HFDL aircraft positions go to the ADS-B tool's aircraft map

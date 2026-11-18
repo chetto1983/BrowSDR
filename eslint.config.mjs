@@ -53,6 +53,20 @@ export default defineConfig(
 		languageOptions: { globals: { ...globals.browser, ...globals.worker } },
 	},
 	{
+		files: ['src/**/*.ts'],
+		rules: {
+			// Vite bundles a worker, and names it after its whole content, only from `new Worker(new URL(...))`.
+			'no-restricted-syntax': [
+				'error',
+				{
+					selector: "NewExpression[callee.type='MemberExpression'][callee.property.name=/^(Shared)?Worker$/]",
+					message:
+						"Write `new Worker(new URL('./worker.ts', import.meta.url), ...)`: other forms are copied unbundled, under a name that ignores the worker's content, and stay cached after an update.",
+				},
+			],
+		},
+	},
+	{
 		files: ['src/**/*.ts', '.storybook/*.ts', '*config.ts'],
 		extends: [tseslint.configs.recommendedTypeChecked, vue.configs['flat/essential']],
 		languageOptions: { parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname } },

@@ -89,7 +89,7 @@ export function initializeVfoWorkers(
 	backend.dspWorkers = [];
 
 	const spawnWorker = (index: number, params: VfoParams): Worker => {
-		const worker = new globalThis.Worker(new URL('../dsp-worker.ts', import.meta.url), { type: 'module' });
+		const worker = new Worker(new URL('../dsp-worker.ts', import.meta.url), { type: 'module' });
 		worker.onmessage = (e: MessageEvent<DspOutput>) =>
 			routeLocalWorkerMessage(
 				backend,

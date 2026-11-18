@@ -5,9 +5,9 @@ import path from 'path';
 import fs from 'fs';
 
 // Plugin that runs after the main build to:
-// 1. Bundle the dsp-worker properly (Vite doesn't bundle nested workers)
-// 2. Copy WASM files to dist
-// 3. Fix .ts → .js extensions in output filenames and references
+// 1. Check that every worker was bundled by Vite (an unbundled one keeps a name that ignores its content)
+// 2. Bundle the whisper-worker, which is loaded by a plain URL
+// 3. Copy WASM files to dist
 function postBuildPlugin(): Plugin {
 	return {
 		name: 'post-build',
@@ -15,60 +15,16 @@ function postBuildPlugin(): Plugin {
 			const distDir = path.resolve(__dirname, 'dist');
 			const assetsDir = path.join(distDir, 'assets');
 
-			// Track all .ts → .js renames for reference updates
-			const renames = new Map<string, string>();
-
-			// --- Bundle nested workers (Vite doesn't bundle workers spawned from workers) ---
-			for (const file of fs.readdirSync(assetsDir)) {
-				const filePath = path.join(assetsDir, file);
-				if (!file.endsWith('.ts') && !file.endsWith('.js')) continue;
-
-				const content = fs.readFileSync(filePath, 'utf-8');
-				if (content.includes("from './") || content.includes("from '../") || content.includes("from '@/")) {
-					console.log(`[post-build] Bundling nested worker: ${file}`);
-					const jsName = file.replace(/\.ts$/, '.js');
-					renames.set(file, jsName);
-
-					await build({
-						configFile: false,
-						root: path.resolve(__dirname, 'src/client'),
-						build: {
-							outDir: assetsDir,
-							emptyOutDir: false,
-							lib: {
-								entry: path.resolve(__dirname, 'src/client/worker/dsp-worker.ts'),
-								formats: ['es'],
-								fileName: () => jsName,
-							},
-							rollupOptions: {
-								external: [/^\/wasm\//],
-							},
-							minify: true,
-						},
-						resolve: {
-							alias: sourceAlias,
-						},
-						logLevel: 'warn',
-					});
-
-					// Remove the unbundled original .ts if it differs from the output
-					if (file !== jsName && fs.existsSync(filePath)) {
-						fs.unlinkSync(filePath);
-					}
-				}
+			// Workers created as `new Worker(new URL('./x.ts', import.meta.url), ...)` are bundled by Vite and named
+			// after their whole content. Any other form copies the .ts source as a plain asset named after that file
+			// alone: the service worker would then keep serving an old worker after an update.
+			const raw = fs.readdirSync(assetsDir).filter((file) => file.endsWith('.ts'));
+			if (raw.length) {
+				throw new Error(
+					`Unbundled worker source in the build: ${raw.join(', ')}. Create workers with ` +
+						"`new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' })` so that Vite bundles them.",
+				);
 			}
-
-			// --- Rename any remaining .ts output files to .js ---
-			for (const file of fs.readdirSync(assetsDir)) {
-				if (file.endsWith('.ts')) {
-					const jsName = file.replace(/\.ts$/, '.js');
-					renames.set(file, jsName);
-					fs.renameSync(path.join(assetsDir, file), path.join(assetsDir, jsName));
-				}
-			}
-
-			// --- Update all .ts → .js references in output files ---
-			updateBuiltReferences(renames, assetsDir, distDir);
 
 			// --- Bundle whisper-worker (loaded via plain URL, not Vite worker syntax) ---
 			const whisperEntry = path.resolve(__dirname, 'src/client/transcription/whisper-worker.ts');
@@ -231,35 +187,4 @@ function wasmAssetsPlugin(): Plugin {
 			});
 		},
 	};
-}
-
-function updateBuiltReferences(renames: Map<string, string>, assetsDir: string, distDir: string) {
-	if (renames.size > 0) {
-		for (const file of fs.readdirSync(assetsDir)) {
-			if (!file.endsWith('.js')) continue;
-			const filePath = path.join(assetsDir, file);
-			let content = fs.readFileSync(filePath, 'utf-8');
-			let changed = false;
-			for (const [oldName, newName] of renames) {
-				if (content.includes(oldName)) {
-					content = content.replaceAll(oldName, newName);
-					changed = true;
-				}
-			}
-			if (changed) fs.writeFileSync(filePath, content);
-		}
-
-		const htmlPath = path.join(distDir, 'index.html');
-		if (fs.existsSync(htmlPath)) {
-			let html = fs.readFileSync(htmlPath, 'utf-8');
-			let changed = false;
-			for (const [oldName, newName] of renames) {
-				if (html.includes(oldName)) {
-					html = html.replaceAll(oldName, newName);
-					changed = true;
-				}
-			}
-			if (changed) fs.writeFileSync(htmlPath, html);
-		}
-	}
 }

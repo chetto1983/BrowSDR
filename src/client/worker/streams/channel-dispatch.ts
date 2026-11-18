@@ -109,7 +109,7 @@ export function dispatchIqChunk(
 
 export function ensureChannelWorker(backend: Backend, channel: ChannelState, perf: PerfCounters) {
 	if (!channel.worker) {
-		channel.worker = new globalThis.Worker(new URL('../dsp-worker.ts', import.meta.url), { type: 'module' });
+		channel.worker = new Worker(new URL('../dsp-worker.ts', import.meta.url), { type: 'module' });
 		const worker = channel.worker;
 		let sequence = 0;
 		channel.worker.onmessage = ({ data: message }: MessageEvent<DspOutput>) => {

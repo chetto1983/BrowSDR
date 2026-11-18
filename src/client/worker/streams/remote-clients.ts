@@ -268,7 +268,7 @@ export function setRemoteVfoParams(this: Backend, clientId: string, index: numbe
 
 	if (!state.workers[index]) {
 		if (!this._sampleRate || !this.sharedIqPools) return Promise.resolve(true);
-		const worker = new globalThis.Worker(new URL('../dsp-worker.ts', import.meta.url), { type: 'module' });
+		const worker = new Worker(new URL('../dsp-worker.ts', import.meta.url), { type: 'module' });
 		bindRemoteWorker(this, clientId, state, worker);
 		worker.postMessage({
 			type: 'init',
@@ -570,7 +570,7 @@ export function _reinitRemoteClientWorkers(this: Backend): void {
 				continue;
 			}
 
-			const worker = new globalThis.Worker(new URL('../dsp-worker.ts', import.meta.url), { type: 'module' });
+			const worker = new Worker(new URL('../dsp-worker.ts', import.meta.url), { type: 'module' });
 			bindRemoteWorker(this, clientId, state, worker);
 			worker.postMessage({
 				type: 'init',

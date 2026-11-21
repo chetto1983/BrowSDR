@@ -5,7 +5,9 @@
 // reported once) and the frame bookkeeping of core/src/mesh/mesh_rx.cpp, https://github.com/adswill/OnAir; see
 // third_party/onair. LoRa facts as credited there: gr-lora_sdr (Joachim Tapparel, EPFL, and contributors, GPL-3.0).
 // Changes: one channel, the VFO's, which BrowSDR's DDC has already mixed to 0 Hz, filtered and decimated (in place of
-// OnAir's channelizers); no inverted IQ, implicit-header channels or Doppler settings.
+// OnAir's channelizers); inverted IQ is a second bank fed the conjugate (the satellite decoder); the satellite settings
+// of OnAir's Channel (carrierHz, cfoTrack, implicitLen) plus any sync word, a forced low data rate optimisation and the
+// orbit's Doppler hint (setHint).
 
 import { ChanBuf, ChipStream } from './chips';
 import { autoLdro, loraParams } from './code';
@@ -34,7 +36,11 @@ export class LoraBank {
 				syncWord: cfg.syncs[0],
 				moreSync: cfg.syncs.slice(1),
 				preamble: cfg.preamble,
-				ldro: autoLdro(sf, cfg.bwHz),
+				ldro: cfg.ldro ?? autoLdro(sf, cfg.bwHz),
+				anySync: !!cfg.anySync,
+				cfoTrack: cfg.cfoTrack ?? 0,
+				carrierHz: cfg.carrierHz ?? 0,
+				...(cfg.implicitLen ? { implicitHdr: true, implicitLen: cfg.implicitLen, cr: cfg.cr ?? 5, crc: cfg.crc ?? true } : {}),
 			});
 			const d = new Demod(p, cfg.rate, this.cs);
 			d.reset(0);
@@ -50,6 +56,24 @@ export class LoraBank {
 	/** The spreading factors demodulating a frame now. */
 	receivingSfs(): number[] {
 		return this.demods.filter((d) => d.receiving).map((d) => d.sf);
+	}
+
+	/** The carrier offset (Hz) and its drift (Hz/s) the orbit predicts for the next frames; NaN when not known. */
+	setHint(offsetHz: number, rateHzS: number): void {
+		const bw = this.cfg.bwHz;
+		for (const d of this.demods) {
+			d.hintBins = (offsetHz * d.n) / bw;
+			d.hintRate = (rateHzS * d.n * d.n) / (bw * bw);
+		}
+	}
+
+	/** Preambles, sync words, headers and frames counted by the demodulators. */
+	stats(): { preambles: number; frames: number; crcBad: number } {
+		let preambles = 0,
+			frames = 0,
+			crcBad = 0;
+		for (const d of this.demods) [preambles, frames, crcBad] = [preambles + d.st.preambles, frames + d.st.frames, crcBad + d.st.crcBad];
+		return { preambles, frames, crcBad };
 	}
 
 	/** Interleaved complex samples at the channel rate; finished frames are appended to out. */
@@ -79,7 +103,7 @@ export class LoraBank {
 		if (this.recent.some((r) => r.sf !== d.sf && sameBytes(r.payload, f.payload) && Math.abs(r.sec - sec) < 0.25)) return;
 		this.recent.push({ payload: f.payload, sec, sf: d.sf });
 		if (this.recent.length > 16) this.recent.shift();
-		const sync = this.cfg.syncs.includes(f.syncWord) ? f.syncWord : this.cfg.syncs[0];
+		const sync = this.cfg.anySync || this.cfg.syncs.includes(f.syncWord) ? f.syncWord : this.cfg.syncs[0];
 		out.push({ sf: d.sf, sync, bwHz: this.cfg.bwHz, sec, frame: f });
 	}
 }

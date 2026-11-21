@@ -6,7 +6,8 @@
 // third_party/onair. LoRa facts as credited there: gr-lora_sdr (Joachim Tapparel, EPFL, and contributors, GPL-3.0):
 // tables.h (whitening), hamming_enc_impl.cc, interleaver_impl.cc, gray_demap_impl.cc, header_impl.cc, add_crc_impl.cc;
 // the air time formula and the 16 ms low data rate rule from the Semtech SX1261/2 datasheet (6.1.4) and RadioLib.
-// Changes: tables are built once at module load; the encoder returns a Uint16Array.
+// Changes: tables are built once at module load; the encoder returns a Uint16Array; loraParams has the satellite
+// settings (carrierHz, cfoTrack) and anySync.
 
 import type { LoraParams } from './types';
 
@@ -24,6 +25,9 @@ export function loraParams(over: Partial<LoraParams> = {}): LoraParams {
 		implicitHdr: false,
 		implicitLen: 0,
 		jumpChips: 11.7,
+		carrierHz: 0,
+		cfoTrack: 0,
+		anySync: false,
 		...over,
 	};
 }

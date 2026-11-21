@@ -5,9 +5,10 @@
 // soft bins and the timing loop for clock drift, CRC retries and sample-jump recovery), https://github.com/adswill/OnAir;
 // see third_party/onair. The method follows gr-lora_sdr (Joachim Tapparel, EPFL, and contributors, GPL-3.0)
 // frame_sync_impl.cc and fft_demod_impl.cc and the paper "An open-source LoRa physical layer prototype on GNU Radio"
-// (Tapparel et al., 2020), as credited in OnAir. Changes: the SFD search and fine estimates are in sfd.ts; no carrier
-// tracking through the frame (cfoTrack, for satellites) and no half-rate search stride; split typed arrays, BrowSDR's
-// FFT (dab/ofdm/fft.ts) in double precision.
+// (Tapparel et al., 2020), as credited in OnAir. Changes: the SFD search and fine estimates are in sfd.ts; the carrier
+// loop through the frame (cfoTrack, for satellites) in its own methods, with an expected offset and drift from the orbit
+// (hintBins, hintRate) that the SFD search may use; no half-rate search stride; split typed arrays, BrowSDR's FFT
+// (dab/ofdm/fft.ts) in double precision.
 
 import { Fft } from '@/worker/decoders/dab/ofdm/fft';
 import { ChipStream, type ChanBuf } from './chips';
@@ -120,6 +121,16 @@ export class Demod {
 	cfoBins = 0;
 	drift = 0;
 	loopInt = 0;
+	/** cfoTrack: the carrier offset's change per symbol, bins (a satellite's Doppler rate), and its value at the first data symbol. */
+	cfoRate = 0;
+	cfoStartBins = 0;
+	/** cfoTrack: the peak bin's phase at the last symbol (with the mixer's phase added back) and that symbol's timing step. */
+	theta0 = 0;
+	thetaOk = false;
+	lastAdj = 0;
+	/** Satellites: the carrier offset (bins) and its drift (bins per symbol) the orbit predicts; NaN when not known. */
+	hintBins = NaN;
+	hintRate = NaN;
 	/** The data start (a frame that fails its CRC is demodulated again from here). */
 	posS0 = 0;
 	retried = 0;
@@ -517,7 +528,7 @@ export class Demod {
 	 * Timing loop. The phase step where the chirp wraps measures a timing error: the de-chirped symbol's two parts (before and
 	 * after the wrap at chip N - k) differ in phase by pi tau, tau = how late the symbol starts, in chips.
 	 */
-	private timing(k: number, q: number): number {
+	private timing(k: number, q: number, eF: number): number {
 		const n = this.n;
 		// wider loop for the first 40 symbols (the drift from a short preamble may be well off), then the narrow one
 		const acq = this.fd.pushed <= 40;
@@ -550,8 +561,8 @@ export class Demod {
 			ri = rr * ci + ri * cr;
 			rr = t;
 		}
-		// arg(s2 conj(s1)) / pi
-		const tau = Math.atan2(s2i * s1r - s2r * s1i, s2r * s1r + s2i * s1i) / Math.PI;
+		// arg(s2 conj(s1)) / pi; the carrier offset (known from the phase) is not a timing error
+		const tau = Math.atan2(s2i * s1r - s2r * s1i, s2r * s1r + s2i * s1i) / Math.PI - eF;
 		const e = Math.max(-0.5, Math.min(0.5, tau)) * w;
 		this.loopInt += kI * e;
 		return kP * e + this.loopInt;
@@ -564,7 +575,10 @@ export class Demod {
 		}
 		const mean = this.spectrum(true, true);
 		const k = this.softSymbol(mean);
-		const adj = this.timing(k, this.pw[k] / mean);
+		const track = this.p.cfoTrack > 0;
+		const eF = track ? this.carrierError(k) : NaN;
+		const adj = this.timing(k, this.pw[k] / mean, Number.isNaN(eF) ? 0 : eF);
+		if (track) this.followCarrier(eF, adj);
 		this.posS += this.perS + adj * this.chipS;
 		if (this.fd.pushed === 8 && !this.fd.header.ok) {
 			this.st.headerBad++;
@@ -572,6 +586,42 @@ export class Demod {
 			return;
 		}
 		if (this.fd.done) this.finishFrame(out);
+	}
+
+	/**
+	 * Carrier offset (cfoTrack > 0): the phase of the peak bin advances by 2 pi times the carrier offset (in bins) from symbol to
+	 * symbol (the chirps' phase is continuous and returns to zero at every symbol start), once the mixer's own phase at the window
+	 * start is added back. Moving the window by x chips turns the phase by x / 2 cycles (lastAdj). The offset comes out modulo one
+	 * bin, relative to the loop's own estimate; NaN for the first symbol.
+	 */
+	private carrierError(k: number): number {
+		const theta = Math.atan2(this.im[k], this.re[k]) + (2 * Math.PI * this.cfoBins * this.posS) / (this.n * this.rho);
+		let eF = NaN;
+		if (this.thetaOk) {
+			const d = (theta - this.theta0) / (2 * Math.PI) - 0.5 * this.lastAdj;
+			eF = d - (this.cfoBins - 0.5 * this.cfoRate); // the phase step is the offset half a symbol back
+			eF -= Math.sign(eF) * Math.round(Math.abs(eF));
+			eF = Math.max(-0.5, Math.min(0.5, eF));
+		}
+		this.theta0 = theta;
+		this.thetaOk = true;
+		return eF;
+	}
+
+	/** The carrier loop: the offset moves by the drift each symbol, both corrected by the phase error at gain cfoTrack. */
+	private followCarrier(eF: number, adj: number): void {
+		if (!Number.isNaN(eF)) {
+			this.cfoRate += 0.1 * this.p.cfoTrack * eF;
+			this.cfoBins += this.cfoRate + 0.5 * this.p.cfoTrack * eF;
+		} else this.cfoBins += this.cfoRate;
+		this.lastAdj = adj;
+	}
+
+	/** The carrier at the first data symbol and its drift, Hz and Hz/s (cfoTrack > 0; else 0). */
+	private carrierDrift(): { cfoStartHz: number; cfoRateHzS: number } {
+		if (this.p.cfoTrack <= 0) return { cfoStartHz: 0, cfoRateHzS: 0 };
+		const hzPerBin = this.p.bwHz / this.n;
+		return { cfoStartHz: this.cfoStartBins * hzPerBin, cfoRateHzS: (this.cfoRate * hzPerBin * this.p.bwHz) / this.n };
 	}
 
 	private finishFrame(out: LoraFrame[]): void {
@@ -591,7 +641,7 @@ export class Demod {
 				this.st.jumpFixed++;
 			}
 		}
-		if (fd.header.crc && !crcOk && this.retried < 3) {
+		if (fd.header.crc && !crcOk && this.retried < 3 && p.cfoTrack <= 0) {
 			// The loop's integral holds the rest of the clock drift a short preamble left: demodulate again from the start with it.
 			this.retried++;
 			const dd = this.loopInt;
@@ -611,6 +661,7 @@ export class Demod {
 			crcOk,
 			corrected: got?.corrected ?? 0,
 			cfoHz: (this.cfoBins * p.bwHz) / this.n,
+			...this.carrierDrift(),
 			sfoPpm: ((this.drift + this.loopInt) / this.n) * 1e6,
 			snrDb: 10 * Math.log10(this.snrLin),
 			softFixed: fd.softFixed,

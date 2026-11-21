@@ -1,5 +1,6 @@
 import type { DigimodeInfo } from './types';
 import { AMATEUR_DIGIMODES } from './catalog-amateur';
+import { LORA_SAT_DIGIMODES } from './lora-sat/catalog';
 
 /** Decoders of the Digital Modes panel. Each is ported from OnAir (see third_party/onair). */
 export const DIGIMODES: readonly DigimodeInfo[] = [
@@ -105,6 +106,7 @@ export const DIGIMODES: readonly DigimodeInfo[] = [
 		],
 		source: 'core/src/cubesat/cubesat_rx.cpp, core/include/dect2/packet/packet_demod.h',
 	},
+	...LORA_SAT_DIGIMODES,
 	{
 		id: 'orbcomm',
 		label: 'ORBCOMM',

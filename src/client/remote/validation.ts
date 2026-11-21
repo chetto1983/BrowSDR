@@ -5,6 +5,7 @@ import { validAcarsMessage } from '@/worker/decoders/acars/validation';
 import { validAprsMessage } from '@/worker/decoders/aprs/validation';
 import { validTetraMessage } from '@/worker/decoders/tetra/validation';
 import { validAdsbMessage } from '@/worker/decoders/adsb/validation';
+import { validLoraSatParams } from '@/worker/decoders/digimode/lora-sat/validation';
 import { isRecord, primitiveMap } from '@/platform/data';
 import type { ReceiverCommand } from './types';
 
@@ -145,6 +146,13 @@ function optionalFields(value: Record<string, unknown>, fields: string[], kind: 
 		(key) => value[key] === undefined || (typeof value[key] === kind && (kind !== 'number' || Number.isFinite(value[key]))),
 	);
 }
+/** The station and the LoRa satellite settings that a VFO's Digital Modes decoder may take. */
+function validDigimodeParams(value: Record<string, unknown>): boolean {
+	return (
+		(value.digimodeStation === undefined || (isRecord(value.digimodeStation) && numbers(value.digimodeStation, ['lat', 'lon']))) &&
+		(value.digimodeLoraSat === undefined || validLoraSatParams(value.digimodeLoraSat))
+	);
+}
 function validVfoParams(value: unknown): boolean {
 	return (
 		numbers(value, ['freq', 'bandwidth', 'volume', 'squelchLevel']) &&
@@ -158,7 +166,7 @@ function validVfoParams(value: unknown): boolean {
 		) &&
 		optionalFields(value, ['rtl433SampleRate', 'dabService'], 'number') &&
 		optionalFields(value, ['rtl433Protocols', 'digimode'], 'string') &&
-		(value.digimodeStation === undefined || (isRecord(value.digimodeStation) && numbers(value.digimodeStation, ['lat', 'lon']))) &&
+		validDigimodeParams(value) &&
 		(value.pocsagCharset === undefined ||
 			(isRecord(value.pocsagCharset) && typedFields(value.pocsagCharset, ['vendor', 'model', 'codepage'], 'string'))) &&
 		(value.pocsagMode === undefined || (typeof value.pocsagMode === 'string' && ['auto', 'alpha', 'numeric'].includes(value.pocsagMode))) &&

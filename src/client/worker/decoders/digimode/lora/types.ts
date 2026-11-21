@@ -5,8 +5,9 @@
 // (MeshLoraSettings), core/src/mesh/mesh_lora_demod.cpp (the SFD search candidates and preamble measurements) and
 // core/src/mesh/mesh_crypto_ed25519.cpp (Fe, Point, Consts), https://github.com/adswill/OnAir; see third_party/onair.
 // LoRa facts as credited there: gr-lora_sdr (Joachim Tapparel, EPFL, and contributors, GPL-3.0). Changes: the soft
-// symbols live in flat typed arrays of the frame decoder; the bank works on the one channel of the VFO; no satellite
-// fields of the frame (Doppler rate); named records for the values the C++ SFD search kept in locals.
+// symbols live in flat typed arrays of the frame decoder; the bank works on the one channel of the VFO; named records
+// for the values the C++ SFD search kept in locals; for satellites (from OnAir's carrierHz, cfoTrack, cfoStartHz and
+// cfoRateHzS) also any of the 256 sync words and the bank's inverted IQ, implicit header and Doppler hint settings.
 
 /** The LoRa settings of one demodulator (one spreading factor of a channel). */
 export interface LoraParams {
@@ -28,6 +29,12 @@ export interface LoraParams {
 	implicitLen: number;
 	/** A CRC-bad frame is searched for sample jumps of multiples of this many chips; 0 turns the search off. */
 	jumpChips: number;
+	/** cfoTrack > 0: the carrier frequency when known, Hz (a Doppler shift stretches the symbol clock by the same fraction). */
+	carrierHz: number;
+	/** 0: the carrier offset is measured once per frame (every ground link); > 0: followed through the frame at this loop gain (satellites: Doppler rate). */
+	cfoTrack: number;
+	/** Any of the 256 sync words in place of syncWord and moreSync (the one found is reported). */
+	anySync: boolean;
 }
 
 export interface LoraHeader {
@@ -45,8 +52,11 @@ export interface LoraFrame {
 	crcOk: boolean;
 	/** Codewords with a corrected bit. */
 	corrected: number;
-	/** Carrier offset from the channel centre, Hz. */
+	/** Carrier offset from the channel centre, Hz (at the end of the frame). */
 	cfoHz: number;
+	/** The same at the first data symbol, and the drift in Hz per second (both only with cfoTrack > 0, else 0). */
+	cfoStartHz: number;
+	cfoRateHzS: number;
 	/** Clock offset measured over the frame. */
 	sfoPpm: number;
 	/** In the LoRa bandwidth. */
@@ -88,6 +98,18 @@ export interface LoraBankConfig {
 	syncs: number[];
 	/** Symbols of the preamble (only places the frame start). */
 	preamble: number;
+	/** Any sync word (syncs is then only the first guess). */
+	anySync?: boolean;
+	/** > 0: follow a drifting carrier through each frame (satellites), see LoraParams.cfoTrack. */
+	cfoTrack?: number;
+	/** The nominal carrier frequency, Hz (satellites: the symbol clock stretches with the Doppler shift), 0 unknown. */
+	carrierHz?: number;
+	/** Low data rate optimisation forced on or off (default: on for symbols of 16 ms or more, as the radios do). */
+	ldro?: boolean;
+	/** > 0: implicit header frames of this length with the coding rate and CRC below. */
+	implicitLen?: number;
+	cr?: number;
+	crc?: boolean;
 }
 
 /** A frame found by the bank, with the spreading factor and sync word that found it. */

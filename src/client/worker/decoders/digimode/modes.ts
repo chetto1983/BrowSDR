@@ -24,6 +24,8 @@ import { Mpt1327Decoder } from './mpt1327';
 import { OrbcommReceiver } from './orbcomm/receiver';
 import { InmarsatCDecoder } from './inmarsat-c';
 import { AeroDecoder } from './aero';
+import { LoraSatDecoder } from './lora-sat';
+import { LORA_SAT_BANDS } from './lora-sat/catalog';
 
 /** Worker-side constructors of the catalog's decoders. */
 export const DIGIMODE_DECODERS: Record<string, (sink: DigimodeSink) => DigimodeDecoder> = {
@@ -63,4 +65,5 @@ export const DIGIMODE_DECODERS: Record<string, (sink: DigimodeSink) => DigimodeD
 	mpt1327: (sink) => new Mpt1327Decoder(sink),
 	'inmarsat-c': (sink) => new InmarsatCDecoder(sink),
 	aero: (sink) => new AeroDecoder(sink),
+	...Object.fromEntries(LORA_SAT_BANDS.map((band) => [band.id, (sink: DigimodeSink) => new LoraSatDecoder(sink, band)])),
 };

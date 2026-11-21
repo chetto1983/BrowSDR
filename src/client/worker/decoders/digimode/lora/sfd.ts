@@ -3,8 +3,10 @@
 // Ported to TypeScript for BrowSDR from OnAir core/src/mesh/mesh_lora_demod.cpp (Demod::Impl::sfd: the first down-chirp
 // after the preamble, the sync word check, and the fractional carrier and timing estimates from the preamble and the
 // down-chirps), https://github.com/adswill/OnAir; see third_party/onair. The method follows gr-lora_sdr (Joachim Tapparel,
-// EPFL, and contributors, GPL-3.0) frame_sync_impl.cc, as credited in OnAir. Changes: split into functions; no carrier
-// tracking through the frame (cfoTrack, for satellites).
+// EPFL, and contributors, GPL-3.0) frame_sync_impl.cc, as credited in OnAir. Changes: split into functions; for
+// satellites, OnAir's carrier tracking start (cfoTrack: the preamble's ramp as a carrier drift) and, added in BrowSDR, any
+// of the 256 sync words (the nibble bins scored at once), the carrier ambiguity resolved around the offset the orbit
+// predicts (hintBins) and the predicted drift (hintRate) taken when the preamble agrees with it.
 
 import { sfdExtraSymbols, syncSymbol } from './code';
 import { argmax, DATA, type Demod } from './demod';
@@ -61,6 +63,30 @@ function downChirpBin(d: Demod, e: number): number {
 	return bestDn < 10 + d.sf ? -1 : kDn;
 }
 
+/**
+ * The bins a sync word nibble can take (nibble << 3 as a signed 7-bit value), less nibble 0: a sync symbol in bin 0 looks
+ * like one more preamble chirp, so with any sync word allowed the preamble's end would be ambiguous.
+ */
+const nibbleBins = (sf: number): number[] => Array.from({ length: 15 }, (_, v) => syncSymbol((v + 1) << 4, 0, sf));
+
+/** The best nibble bin of a sync window (relative to cfo) by the score `at`, and that score. */
+function bestNibble(sf: number, at: (k: number) => number): [bin: number, score: number] {
+	let bin = 0,
+		best = -1;
+	for (const v of nibbleBins(sf)) {
+		const q = at(v);
+		if (q > best) [bin, best] = [v, q];
+	}
+	return [bin, best];
+}
+
+/** A carrier bin 0..N-1 as a signed offset in bins: within half the band of the offset the orbit predicts, else of 0. */
+function signedBin(d: Demod, k: number): number {
+	const c = Number.isFinite(d.hintBins) ? d.hintBins : 0;
+	const n = d.n;
+	return c + ((((k - c + n / 2) % n) + n) % n) - n / 2;
+}
+
 /** Normalised spectrum of window o into out. */
 function keep(d: Demod, out: Float64Array, o: number, mean: number): void {
 	for (let k = 0; k < d.n; k++) out[o + k] = d.pw[k] / mean;
@@ -79,10 +105,14 @@ function candidates(d: Demod, e: number, kDn: number, syncs: number[]): Cand[] {
 	const { upW, dnW } = buffers(d);
 	const upOk = new Uint8Array(9),
 		dnOk = new Uint8Array(6);
+	const any = d.p.anySync;
 	const sw = syncs.map((s) => [syncSymbol(s, 0, d.sf), syncSymbol(s, 1, d.sf)]);
 	const cands: Cand[] = [];
 	const at = (w: Float64Array, idx: number, k: number) =>
 		Math.max(w[idx * n + d.wrap(k)], w[idx * n + d.wrap(k - 1)], w[idx * n + d.wrap(k + 1)]);
+	// the two sync symbols' windows: the wanted bins, or the best of the 16 nibble bins
+	const sync = (idx: number, cfoC: number, want: number) =>
+		any ? bestNibble(d.sf, (v) => at(upW, idx, cfoC + v))[1] : at(upW, idx, cfoC + want);
 	for (const tau of taus) {
 		const cfoC = d.wrap(d.kUp + tau);
 		// up windows start at (e + j) N + tau for j = -4..4, down windows for j = -1..4
@@ -97,16 +127,15 @@ function candidates(d: Demod, e: number, kDn: number, syncs: number[]): Cand[] {
 		// first down-chirp at (e + m) N + tau: up windows at m-3, m-2, m-1, down windows at m, m+1
 		for (let m = -1; m <= 3; m++) {
 			if (!upOk[m + 1] || !upOk[m + 2] || !upOk[m + 3] || !dnOk[m + 1] || !dnOk[m + 2]) continue;
-			for (let si = 0; si < syncs.length; si++) {
+			for (let si = 0; si < (any ? 1 : syncs.length); si++) {
 				const [sw1, sw2] = sw[si];
-				const score =
-					at(upW, m + 1, cfoC) + at(upW, m + 2, cfoC + sw1) + at(upW, m + 3, cfoC + sw2) + at(dnW, m + 1, cfoC) + at(dnW, m + 2, cfoC);
+				const score = at(upW, m + 1, cfoC) + sync(m + 2, cfoC, sw1) + sync(m + 3, cfoC, sw2) + at(dnW, m + 1, cfoC) + at(dnW, m + 2, cfoC);
 				cands.push({ score, tau, m, cfoC, si });
 			}
 		}
 	}
 	cands.sort((a, b) => b.score - a.score);
-	return cands.slice(0, 2 + syncs.length);
+	return cands.slice(0, 2 + (any ? 1 : syncs.length));
 }
 
 /** The best candidate scored again on windows resampled with their carrier offset mixed out (full sensitivity). */
@@ -116,10 +145,10 @@ function bestCandidate(d: Demod, b: ChanBuf, e: number, cands: Cand[], syncs: nu
 	const w = buffers(d).w;
 	let best: Best | undefined;
 	for (const c of cands) {
-		const sw1 = syncSymbol(syncs[c.si], 0, d.sf),
+		let sw1 = syncSymbol(syncs[c.si], 0, d.sf),
 			sw2 = syncSymbol(syncs[c.si], 1, d.sf);
 		// after mixing, the expected bins are relative to it
-		const cfoMix = c.cfoC >= n / 2 ? c.cfoC - n : c.cfoC;
+		const cfoMix = signedBin(d, c.cfoC);
 		const s = (e + c.m) * n + c.tau;
 		const starts = [s - 3 * n, s - 2 * n, s - n, s, s + n];
 		let ok = true;
@@ -131,6 +160,10 @@ function bestCandidate(d: Demod, b: ChanBuf, e: number, cands: Cand[], syncs: nu
 			}
 		}
 		if (!ok) continue;
+		if (d.p.anySync) {
+			sw1 = bestNibble(d.sf, (v) => near3(d, w[1], v))[0];
+			sw2 = bestNibble(d.sf, (v) => near3(d, w[2], v))[0];
+		}
 		const score = near3(d, w[0], 0) + near3(d, w[1], sw1) + near3(d, w[2], sw2) + near3(d, w[3], 0) + near3(d, w[4], 0);
 		if (!best || score > best.score) best = { score, s, cfoC: c.cfoC, v1: argmax(w[1]), v2: argmax(w[2]), sw1, sw2 };
 	}
@@ -242,6 +275,7 @@ function slopeOf(pre: Preamble, J: number, n: number): { slope: number; sw: numb
 /** Fine estimates on accurately resampled windows, twice: carrier (bins), start (chips from the origin) and drift. */
 function fineEstimates(d: Demod, b: ChanBuf, s0: number, cfo0: number, J: number): { s: number; cfo: number; slope: number } | undefined {
 	const n = d.n;
+	const track = d.p.cfoTrack > 0;
 	let s = s0,
 		cfo = cfo0,
 		slope = 0;
@@ -263,11 +297,18 @@ function fineEstimates(d: Demod, b: ChanBuf, s0: number, cfo0: number, J: number
 		// the up-chirps' peak taken where the down-chirps are (j = -2.5)
 		const epsUp = (fit.sy - slope * fit.sx) / fit.sw + slope * -2.5;
 		let dres = 0.5 * (epsUp + epsDn);
-		const tres = 0.5 * (epsDn - epsUp) - 0.5 * slope;
+		// a drifting carrier: of the slope, only the stretched symbol clock moves the symbol start, the rest is the drift
+		const clk = track ? stretchedClock(d, cfo) : slope;
+		// at the first down-chirp (a frequency ramp does not move the symbol clock)
+		const tres = 0.5 * (epsDn - epsUp) - 0.5 * clk;
 		if (Math.hypot(pre.accR, pre.accI) > 0) {
-			let dd = Math.atan2(pre.accI, pre.accR) / (2 * Math.PI) - dres;
+			let ph = Math.atan2(pre.accI, pre.accR) / (2 * Math.PI);
+			// a drifting carrier: the phase step measures the offset in the middle of the preamble, the estimate is wanted at the down-chirps
+			if (track) ph += -(slope - clk) * ((J + 1) / 2 + 2.5);
+			let dd = ph - dres;
 			dd -= cround(dd);
-			dres += dd;
+			// a drifting carrier: the two estimates must agree before the finer one is taken
+			if (!track || (it > 0 && Math.abs(dd) < 0.3)) dres += dd;
 		}
 		cfo += dres;
 		s += tres;
@@ -281,6 +322,34 @@ function fineEstimates(d: Demod, b: ChanBuf, s0: number, cfo0: number, J: number
 		}
 	}
 	return { s, cfo, slope };
+}
+
+/**
+ * The part of the preamble's ramp that is the symbol clock stretched by the Doppler shift (chips per symbol, the timing
+ * loop's, not the carrier's): the shift's fraction of the carrier frequency; 0 when the carrier frequency is not known.
+ */
+function stretchedClock(d: Demod, cfoBins: number): number {
+	const p = d.p;
+	return p.carrierHz ? (-((cfoBins * p.bwHz) / d.n) / p.carrierHz) * d.n : 0;
+}
+
+/**
+ * A carrier that drifts (cfoTrack > 0, a satellite's Doppler rate): what the preamble showed as a clock drift is a frequency
+ * ramp, which the demodulator's carrier loop follows; the symbol clock stays at the nominal rate. The orbit's drift is taken
+ * when the preamble's agrees with it.
+ */
+function startCarrierLoop(d: Demod, slope: number): void {
+	const p = d.p;
+	d.cfoRate = 0;
+	d.thetaOk = false;
+	d.lastAdj = 0;
+	if (p.cfoTrack <= 0) return;
+	const measured = -(slope - stretchedClock(d, d.cfoBins));
+	const hint = d.hintRate;
+	d.cfoRate = Number.isFinite(hint) && Math.abs(measured - hint) < 0.05 + 0.5 * Math.abs(hint) ? hint : measured;
+	d.cfoBins += (1.75 + sfdExtraSymbols(d.sf)) * d.cfoRate; // the estimate is valid half a symbol into the down-chirps
+	d.cfoStartBins = d.cfoBins;
+	d.drift = 0;
 }
 
 /** Finds the first down-chirp after the preamble, checks the sync word and measures the carrier and timing offsets. */
@@ -301,10 +370,11 @@ export function findSfd(d: Demod, b: ChanBuf): boolean {
 	if (!close(best.v1, best.sw1) || !close(best.v2, best.sw2)) return false;
 	d.syncSeen = ((((best.v1 + 4) >> 3) << 4) | (((best.v2 + 4) >> 3) & 0xf)) & 0xff;
 	const J = Math.max(1, Math.min(12, e - d.preFirst - 2));
-	const fine = fineEstimates(d, b, best.s, best.cfoC >= n / 2 ? best.cfoC - n : best.cfoC, J);
+	const fine = fineEstimates(d, b, best.s, signedBin(d, best.cfoC), J);
 	if (!fine) return false;
 	d.cfoBins = fine.cfo;
 	d.drift = fine.slope; // chips per symbol
+	startCarrierLoop(d, fine.slope);
 	d.chipS = d.rho * (1 + d.drift / n);
 	d.perS = n * d.chipS;
 	// the data start 2.25 symbols after the first down-chirp (and the clock error of 2.25 symbols later)

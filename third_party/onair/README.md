@@ -152,14 +152,14 @@ file). Algorithms and protocol tables follow the OnAir source.
 | `test/dab/aac-encoder.js` | `core/src/dab/dab_gen_aac.cpp` (AAC-LC 960 encoder, DAB+ superframe) |
 | `test/dab/aac-tables.js` | `core/src/drm/drm_aactab.cpp` (AAC Huffman tables, from FFmpeg), `drm_aac.cpp` (cbInfo, cbIndex) |
 | `test/dab/drm-fft.js` | `core/src/drm/drm_fft.cpp` (DrmFft) |
-| `src/client/worker/decoders/digimode/lora/types.ts` | `core/include/dect2/mesh/mesh_lora.h` (Params, Header, RxFrame, DemodStats), `core/include/dect2/lorawan/lora_bank.h` (Channel, Decoded), `core/include/dect2/mesh/mesh_proto.h` (MeshLoraSettings), `core/src/mesh/mesh_lora_demod.cpp` (SFD candidates), `mesh_crypto_ed25519.cpp` (Fe, Point) |
+| `src/client/worker/decoders/digimode/lora/types.ts` | `core/include/dect2/mesh/mesh_lora.h` (Params with carrierHz and cfoTrack, Header, RxFrame with cfoStartHz and cfoRateHzS, DemodStats), `core/include/dect2/lorawan/lora_bank.h` (Channel, Decoded), `core/include/dect2/mesh/mesh_proto.h` (MeshLoraSettings), `core/src/mesh/mesh_lora_demod.cpp` (SFD candidates), `mesh_crypto_ed25519.cpp` (Fe, Point) |
 | `src/client/worker/decoders/digimode/lora/code.ts` | `core/src/mesh/mesh_lora_code.cpp` (whitening, Hamming code, header checksum, CRC, Gray mapping, interleaver, encode, dataSymbols, airSeconds), `core/include/dect2/mesh/mesh_lora.h` |
 | `src/client/worker/decoders/digimode/lora/frame.ts` | `core/src/mesh/mesh_lora_code.cpp` (FrameDecoder: header, hard and soft Hamming decoding, list decoding on the CRC) |
 | `src/client/worker/decoders/digimode/lora/jumps.ts` | `core/src/mesh/mesh_lora_code.cpp` (JumpSearch, recoverJumps) |
 | `src/client/worker/decoders/digimode/lora/chips.ts` | `core/src/mesh/mesh_lora_demod.cpp` (ChanBuf, ChipStream) |
-| `src/client/worker/decoders/digimode/lora/demod.ts` | `core/src/mesh/mesh_lora_demod.cpp` (Demod: preamble search, resampler, soft symbols, timing loop, CRC retries) |
-| `src/client/worker/decoders/digimode/lora/sfd.ts` | `core/src/mesh/mesh_lora_demod.cpp` (Demod::Impl::sfd: down-chirp, sync word, carrier and timing estimates) |
-| `src/client/worker/decoders/digimode/lora/bank.ts` | `core/src/lorawan/lora_bank.cpp` (Bank: one chip stream, a demodulator per spreading factor, duplicate frames), `core/src/mesh/mesh_rx.cpp` |
+| `src/client/worker/decoders/digimode/lora/demod.ts` | `core/src/mesh/mesh_lora_demod.cpp` (Demod: preamble search, resampler, soft symbols, timing loop, CRC retries, the carrier loop through the frame of cfoTrack) |
+| `src/client/worker/decoders/digimode/lora/sfd.ts` | `core/src/mesh/mesh_lora_demod.cpp` (Demod::Impl::sfd: down-chirp, sync word, carrier and timing estimates, the start of cfoTrack); any sync word, the orbit's Doppler hint and the stretched clock kept out of the drift added in BrowSDR |
+| `src/client/worker/decoders/digimode/lora/bank.ts` | `core/src/lorawan/lora_bank.cpp` (Bank: one chip stream, a demodulator per spreading factor, duplicate frames, the satellite settings carrierHz, cfoTrack and implicitLen of Channel), `core/src/mesh/mesh_rx.cpp` |
 | `src/client/worker/decoders/digimode/lora/crypto.ts` | `core/src/mesh/mesh_crypto.cpp` (AES ECB / CTR, SHA-256, HMAC-SHA256, base64, hex), `mesh_crypto_tables.cpp` |
 | `src/client/worker/decoders/digimode/lora/ed25519.ts` | `core/src/mesh/mesh_crypto_ed25519.cpp` (Ed25519 sign and verify), `mesh_crypto.cpp` (SHA-512), `mesh_crypto_tables.cpp` |
 | `src/client/worker/decoders/digimode/lora/presets.ts` | `core/src/mesh/mesh_proto.cpp` (Meshtastic presets, regions and slots, default keys), `mesh_presets.cpp`, `mesh_presets_data.cpp` (MeshCore presets), `mesh_proto_aprs.cpp` (loraAprsPresets, meshcomPresets), `mesh_proto_lorawan.cpp` (lorawanPresets) |
@@ -172,7 +172,7 @@ file). Algorithms and protocol tables follow the OnAir source.
 | `src/client/worker/decoders/digimode/meshtastic/ports.ts` | `rust/onair_mesh/src/meshtastic.rs` (decode_port and the port payloads) |
 | `src/client/worker/decoders/digimode/meshtastic/proto.ts` | `core/src/mesh/mesh_proto_rs.cpp` (decodeMeshtastic), `core/src/mesh/mesh_proto.cpp` (default channels), `rust/onair_mesh/src/meshtastic.rs` (parse_header, parse_data) |
 | `src/client/worker/decoders/digimode/meshtastic/index.ts` | `core/src/mesh/mesh_rx.cpp` (Meshtastic decoders with the preset search, packet row) |
-| `test/digimode/lora/phy.js` | `core/src/mesh/mesh_lora_code.cpp` (TxFrame: the LoRa frame waveform), `core/include/dect2/dsp/gen_util.h` (noise) |
+| `test/digimode/lora/phy.js` | `core/src/mesh/mesh_lora_code.cpp` (TxFrame: the LoRa frame waveform with the carrier's drift freqRateHzS), `core/include/dect2/dsp/gen_util.h` (noise) |
 | `test/digimode/lora/builders.js` | `core/src/mesh/mesh_pb.cpp` (Writer), `mesh_proto_meshtastic.cpp`, `mesh_proto_meshcore.cpp`, `mesh_proto_aprs.cpp`, `mesh_proto_lorawan.cpp` (packet builders) |
 | `test/digimode/lora/scene.js` | `core/src/mesh/mesh_gen.cpp` (the mesh test scene), `core/src/lorawan/lorawan_gen.cpp` (lorawanTestSchedule) |
 | `src/client/worker/decoders/digimode/meshcore/types.ts` | `rust/onair_mesh/src/meshcore.rs` (Parsed, Out, GroupOut), `core/src/mesh/mesh_proto_internal.h` (MeshCoreChannel) |
@@ -326,6 +326,14 @@ file). Algorithms and protocol tables follow the OnAir source.
 | `test/digimode/flarm/flarm.spec.js` | `tests/flarm/test_flarm_rx.cpp`, `test_flarm_impair.cpp`, `test_flarm_chase.cpp` |
 | `test/digimode/flarm/ogn.spec.js` | `tests/avroad/test_avroad_air.cpp` (testOgn) |
 | `test/digimode/flarm/adsl.spec.js` | `tests/adsl/test_adsl_rx.cpp`, `test_adsl_tone.cpp` |
+| `src/client/worker/decoders/digimode/lora-sat/types.ts` | `core/include/dect2/lorasat/lorasat_presets.h` (Preset, Confidence), `core/include/dect2/lorasat/lorasat_tel.h` (LoraSatSettings, LsFrame) |
+| `src/client/worker/decoders/digimode/lora-sat/presets.ts` | `core/src/lorasat/lorasat_presets.cpp` (presets with their confidence and notes, nearest, maxDopplerHz, maxDopplerRateHzS), `core/include/dect2/lorasat/lorasat_presets.h` (bandwidthHz) |
+| `src/client/worker/decoders/digimode/lora-sat/catalog.ts` | `core/src/lorasat/lorasat_rx.cpp` (loraSatTuning, the channel filter of the bandwidth and twice the Doppler allowance) |
+| `src/client/worker/decoders/digimode/lora-sat/report.ts` | `core/src/lorasat/lorasat_rx.cpp` (onFrame: the frame row), `core/include/dect2/lorasat/lorasat_tel.h` (LsFrame, loraSatSummary) |
+| `src/client/worker/decoders/digimode/lora-sat/index.ts` | `core/src/lorasat/lorasat_rx.cpp` (LoraSatReceiver: the bank with the carrier followed, SF7 - SF12, the tracked satellite), `core/src/lorawan/lora_bank.cpp` (inverted IQ by the conjugate) |
+| `test/digimode/lora-sat/gen.js` | `core/src/lorasat/lorasat_gen.cpp` (LoraSatPass, loraSatBeacons, the pass frames), `tests/lorasat/test_lorasat_rx.cpp` (framesAt, decoded) |
+| `test/digimode/lora-sat/rx.spec.js` | `tests/lorasat/test_lorasat_rx.cpp` |
+| `test/digimode/lora-sat/worker.spec.js` | `tests/lorasat/test_lorasat_rx.cpp` (a 436.8 MHz pass with the pass planner's satellite) |
 | `src/client/worker/decoders/digimode/fanet/types.ts` | `core/include/dect2/avroad/avroad_proto.h` (FanetFrame), `core/src/avroad/avroad_air.cpp` (FanetDec settings); thermal, landmark and service fields from the FANET protocol description (protocol.txt of Skytraxx's [fanet-stm32](https://github.com/3s1d/fanet-stm32), format only) |
 | `src/client/worker/decoders/digimode/fanet/names.ts` | `core/src/avroad/avroad_air.cpp` (fanetParse: aircraft types, ground states; FanetDec::feed: sender); manufacturers, frame types and landmark names from the FANET protocol description |
 | `src/client/worker/decoders/digimode/fanet/proto.ts` | `core/src/avroad/avroad_air.cpp` (s24, fanetParse); turn rate, QNE offset, thermals, landmarks and compressed coordinates from the FANET protocol description |
@@ -375,3 +383,16 @@ file). Algorithms and protocol tables follow the OnAir source.
 | `test/digimode/aero/su.spec.js` | `tests/aero/test_aero_su_layers.cpp`, `test_aero_acars_real.cpp`, `test_aero_adsc.cpp`, `test_aero_cpdlc.cpp` |
 | `test/digimode/aero/receiver.spec.js` | `tests/aero/test_aero_rx.cpp`, `test_aero_rates.cpp`, `test_aero_map.cpp`, `test_aero_basic.cpp` |
 | `test/digimode/aero/worker.spec.js` | `tests/aero/test_aero_engine.cpp` |
+
+## Other sources of the LoRa satellite decoder
+
+Not OnAir code, credited the same way in the files that use them:
+
+- `src/client/worker/decoders/digimode/lora-sat/tinygs.ts` adapts the modem configuration reading of the
+  [TinyGS firmware](https://github.com/G4lile0/tinyGS) (GPL-3.0-or-later, Copyright (C) 2020-2021 G4lile0,
+  gmag12 and dev_4m1g0; revision `0890fb1`): `tinyGS/src/ConfigManager/ConfigManager.cpp` (parseModemStartup),
+  `tinyGS/src/Mqtt/MQTT_Client.cpp` (isValidFrequency), `tinyGS/src/Status.h` (ModemInfo) and
+  `tinyGS/src/Radio/Radio.cpp` (begin), with the value conversions of the ArduinoJson 6.17.2 it bundles (MIT).
+- `src/client/worker/decoders/digimode/lora-sat/satnogs.ts` is data from [SatNOGS DB](https://db.satnogs.org)
+  (CC BY-SA 4.0, the SatNOGS DB contributors), selected by `scripts/tinygs/satnogs-lora.mjs` with TinyGS's
+  [element file](https://api.tinygs.com/v1/tinygs_supported.txt); that file is shared under CC BY-SA 4.0.

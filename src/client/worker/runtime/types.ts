@@ -8,6 +8,7 @@ import type { RationalResampler } from '@/worker/streams/dsp-pipeline';
 import type { DSDDecoder } from '@/worker/decoders/dsd/dsd-decoder';
 import type { RxStreamStats } from '@/radio/types';
 import type { RtkProfileMode } from '@/worker/decoders/rtk/types';
+import type { LoraSatParams } from '@/worker/decoders/digimode/lora-sat/types';
 /*
 Copyright (c) 2026, jLynx <https://github.com/jLynx>
 
@@ -54,6 +55,8 @@ export interface VfoParams {
 	digimode?: string;
 	/** The station location, for Digital Modes decoders that use one (FLARM positions, distances). */
 	digimodeStation?: { lat: number; lon: number };
+	/** The LoRa satellite decoder's TinyGS configuration, tracked satellite and Doppler hint. */
+	digimodeLoraSat?: LoraSatParams;
 	rtl433?: boolean;
 	rtl433SampleRate?: number;
 	rtl433Protocols?: string;

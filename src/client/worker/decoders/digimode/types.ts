@@ -130,6 +130,15 @@ export interface DigimodeDecoder {
 	reset(): void;
 	/** The station location in degrees, for decoders that use one (positions relative to it, distances). */
 	setStation?(lat: number, lon: number): void;
+	/** The VFO frequency and the decoder's own VFO parameters, at start and on every parameter update. */
+	setOptions?(options: DigimodeOptions): void;
+}
+
+/** What a decoder may take from the VFO parameters besides its channel. */
+export interface DigimodeOptions {
+	freqMHz: number;
+	/** The LoRa satellite decoder's settings (unchecked here: the decoder checks them). */
+	loraSat?: unknown;
 }
 
 export interface DigimodePreset {

@@ -42,7 +42,9 @@ export class DigimodeStream {
 			}
 			return;
 		}
-		const key = JSON.stringify([info.id, params.freq, inputRate, centerFreq]);
+		// a TinyGS configuration starts the decoder afresh; the Doppler hint and the satellite only update it
+		const loraConfig = params.digimodeLoraSat?.config ?? null;
+		const key = JSON.stringify([info.id, params.freq, inputRate, centerFreq, loraConfig]);
 		if (key === this.key) {
 			this.applyStation(params);
 			return;
@@ -95,10 +97,11 @@ export class DigimodeStream {
 		}
 	}
 
-	/** The station location, for decoders that use one. */
+	/** The station location and the decoder's own parameters, for decoders that use them. */
 	private applyStation(params: VfoParams): void {
 		const station = params.digimodeStation;
 		if (station && Number.isFinite(station.lat) && Number.isFinite(station.lon)) this.decoder?.setStation?.(station.lat, station.lon);
+		this.decoder?.setOptions?.({ freqMHz: params.freq, loraSat: params.digimodeLoraSat });
 	}
 
 	reset(): void {

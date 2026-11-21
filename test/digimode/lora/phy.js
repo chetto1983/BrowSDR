@@ -4,16 +4,21 @@
 // preamble, sync word, 2.25 down-chirps, data symbols, transmitter clock error, carrier offset and phase) and
 // core/include/dect2/dsp/gen_util.h (complex white noise), https://github.com/adswill/OnAir; see third_party/onair. LoRa
 // facts as credited there: gr-lora_sdr (Joachim Tapparel, EPFL, and contributors, GPL-3.0) modulate_impl.cc. Changes:
-// Math.cos / sin in place of the 65536-entry table; Box-Muller noise from a seeded generator in place of the noise table.
+// Math.cos / sin in place of the 65536-entry table; Box-Muller noise from a seeded generator in place of the noise table;
+// the carrier's drift (OnAir's freqRateHzS, a satellite's Doppler rate) and, added in BrowSDR, inverted IQ (the conjugate).
 
 import { airSeconds, encode, sfdExtraSymbols, symbolSeconds, syncSymbol } from '@/worker/decoders/digimode/lora/code';
 import { noise } from '../fixtures';
 
 /** A frame to render: settings, payload, start time, carrier offset (Hz), SNR in the LoRa bandwidth, clock error. */
-export function txFrame(p, payload, { startSec = 0.05, freqHz = 0, snrDb = 20, sroPpm = 0, phase0 = 0.3 } = {}) {
+export function txFrame(
+	p,
+	payload,
+	{ startSec = 0.05, freqHz = 0, snrDb = 20, sroPpm = 0, phase0 = 0.3, freqRateHzS = 0, inverted = false } = {},
+) {
 	const data = encode(p, payload, payload.length);
 	const end = startSec + (p.preamble + 4.25 + sfdExtraSymbols(p.sf) + data.length) * symbolSeconds(p.sf, p.bwHz) * (1 + sroPpm * 1e-6);
-	return { p, data, startSec, freqHz, snrDb, sroPpm, phase0, endSec: end, airSec: airSeconds(p, payload.length) };
+	return { p, data, startSec, freqHz, snrDb, sroPpm, phase0, freqRateHzS, inverted, endSec: end, airSec: airSeconds(p, payload.length) };
 }
 
 /** Adds the frame's waveform (amplitude amp) to the interleaved samples out[k] for sample times t0 + k / rate. */
@@ -56,7 +61,8 @@ export function renderFrame(f, out, t0, rate, amp) {
 			const s = Math.floor(ud / N);
 			c = up(data[s], ud - s * N);
 		}
-		let cyc = c + f.freqHz * t + f.phase0;
+		// inverted IQ: the chirps run the other way round (the conjugate); the carrier and its drift stay
+		let cyc = (f.inverted ? -c : c) + f.freqHz * t + f.phase0 + 0.5 * (f.freqRateHzS ?? 0) * t * t;
 		cyc -= Math.floor(cyc);
 		out[2 * k] += amp * Math.cos(2 * Math.PI * cyc);
 		out[2 * k + 1] += amp * Math.sin(2 * Math.PI * cyc);

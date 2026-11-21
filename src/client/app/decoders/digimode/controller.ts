@@ -6,6 +6,7 @@ import { mergeHfdlPositions } from '@/app/decoders/adsb/hfdl';
 import { readApplication } from './application';
 import { readAviation, resetAviation } from './aviation';
 import { DigimodePicture } from './image';
+import { keepLoraSatConfig, loraSatMethods } from './lora-sat';
 import type { DigimodeLogEntry } from './types';
 
 const LOG_LIMIT = 500;
@@ -31,6 +32,7 @@ export function digimodePanelState() {
 }
 
 export const digimodeMethods = {
+	...loraSatMethods,
 	toggleDigimodePanel(this: AppInstance): void {
 		this.digimodes.panelOpen = !this.digimodes.panelOpen;
 	},
@@ -63,6 +65,7 @@ export const digimodeMethods = {
 		const vfo = this.vfos[index];
 		if (!vfo) return;
 		vfo.digimode = digimodeInfo(mode) ? mode : '';
+		keepLoraSatConfig(vfo);
 		this.digimodes.status[index] = null;
 		resetAviation(this, index);
 		this.updateBackendVfoParams(index);

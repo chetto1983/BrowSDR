@@ -2,10 +2,12 @@ import type { Env, IceServerEntry } from './types';
 import { isRecord } from '../client/platform/data';
 import { updateMaritimeDatabase } from './maritime-db/update';
 import { updateDatabase } from './aircraft-db/update';
+import { TINYGS_TLE_PATH, tinygsTle } from './tinygs';
 /**
  * BrowSDR - Cloudflare Worker
  *
- * Serves the static BrowSDR frontend from dist/ and refreshes aircraft and maritime metadata weekly.
+ * Serves the static BrowSDR frontend from dist/ and refreshes aircraft and maritime metadata weekly; relays TinyGS's
+ * satellite element file, which browsers cannot read cross-origin.
  * All static assets (HTML, JS, CSS, WASM) are served via the ASSETS binding.
  *
  * - Run `npm run dev:worker` to start the Worker on http://localhost:8788/
@@ -22,7 +24,7 @@ export default {
 				'Database refresh failed',
 			);
 	},
-	async fetch(request: Request, env: Env, _ctx: ExecutionContext): Promise<Response> {
+	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 		const url = new URL(request.url);
 
 		// Cross-origin isolation headers (required for SharedArrayBuffer)
@@ -37,6 +39,9 @@ export default {
 				headers: { 'Content-Type': 'application/json', ...coopHeaders },
 			});
 		}
+
+		// TinyGS's element file of supported satellites, same-origin and cached for six hours (TinyGS sends no CORS header)
+		if (url.pathname === TINYGS_TLE_PATH) return tinygsTle(request, ctx, coopHeaders);
 
 		// Return TURN/STUN ICE servers for WebRTC connectivity.
 		// Uses ExpressTURN (free) as primary, Cloudflare TURN as fallback.

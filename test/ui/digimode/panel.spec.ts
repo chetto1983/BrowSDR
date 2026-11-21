@@ -154,4 +154,58 @@ describe('Digital Modes panel', () => {
 		wrapper.vm._onDigimodeMessage(0, 156.525, message([distress]));
 		expect(wrapper.vm.digimodes.log).toHaveLength(0);
 	});
+
+	it('decodes with a pasted TinyGS modem configuration and goes back to the blind search', async () => {
+		const setVfoParams = await mountPanel({ ...makeDefaultVfo(436.5), digimode: 'lora-sat' });
+		expect(wrapper.text()).toContain('Blind search: every SF, sync word and IQ of this bandwidth.');
+		const json =
+			'{"mode":"LoRa","freq":436.703,"bw":250.0,"sf":10,"cr":5,"sw":18,"pwr":5,"cl":120,"pl":8,"gain":0,"crc":true,"fldro":1,"sat":"Norbi","NORAD":46494}';
+		await wrapper.get('textarea[aria-label="TinyGS modem configuration JSON"]').setValue(json);
+		await wrapper
+			.findAll('button')
+			.find((button) => button.text() === 'Use configuration')!
+			.trigger('click');
+		expect(wrapper.vm.vfos[0]).toMatchObject({ digimode: 'lora-sat-250', freq: 436.703 });
+		expect(wrapper.text()).toContain(
+			'Decoding with Norbi (NORAD 46494): 436.703 MHz · SF10 · 250 kHz · CR 4/5 · sync 0x12 · preamble 8 · CRC on · LDRO on · normal IQ · explicit header.',
+		);
+		expect(setVfoParams).toHaveBeenLastCalledWith(
+			0,
+			expect.objectContaining({
+				freq: 436.703,
+				digimode: 'lora-sat-250',
+				digimodeLoraSat: { config: expect.objectContaining({ sat: 'Norbi', norad: 46494, sf: 10, bwHz: 250000, sync: 18, ldro: 'on' }) },
+			}),
+		);
+		expect(wrapper.get('select[aria-label="Decoder"]').element.value).toBe('lora-sat-250');
+		await wrapper
+			.findAll('button')
+			.find((button) => button.text() === 'Blind search')!
+			.trigger('click');
+		expect(wrapper.vm.vfos[0].loraSatConfig).toBeUndefined();
+		expect(setVfoParams).toHaveBeenLastCalledWith(0, expect.objectContaining({ digimode: 'lora-sat-250', digimodeLoraSat: {} }));
+	});
+	it('says when a TinyGS configuration is FSK or invalid and keeps the VFO as it was', async () => {
+		await mountPanel({ ...makeDefaultVfo(436.5), digimode: 'lora-sat' });
+		const use = async (json: string) => {
+			await wrapper.get('textarea[aria-label="TinyGS modem configuration JSON"]').setValue(json);
+			await wrapper
+				.findAll('button')
+				.find((button) => button.text() === 'Use configuration')!
+				.trigger('click');
+			return wrapper.get('.digimode-tinygs-state').text();
+		};
+		expect(
+			await use(
+				'{"mode":"FSK","freq":437.77,"br":9.6,"fd":25,"bw":200,"pwr":10,"cl":100,"pl":0,"ook":0,"fsw":[4,53,46,53,46],"sat":"reaktor-hello-world","NORAD":43743}',
+			),
+		).toMatch(/^reaktor-hello-world uses FSK \(mode "FSK"\) at 437\.77 MHz: 9\.6 kbit\/s, deviation 25 kHz/);
+		expect(await use('{"freq":436.7}')).toContain('it has no "mode"');
+		expect(await use('{"mode":"LoRa","freq":436.7,"bw":100,"sf":10,"cr":5}')).toContain('Bandwidth 100 kHz');
+		expect(wrapper.vm.vfos[0]).toMatchObject({ digimode: 'lora-sat', freq: 436.5 });
+		expect(wrapper.vm.vfos[0].loraSatConfig).toBeUndefined();
+		// other decoders have no such field
+		await wrapper.get('select[aria-label="Decoder"]').setValue('dsc-vhf');
+		expect(wrapper.find('textarea[aria-label="TinyGS modem configuration JSON"]').exists()).toBe(false);
+	});
 });

@@ -4,7 +4,7 @@ import { ReceiverView } from '../helpers/receiver-view';
 import { makeDefaultVfo } from '@/app/core/constants';
 import { orbitState, receivedMHz } from '@/satellites/orbit';
 import { parseTle } from '@/satellites/tle';
-import { AMATEUR_TLE, METEOR_TLE, ORBCOMM_TLE, SITE } from '../../satellites/fixtures.js';
+import { AMATEUR_TLE, METEOR_TLE, ORBCOMM_TLE, SITE, TINYGS_TLE } from '../../satellites/fixtures.js';
 
 vi.mock('leaflet', () => ({}));
 vi.mock('@/app/satellites/map', () => ({
@@ -18,13 +18,14 @@ vi.mock('@/app/satellites/map', () => ({
 	})),
 }));
 
-const TLES = parseTle(AMATEUR_TLE + METEOR_TLE);
+const TLES = parseTle(AMATEUR_TLE + METEOR_TLE + TINYGS_TLE);
 /** Mid-pass of SO-50 over Caraglio (peak 76° at 22:51 UTC). */
 const DURING_SO50 = new Date('2026-11-16T22:51:00Z');
 
 function celestrak() {
 	const blocks = (AMATEUR_TLE + METEOR_TLE).trim().split('\n');
 	return vi.fn(async (url: string) => {
+		if (url === '/api/tinygs/tle') return new Response(TINYGS_TLE);
 		if (new URL(url).searchParams.get('GROUP') === 'orbcomm') return new Response(ORBCOMM_TLE);
 		const norad = Number(new URL(url).searchParams.get('CATNR'));
 		const at = blocks.findIndex((line) => line.startsWith('1 ') && Number(line.slice(2, 7)) === norad);
@@ -208,5 +209,103 @@ describe('Satellites panel', () => {
 		await openPanel();
 		await wrapper.vm.satelliteTrack(25544, 4);
 		expect(wrapper.vm.vfos[0]).toMatchObject({ freq: 145.825, mode: 'nfm', aprs: true });
+	});
+
+	it('lists TinyGS LoRa satellites only when asked, with pointing and passes', async () => {
+		await openPanel();
+		const tinygsFetched = () => vi.mocked(fetch).mock.calls.some(([url]) => url === '/api/tinygs/tle');
+		expect(tinygsFetched()).toBe(false);
+		expect(wrapper.text()).not.toContain('Norby-2');
+		await wrapper.get('input[aria-label="Show LoRa satellites (TinyGS)"]').setValue(true);
+		await flushPromises();
+		expect(tinygsFetched()).toBe(true);
+		const text = wrapper.text();
+		for (const name of ['Norby-2', 'Polytech_Universe-3', 'Polytech_Universe-4 / Surve-260827-K4KDR', 'FossaSat-2E19', 'FossaSat-2E27'])
+			expect(text).toContain(name);
+		expect(text).toContain('LoRa satellites: TinyGS list, frequencies from SatNOGS DB (CC BY-SA 4.0) and OnAir, unverified');
+		const panel = wrapper.findComponent({ name: 'SatellitesPanel' }).vm;
+		const lora = [57179, 57191, 61747, 62676, 101140];
+		// pointing for every one of them, the Alpha-5 one included
+		expect(lora.every((norad) => panel.rows.find((row) => row.satellite.norad === norad)?.state?.look)).toBe(true);
+		await wrapper.get('select[aria-label="Passes of"]').setValue('-2');
+		expect(panel.passList.length).toBeGreaterThan(0);
+		expect(panel.passList.every((row) => lora.includes(row.pass.norad))).toBe(true);
+		expect(panel.displayRows.map((row) => row.satellite.norad).sort()).toEqual([...lora].sort());
+		await wrapper.get('input[aria-label="Show LoRa satellites (TinyGS)"]').setValue(false);
+		await flushPromises();
+		expect(wrapper.text()).not.toContain('Norby-2');
+		expect(wrapper.find('select[aria-label="Passes of"]').element.value).toBe('0');
+	});
+	it('decodes a TinyGS satellite on the VFO without retuning it and tells the decoder the Doppler', async () => {
+		const setVfoParams = vi.fn();
+		await openPanel({ backend: { setVfoParams } });
+		await wrapper.vm.satelliteShowLora(true);
+		wrapper.vm.satelliteSelect(57179);
+		await wrapper.vm.$nextTick();
+		expect(wrapper.find('select[aria-label="Downlink"]').text()).toContain(
+			'LoRa 250 kHz · SatNOGS: Mode U - LoRa (SF:10 CR:5 BW:250) · 436.5000 MHz LoRa',
+		);
+		await wrapper
+			.findAll('button')
+			.find((button) => button.text() === 'Decode on VFO 1')!
+			.trigger('click');
+		await flushPromises();
+		expect(wrapper.vm.vfos[0]).toMatchObject({ freq: 436.5, digimode: 'lora-sat-250', enabled: true });
+		expect(wrapper.vm.satellites.tracking).toMatchObject({ norad: 57179, decode: true, satellite: { name: 'Norby-2', norad: 57179 } });
+		expect(wrapper.vm.satellites.notice).toContain('LoRa decoding on VFO 1 (Tools → Digital Modes). The VFO stays on 436.5 MHz');
+		const sent = () => setVfoParams.mock.calls.at(-1)[1];
+		const expected = () => (heardNow(57179, 436.5) - 436.5) * 1e6;
+		expect(sent()).toMatchObject({
+			freq: 436.5,
+			digimode: 'lora-sat-250',
+			digimodeLoraSat: { satellite: { name: 'Norby-2', norad: 57179 } },
+		});
+		expect(Math.abs(sent().digimodeLoraSat.hint.offsetHz - expected())).toBeLessThan(2);
+		const first = sent().digimodeLoraSat.hint;
+		vi.advanceTimersByTime(60_000);
+		// the VFO stays put (the decoder restarts on a retune); the hint follows the pass
+		expect(wrapper.vm.vfos[0].freq).toBe(436.5);
+		expect(sent().freq).toBe(436.5);
+		expect(Math.abs(sent().digimodeLoraSat.hint.offsetHz - expected())).toBeLessThan(2);
+		expect(sent().digimodeLoraSat.hint.offsetHz).not.toBe(first.offsetHz);
+		expect(Math.abs(sent().digimodeLoraSat.hint.offsetHz - first.offsetHz - 60 * first.rateHzS)).toBeLessThan(
+			Math.abs(first.rateHzS) * 30 + 5,
+		);
+		await wrapper.vm.$nextTick();
+		expect(wrapper.text()).toMatch(
+			/Decoding Norby-2 LoRa on VFO 1 · 436\.5000 MHz \(not retuned\) · expected Doppler [+−]\d+\.\d kHz, -?\d+ Hz\/s/,
+		);
+		expect(wrapper.text()).toContain('told to the decoder, the VFO stays');
+		// hiding TinyGS's satellites does not end the pass
+		await wrapper.get('input[aria-label="Show LoRa satellites (TinyGS)"]').setValue(false);
+		await flushPromises();
+		vi.advanceTimersByTime(2000);
+		expect(Math.abs(sent().digimodeLoraSat.hint.offsetHz - expected())).toBeLessThan(2);
+		await wrapper.vm.$nextTick();
+		expect(wrapper.text()).toMatch(/Decoding Norby-2 LoRa on VFO 1/);
+		await wrapper
+			.findAll('button')
+			.find((button) => button.text() === 'Stop')!
+			.trigger('click');
+		expect(wrapper.vm.satellites.tracking).toBeNull();
+		// the decoder is told at once that the pass is no longer followed
+		expect(sent().digimodeLoraSat).toEqual({});
+		vi.advanceTimersByTime(5000);
+		expect(sent().digimodeLoraSat).toEqual({});
+	});
+	it('lists a TinyGS satellite with no known frequency without a Decode button', async () => {
+		await openPanel();
+		await wrapper.vm.satelliteShowLora(true);
+		wrapper.vm.satelliteSelect(61747);
+		await wrapper.vm.$nextTick();
+		const details = wrapper.get('[aria-label="Selected satellite"]');
+		expect(details.text()).toContain('Polytech_Universe-4 / Surve-260827-K4KDR');
+		expect(details.text()).toContain('No known frequency');
+		expect(details.text()).toContain('no LoRa frequency is known here');
+		expect(details.find('select[aria-label="Downlink"]').exists()).toBe(false);
+		expect(details.findAll('button').some((button) => /on VFO/.test(button.text()))).toBe(false);
+		await wrapper.vm.satelliteTrack(61747, 0);
+		expect(wrapper.vm.satellites.tracking).toBeNull();
+		expect(wrapper.vm.vfos[0].digimode).toBe('');
 	});
 });

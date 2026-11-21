@@ -1,5 +1,6 @@
 import type { Site, Tle } from './types';
-import { fetchTleGroup, fetchTles, TleCache } from './tle';
+import { fetchTleGroup, fetchTles, fetchTleText, TleCache } from './tle';
+import { TINYGS_TLE_URL } from './tinygs';
 import { errorMessage } from '@/platform/errors';
 
 const STATION_KEY = 'browsdr.station';
@@ -67,17 +68,26 @@ export async function cachedTles(
 }
 
 /** One Celestrak constellation, cached separately from the fixed satellite catalog. */
-export async function cachedTleGroup(
+export function cachedTleGroup(
 	storageKey: string,
 	group: string,
 	now: Date,
 	fetchFn: typeof fetch = fetch,
 ): Promise<{ tles: Tle[]; note: string }> {
+	return cachedTleSource(storageKey, () => fetchTleGroup(group, fetchFn), now);
+}
+
+/** TinyGS's satellites (BrowSDR's copy of TinyGS's element file, which browsers cannot read from TinyGS directly). */
+export function cachedTinygsTles(storageKey: string, now: Date, fetchFn: typeof fetch = fetch): Promise<{ tles: Tle[]; note: string }> {
+	return cachedTleSource(storageKey, () => fetchTleText(TINYGS_TLE_URL, fetchFn), now);
+}
+
+async function cachedTleSource(storageKey: string, load: () => Promise<Tle[]>, now: Date): Promise<{ tles: Tle[]; note: string }> {
 	const cache = new TleCache(browserStorage(), storageKey);
 	const cached = cache.get();
 	if (cached && !cache.stale(now)) return { tles: cached.tles, note: `Orbits from ${cached.fetchedAt.toLocaleDateString()}` };
 	try {
-		const tles = await fetchTleGroup(group, fetchFn);
+		const tles = await load();
 		cache.put(tles, now);
 		return { tles, note: `Orbits from ${now.toLocaleDateString()}` };
 	} catch (error) {

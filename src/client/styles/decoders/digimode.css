@@ -63,3 +63,31 @@
 .digimode-log td:first-child small {
 	white-space: normal;
 }
+.digimode-tinygs {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	padding: 6px 8px;
+	border-bottom: 1px solid var(--border);
+	font-size: 12px;
+}
+.digimode-tinygs-json {
+	width: 100%;
+	box-sizing: border-box;
+	resize: vertical;
+	font-family: monospace;
+	font-size: 12px;
+	background: var(--bg-dark);
+	color: var(--text-main);
+	border: 1px solid var(--border);
+}
+.digimode-tinygs-tools {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	align-items: center;
+}
+.digimode-tinygs-state {
+	color: var(--text-muted);
+	overflow-wrap: anywhere;
+}

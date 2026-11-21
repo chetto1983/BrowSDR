@@ -1,6 +1,7 @@
 import type { CharsetKey } from '@/worker/decoders/charsets';
 import type { PocsagMode } from '@/worker/decoders/types';
 import type { RtkProfileMode } from '@/worker/decoders/rtk/types';
+import type { LoraSatConfig } from '@/worker/decoders/digimode/lora-sat/types';
 
 export interface Vfo {
 	rtk?: boolean;
@@ -23,6 +24,8 @@ export interface Vfo {
 	dabService?: number;
 	/** Digital Modes decoder id, '' when off. */
 	digimode?: string;
+	/** A TinyGS modem configuration the LoRa satellite decoder runs exactly (else it searches). */
+	loraSatConfig?: LoraSatConfig;
 	rtl433?: boolean;
 	rtl433SampleRate?: number;
 	rtl433Protocols?: string;

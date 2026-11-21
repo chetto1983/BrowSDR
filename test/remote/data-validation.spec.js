@@ -94,6 +94,30 @@ describe('remote command boundaries', () => {
 		expect(isReceiverCommand({ type: 'vfoUpdate', index: 0, params })).toBe(true);
 		expect(isReceiverCommand({ type: 'vfoUpdate', index: 0, params: { ...params, squelchEnabled: 'yes' } })).toBe(false);
 		expect(isReceiverCommand({ type: 'vfoUpdate', index: 0, params: { ...params, freq: Infinity } })).toBe(false);
+		// the LoRa satellite decoder's TinyGS configuration, satellite and Doppler hint are checked too
+		const loraSat = {
+			config: {
+				sat: 'Norbi',
+				norad: 46494,
+				freqMHz: 436.703,
+				bwHz: 250000,
+				sf: 10,
+				cr: 5,
+				sync: 18,
+				preamble: 8,
+				crc: true,
+				ldro: 'on',
+				inverted: false,
+				implicitLen: 0,
+			},
+			satellite: { name: 'Norby', norad: 46494 },
+			hint: { offsetHz: 8300, rateHzS: -95 },
+		};
+		expect(
+			isReceiverCommand({ type: 'vfoUpdate', index: 0, params: { ...params, digimode: 'lora-sat-250', digimodeLoraSat: loraSat } }),
+		).toBe(true);
+		for (const bad of [{ ...loraSat, config: { ...loraSat.config, sf: 4 } }, { ...loraSat, hint: { offsetHz: 'near' } }, 'lora'])
+			expect(isReceiverCommand({ type: 'vfoUpdate', index: 0, params: { ...params, digimodeLoraSat: bad } })).toBe(false);
 	});
 	it('rejects invalid capabilities and sensor discriminators', () => {
 		expect(

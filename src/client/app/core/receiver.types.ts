@@ -318,12 +318,15 @@ export interface ReceiverMethods {
 	setVfoDigimode(index: number, mode: string): void;
 	tuneDigimodeVfo(frequency: number, index?: number): void;
 	clearDigimodeLog(): void;
+	applyLoraSatConfig(index: number, json: string): string;
+	clearLoraSatConfig(index: number): void;
 	toggleSatellitesPanel(): void;
 	satellitesRefresh(now?: Date): Promise<void>;
 	setStationLocation(lat: number, lon: number): string;
 	locateStation(): Promise<string>;
 	satelliteSetLocation(lat: number, lon: number): void;
 	satelliteUseMyPosition(): void;
+	satelliteShowLora(show: boolean): Promise<void>;
 	satelliteSelect(norad: number): void;
 	satelliteTrack(norad?: number, downlink?: number): Promise<void>;
 	satelliteStopTracking(): void;

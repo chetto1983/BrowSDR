@@ -31,6 +31,56 @@ The [ARISS station status](https://www.ariss.org/current-status-of-iss-stations.
 reported ISS APRS on 437.825 MHz as of 4 November 2026. Its operating channel can
 change; select 145.825 MHz only when ARISS reports the VHF packet station active.
 
+## LoRa satellites (TinyGS)
+
+Tick **LoRa satellites (TinyGS)** under the pass list to add the satellites of
+TinyGS's element file. That is the list TinyGS
+[documents for gpredict](https://api.tinygs.com/v1/tinygs_supported.txt): about
+114 satellites, some with Alpha-5 NORAD numbers. The list is loaded only then:
+
+- TinyGS sends no CORS header, so BrowSDR's server fetches the file at most every
+  six hours and serves it at `/api/tinygs/tle`;
+- the browser keeps it for two days, as it does the other orbits;
+- TinyGS's own API is not used.
+
+The satellites get pointing, passes and the map like the others, and
+**LoRa satellites, TinyGS (map and passes)** in the pass filter shows only them.
+A NORAD number listed twice appears once, with both names.
+Predicting their passes takes about 0.7 s for 48 hours (2.3 s for 7 days) on a
+fast computer.
+
+Frequencies come from two places:
+
+- the LoRa transmitters of [SatNOGS DB](https://db.satnogs.org) (CC BY-SA 4.0),
+  with its description and bandwidth;
+- OnAir's presets, for FOSSASAT and Tianqi satellites.
+
+None of them is verified. A satellite with no known frequency is listed with
+"No known frequency" and no button. To decode it, paste a TinyGS station's modem
+configuration in Tools → Digital Modes.
+
+**Decode on VFO**:
+
+- tunes the active VFO to the downlink;
+- chooses the LoRa satellite decoder of its bandwidth;
+- does not retune during the pass. The Digital Modes decoder restarts on every
+  frequency change, which would lose frames.
+
+Instead, every second, the decoder is sent two things:
+
+- the satellite's name;
+- the Doppler offset and rate that SGP4 predicts from the VFO.
+
+The decoder uses them in two ways:
+
+- it centres its carrier search on that offset;
+- it takes the predicted rate when the frame's preamble agrees with it.
+
+Each record names the satellite and shows the expected Doppler and how far the
+frame was from it. A difference that stays the same over the pass is the
+radio's frequency error. A pasted configuration for the same NORAD number
+stays in use; any other goes back to the blind search. **Stop** ends the hints.
+
 ## Map
 
 Markers are green above your horizon, yellow in sunlight and grey in Earth's
@@ -83,5 +133,7 @@ Not corrected:
   image pixels and row timestamps are held in browser memory, while **Save PNG**
   exports only the picture, without geographic metadata.
 - **ORBCOMM** passes and orbits appear on the satellite map. **Track on VFO** opens its Digital Modes decoder on the chosen example frequency; checksum-valid packet fragments appear in hex in the log. Check the spectrum for the active downlink, since Celestrak orbital data does not identify the satellite's current transmit channel.
+- **LoRa satellites (TinyGS)** are not Doppler-retuned either: the decoder follows the shift itself and is told the
+  predicted Doppler (see above).
 - Dongle frequency error: an RTL-SDR off by 1 ppm is 435 Hz off at 435 MHz.
   Correct the dongle first, or retune by ear (the tracker keeps the correction).

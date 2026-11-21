@@ -1,8 +1,9 @@
 import { computed, type Ref } from 'vue';
 import type { AppInstance } from '@/app/core/receiver.types';
-import type { OrbitState } from '@/satellites/types';
-import { TRACKED_SATELLITES } from '@/satellites/catalog';
+import type { Downlink, OrbitState } from '@/satellites/types';
 import { passRows } from '@/satellites/format';
+import { isLoraSat } from '@/worker/decoders/digimode/lora-sat/catalog';
+import { allSatellites } from './controller';
 import { azimuthName } from '@/satellites/passes';
 import { footprint, groundTrack, orbitMinutes, orbitState, receivedMHz } from '@/satellites/orbit';
 import type { MapSatellite, SatelliteRow } from './types';
@@ -20,11 +21,29 @@ export function pointing(state: OrbitState | null): string {
 /** The tracking summary line, or '' while nothing is tracked. */
 function trackingText(receiver: AppInstance): string {
 	const active = receiver.satellites.tracking;
-	const satellite = [...TRACKED_SATELLITES, ...receiver.satellites.orbcomm].find((item) => item.norad === active?.norad);
+	// a LoRa pass goes on while TinyGS's satellites are hidden
+	const satellite = allSatellites({ ...receiver.satellites, showLora: true }).find((item) => item.norad === active?.norad);
 	const vfo = active ? receiver.vfos[active.vfoIndex] : undefined;
 	if (!active || !satellite || !vfo) return '';
+	if (active.decode) {
+		const hint = active.hint
+			? `expected Doppler ${formatKHz(active.hint.offsetHz)}, ${Math.round(active.hint.rateHzS)} Hz/s`
+			: 'no Doppler yet';
+		return `Decoding ${satellite.name} LoRa on VFO ${active.vfoIndex + 1} · ${formatMHz(vfo.freq)} (not retuned) · ${hint}`;
+	}
 	const label = satellite.downlinks[active.downlink]?.label ?? '';
 	return `Tracking ${satellite.name} ${label} on VFO ${active.vfoIndex + 1} · ${formatMHz(vfo.freq)} · Doppler ${formatKHz(active.dopplerHz)}`;
+}
+
+/** Downlinks a decoder takes without retuning; a LoRa satellite's is still shown with its Doppler (the decoder is told it). */
+const untracked = (downlink: Downlink | undefined) =>
+	!downlink || ((!!downlink.decoder || !!downlink.digimode) && !isLoraSat(downlink.digimode));
+
+/** The satellites a pass filter keeps to (-1 ORBCOMM, -2 TinyGS's LoRa satellites), or null for all of them. */
+export function groupIds(state: AppInstance['satellites'], filter: number): Set<number> | null {
+	if (filter === -1) return new Set(state.orbcomm.map((satellite) => satellite.norad));
+	if (filter === -2) return new Set(state.lora.map((satellite) => satellite.norad));
+	return null;
 }
 
 /**
@@ -33,7 +52,7 @@ function trackingText(receiver: AppInstance): string {
  */
 export function useSatelliteLive(receiver: AppInstance, now: Ref<Date>, trackFrom: Ref<Date>, passFilter: Ref<number>) {
 	const state = receiver.satellites;
-	const satellites = computed(() => [...TRACKED_SATELLITES, ...state.orbcomm]);
+	const satellites = computed(() => allSatellites(state));
 	const states = computed(() => {
 		if (!state.panelOpen) return new Map<number, OrbitState>();
 		const entries = state.tles.map((tle) => [tle.norad, orbitState(tle, receiver.station, now.value)] as const);
@@ -53,17 +72,19 @@ export function useSatelliteLive(receiver: AppInstance, now: Ref<Date>, trackFro
 		})),
 	);
 	const selected = computed(() => rows.value.find((row) => row.satellite.norad === state.selected) ?? rows.value[0]);
-	const downlink = computed(() => selected.value.satellite.downlinks[state.downlink] ?? selected.value.satellite.downlinks[0]);
+	const downlink = computed<Downlink | undefined>(
+		() => selected.value.satellite.downlinks[state.downlink] ?? selected.value.satellite.downlinks[0],
+	);
 	const heard = computed(() => {
 		const look = selected.value.state?.look;
-		if (!look || downlink.value.decoder || downlink.value.digimode) return null;
+		if (!look || !downlink.value || untracked(downlink.value)) return null;
 		const freq = receivedMHz(downlink.value.freqMHz, look.rangeRateKmS);
 		return { freq, shiftHz: (freq - downlink.value.freqMHz) * 1e6 };
 	});
 	const mapSatellites = computed<MapSatellite[]>(() => {
-		const orbcommIds = new Set(state.orbcomm.map((satellite) => satellite.norad));
+		const group = groupIds(state, passFilter.value);
 		return rows.value.flatMap((row) =>
-			row.state && (passFilter.value !== -1 || orbcommIds.has(row.satellite.norad)) ? [{ name: row.satellite.name, state: row.state }] : [],
+			row.state && (!group || group.has(row.satellite.norad)) ? [{ name: row.satellite.name, state: row.state }] : [],
 		);
 	});
 	const selection = computed(() => {

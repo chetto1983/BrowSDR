@@ -16,6 +16,7 @@ and the About dialog for the credits.
 | ------------------------------------ | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | DSC (VHF channel 70)                 | 156.525 MHz                                                                                                    | Digital selective calls (ITU-R M.493): distress alerts and relays (highlighted), safety, urgency and routine calls, positions, proposed channels, MMSI kinds. DX/RX time diversity and the check character repair damaged symbols.                                                                                                                                                                                                                |
 | CubeSat AX.25 telemetry              | 437.825 MHz (ISS APRS, ARISS November 2026), 145.825 MHz alternate, satellite downlinks                        | AX.25 frames at 1200 bd AFSK and 9600 / 4800 bd G3RUH FSK at once; binary telemetry as bytes with a hex dump. Pair with Tools → Satellites for Doppler.                                                                                                                                                                                                                                                                                           |
+| LoRa satellites (TinyGS)             | 137–905 MHz presets (SatNOGS DB, OnAir); one entry per bandwidth: 125, 250, 500, 62.5, 41.7 kHz                | LoRa frames of satellites: SF7 to SF12, any sync word, normal and inverted IQ at once, the Doppler shift and its rate followed through each frame; Doppler, rate, SF, bandwidth, coding rate, sync word, IQ, SNR, level, the payload in hex and as text. A pasted TinyGS modem configuration runs exactly; Tools → Satellites names the satellite and tells the decoder its Doppler.                                                              |
 | ORBCOMM                              | 137.2–137.8 MHz; presets 137.2500, 137.2875, 137.3125, 137.4625, 137.6625, 137.7375 MHz                        | 4800 bit/s SDPSK downlinks: sync/satellite ID, checksum-checked message and system fragments, complete reassembled binary blocks, and two-slot ephemeris with satellite position, altitude, velocity and GPS week/time. Subscriber message contents remain binary hex. Each VFO decodes one downlink; the ORBCOMM station bookmark configures two VFOs in one passband.                                                                           |
 | SSTV (FM, ISS)                       | 145.800 MHz                                                                                                    | Slow-scan TV pictures during ARISS events.                                                                                                                                                                                                                                                                                                                                                                                                        |
 | SSTV (USB, HF)                       | 14.230, 7.171, 3.735 MHz                                                                                       | Slow-scan TV in the upper sideband; tune the VFO to the dial frequency.                                                                                                                                                                                                                                                                                                                                                                           |
@@ -48,6 +49,98 @@ PD90, PD120 and PD180, Wraase SC2-180, from the VIS header or, when it was
 missed, from the line sync pulses. The decoder follows the sender's line period
 (slant) and filters noise adaptively; a clean picture passes unchanged.
 
+## LoRa satellites (TinyGS)
+
+[TinyGS](https://tinygs.com) ground stations (an ESP32 with an SX127x or SX126x
+radio) hear LoRa satellites. The **LoRa satellites** decoders do the same with
+an SDR. Choose the entry of the satellite's LoRa bandwidth: **LoRa satellites
+(TinyGS, 125 kHz)**, or the 250, 500, 62.5 or 41.7 kHz entry. Then tune its
+frequency, from a preset or with Tools → Satellites → **Decode on VFO**.
+
+Without more information the decoder searches:
+
+- SF7 to SF12 at once;
+- any sync word whose two nibbles are not 0 (225 of the 256), and the one
+  found is shown;
+- normal and inverted IQ;
+- in each frame's explicit header: the coding rate, and whether there is a
+  CRC (checked when there is one);
+- the low data rate optimisation, by SF and bandwidth as the radios set it.
+
+The carrier is followed through every frame, as OnAir does, so the Doppler shift
+and its rate during a pass do not break long frames. Each record gives:
+
+- the Doppler offset at the first data symbol, its rate and the frequency;
+- SF, bandwidth, coding rate, sync word, IQ, header, LDRO and CRC;
+- SNR and level (dBFS, not calibrated);
+- the payload in hex, and as text when at least 80 % of it is printable.
+
+The VFO channel passes a Doppler shift of up to ±37.5 kHz at 125 kHz,
+±40 kHz at 250 kHz, ±60 kHz at 500 kHz, ±20.75 kHz at 62.5 kHz and ±14 kHz at
+41.7 kHz. That is more than a satellite at 600 km gives at 436 MHz (±10 kHz) or
+868 MHz (±21 kHz), with room for the radio's own error. The 62.5 and 41.7 kHz
+entries are meant for 70 cm and below.
+
+### A TinyGS station's configuration
+
+When the exact settings are known, paste the TinyGS modem configuration into the
+field under the description and press **Use configuration**. This is the JSON of
+the station's **Modem startup** setting (`modem_startup` on its local
+configuration page), or the configuration the TinyGS web dashboard shows for a
+satellite, for example:
+
+```
+{"mode":"LoRa","freq":436.703,"bw":250.0,"sf":10,"cr":5,"sw":18,"pl":8,"crc":true,"fldro":1,"sat":"Norbi","NORAD":46494}
+```
+
+It is read as the TinyGS firmware reads it:
+
+- `freq` is in MHz and `bw` in kHz;
+- `sw` is the sync word in decimal (18 is 0x12);
+- `pl` is the preamble length;
+- `crc` is true or false;
+- `fldro` is 0 off, 1 on or 2 automatic;
+- `iIQ` is inverted IQ;
+- `len` is 0 for an explicit header, or the length of implicit-header frames.
+
+A missing key reads as 0 or false, as on the station. JSON without `mode` is
+refused, so is a frequency no TinyGS LoRa radio tunes (137 to 1020 MHz), and so
+are the bandwidths, spreading factors and coding rates that RadioLib refuses.
+The VFO then moves to the entry of that bandwidth and to `freq`, and the decoder
+runs exactly those settings: one SF, its sync word, its IQ, its preamble, its
+LDRO and, with `len`, the implicit header. Only a configuration can read
+implicit-header frames. Bandwidths from 7.8 to 31.25 kHz run in the 41.7 kHz
+entry's channel. **Blind search** goes back to the search.
+
+An FSK configuration (`mode` other than `LoRa`) is named as such, with its bit
+rate, deviation and sync word, and is not decoded. Of the 114 satellites in
+TinyGS's list, SatNOGS DB lists only FSK, GFSK or GMSK transmitters for 31, and
+both LoRa and FSK for 8 more. Decoding them would need TinyGS's FSK packet
+format: an FSK demodulator at the configuration's bit rate, the sync word of
+`fsw`, fixed or variable length, NRZ, Manchester or the SX126x whitening (`enc`,
+`ws`), and the software CRC of `cSw`, `cB`, `cI`, `cP`, `cF`, `cRI` and `cRO`.
+The CubeSat decoder only covers AX.25 at 1200 bd AFSK and 9600 bd G3RUH.
+
+### Presets
+
+Two sources give the presets:
+
+- OnAir's ten LoRa satellite presets, each marked uncertain or plausible as in
+  OnAir;
+- the 25 LoRa transmitters that
+  [SatNOGS DB](https://db.satnogs.org) (CC BY-SA 4.0) lists for 22 of TinyGS's
+  satellites, read on 21 November 2026. The bandwidth comes from SatNOGS's
+  `baud` field where it is set; a transmitter without one is under 125 kHz.
+
+`scripts/tinygs/satnogs-lora.mjs` writes the SatNOGS table from a dump of its
+transmitters and TinyGS's element file. None of the presets was checked against
+a real signal.
+
+The CPU cost of listening, all six SFs, any sync word and both IQ at once,
+measured in noise in Node: about 4 % of one core at 125 kHz, 7.5 % at 250 kHz,
+15 % at 500 kHz, 2 % at 62.5 kHz and 1 % at 41.7 kHz. Frames add a little
+(5 % at 125 kHz during a pass, 11 % at 250 kHz with SF12).
+
 ## How it works
 
 The DSP worker cuts a channel of the decoder's sample rate and width around the
@@ -68,6 +161,17 @@ satellite tracker.
 - The LoRa decoders search every spreading factor of their bandwidth at once but
   only that bandwidth: Meshtastic's 125 and 500 kHz presets, MeshCore's 125 and
   250 kHz presets, LoRaWAN downlinks and MeshCom are not decoded.
+- The LoRa satellite decoders were tested on OnAir's pass generator only:
+  - straight-line passes;
+  - the symbol clock stretched by the Doppler shift;
+  - noise.
+
+  No real satellite recording was available. Real passes add things the tests
+  do not have: oscillator drift, fading, interference and framing. SF12 at
+  868 MHz near the closest approach (about 280 Hz/s) is the edge of what the
+  carrier loop follows. SF5 and SF6 are searched only from a configuration. The
+  2.4 GHz TinyGS radio (SX1280) is not decoded.
+
 - RTTY, PSK and CW emit one record per line of text (a newline, 80 characters
   or a pause); the line still being received is shown in the status.
 - FT8, FT4 and WSPR read the slot timing from the computer clock, so keep it

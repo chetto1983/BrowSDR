@@ -1,3 +1,5 @@
+import type { LoraSatHint, LoraSatSatellite } from '@/worker/decoders/digimode/lora-sat/types';
+
 /** Where the station is, for pass predictions. */
 export interface Site {
 	lat: number;
@@ -105,6 +107,11 @@ export interface SatelliteTracking {
 	/** Frequency the tracker last set, to notice manual retuning. */
 	lastMHz: number;
 	dopplerHz: number;
+	/** A LoRa satellite decoder takes the pass: the VFO stays put and the decoder gets the satellite and its Doppler. */
+	decode?: boolean;
+	satellite?: LoraSatSatellite;
+	/** The Doppler the orbit predicts for the decoder, from the VFO frequency. */
+	hint?: LoraSatHint;
 }
 
 /** A map point in degrees; longitudes may run past ±180° so lines stay continuous. */

@@ -3,6 +3,7 @@ import type { BookmarkCategory } from '@/app/workspace/types';
 // Color palette for N VFOs
 import type { PocsagMode } from '@/worker/decoders/types';
 import type { RtkProfileMode } from '@/worker/decoders/rtk/types';
+import type { LoraSatConfig } from '@/worker/decoders/digimode/lora-sat/types';
 
 export const DISCORD_INVITE_URL = 'https://discord.gg/m8BtU4ebSH';
 
@@ -51,6 +52,8 @@ export const makeDefaultVfo = (freq = 100.0) => ({
 	tetra: false,
 	meteor: false,
 	digimode: '',
+	/** The LoRa satellite decoder's TinyGS configuration (not kept in bookmarks). */
+	loraSatConfig: undefined as LoraSatConfig | undefined,
 	dabService: 0,
 	rtl433: false,
 	rtl433SampleRate: 250000,

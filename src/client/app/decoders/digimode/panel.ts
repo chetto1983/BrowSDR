@@ -1,6 +1,8 @@
 import { computed, defineComponent, inject, nextTick, ref, watch } from 'vue';
 import type { AppInstance } from '@/app/core/receiver.types';
 import { DIGIMODES, digimodeInfo } from '@/worker/decoders/digimode/catalog';
+import { isLoraSat } from '@/worker/decoders/digimode/lora-sat/catalog';
+import { loraConfigSummary } from '@/worker/decoders/digimode/lora-sat/tinygs';
 import type { DigimodeInfo } from '@/worker/decoders/digimode/types';
 import * as components from '@/ui';
 import { digimodePicture } from './controller';
@@ -42,6 +44,13 @@ export default defineComponent({
 			},
 			{ immediate: true },
 		);
+		const tinygsJson = ref('');
+		const tinygsMessage = ref('');
+		watch(selectedVfo, () => (tinygsMessage.value = ''));
+		const loraSatState = computed(() => {
+			const config = selectedVfo.value?.loraSatConfig;
+			return config ? `Decoding with ${loraConfigSummary(config)}.` : 'Blind search: every SF, sync word and IQ of this bandwidth.';
+		});
 		const imageVfo = computed(() => {
 			const index = receiver.vfos.findIndex((vfo) => digimodeInfo(vfo.digimode)?.image);
 			return index < 0 ? receiver.activeVfoIndex : index;
@@ -74,6 +83,15 @@ export default defineComponent({
 			open,
 			preset,
 			families,
+			loraSat: computed(() => isLoraSat(selectedMode.value?.id)),
+			tinygsJson,
+			tinygsMessage,
+			loraSatState,
+			useTinygs: () => (tinygsMessage.value = receiver.applyLoraSatConfig(receiver.activeVfoIndex, tinygsJson.value)),
+			clearTinygs: () => {
+				receiver.clearLoraSatConfig(receiver.activeVfoIndex);
+				tinygsMessage.value = '';
+			},
 			selectedVfo,
 			selectedMode,
 			picture,

@@ -103,22 +103,30 @@
 			<div class="adsb-details satellite-details" aria-label="Selected satellite">
 				<div class="adsb-details-heading">
 					<strong>{{ selected.satellite.name }}</strong>
-					<UiSelect v-model.number="state.downlink" aria-label="Downlink">
+					<UiSelect v-if="downlink" v-model.number="state.downlink" aria-label="Downlink">
 						<option v-for="(item, i) in selected.satellite.downlinks" :key="i" :value="i">
-							{{ item.label }} · {{ formatMHz(item.freqMHz) }} {{ item.mode.toUpperCase() }}
+							{{ item.label }} · {{ formatMHz(item.freqMHz) }} {{ item.digimode?.startsWith('lora-sat') ? 'LoRa' : item.mode.toUpperCase()
+							}}
 						</option>
 					</UiSelect>
-					<UiButton @click="receiver.satelliteTrack()">Track on VFO {{ receiver.activeVfoIndex + 1 }}</UiButton>
+					<UiButton v-if="downlink" @click="receiver.satelliteTrack()"
+						>{{ decodes ? 'Decode' : 'Track' }} on VFO {{ receiver.activeVfoIndex + 1 }}</UiButton
+					>
 				</div>
 				<dl class="adsb-detail-grid">
 					<div>
 						<dt>Heard now</dt>
-						<dd v-if="heard">{{ formatMHz(heard.freq) }}<small>Doppler {{ formatKHz(heard.shiftHz) }}</small></dd>
-						<dd v-else>
+						<dd v-if="heard">
+							{{ formatMHz(heard.freq) }}<small
+								>Doppler {{ formatKHz(heard.shiftHz) }}{{ decodes ? ' · told to the decoder, the VFO stays' : '' }}</small
+							>
+						</dd>
+						<dd v-else-if="downlink">
 							{{ formatMHz(downlink.freqMHz) }}<small
 								>{{ downlink.decoder || downlink.digimode ? 'No VFO Doppler tracking' : 'Needs station and orbit' }}</small
 							>
 						</dd>
+						<dd v-else>No known frequency</dd>
 					</div>
 					<div>
 						<dt>Pointing</dt>
@@ -126,7 +134,7 @@
 							{{ pointing(selected.state) }}<small v-if="selected.state?.look">{{ Math.round(selected.state.look.rangeKm) }} km away</small>
 						</dd>
 					</div>
-					<div v-if="downlink.band">
+					<div v-if="downlink?.band">
 						<dt>Passband</dt>
 						<dd>{{ downlink.band[0].toFixed(3) }}–{{ downlink.band[1].toFixed(3) }} MHz</dd>
 					</div>
@@ -141,6 +149,7 @@
 				<UiSelect v-model.number="passFilter" aria-label="Passes of">
 					<option :value="0">All satellites</option>
 					<option :value="-1">ORBCOMM constellation (map and passes)</option>
+					<option v-if="state.showLora" :value="-2">LoRa satellites, TinyGS (map and passes)</option>
 					<option v-for="item in satellites" :key="item.norad" :value="item.norad">{{ item.name }}</option>
 				</UiSelect>
 				<UiSelect v-model.number="state.minPeak" aria-label="Lowest peak elevation">
@@ -150,6 +159,10 @@
 					<option :value="48">48 hours</option>
 					<option :value="168">7 days</option>
 				</UiSelect>
+				<label class="satellite-lora-toggle"
+					><input type="checkbox" :checked="state.showLora" aria-label="Show LoRa satellites (TinyGS)" @change="showLora" /> LoRa satellites
+					(TinyGS)</label
+				>
 			</div>
 			<div class="adsb-table-wrap">
 				<table v-if="passList.length" class="adsb-table satellite-passes" aria-label="Passes">
@@ -173,7 +186,7 @@
 		</div>
 	</div>
 	<div class="adsb-footer">
-		<span>{{ state.tleNote || 'Orbits load from Celestrak' }} · SGP4 · Doppler updated every second while tracking</span
+		<span>{{ state.tleNote || 'Orbits load from Celestrak' }} · SGP4 · Doppler updated every second while tracking{{ loraFooter }}</span
 		><span>Orange: next visible pass · cyan dashed: orbit · green: above your horizon. Map tiles need internet.</span>
 	</div>
 </section>

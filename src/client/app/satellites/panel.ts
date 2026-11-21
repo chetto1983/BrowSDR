@@ -1,7 +1,8 @@
 import { computed, defineComponent, inject, onBeforeUnmount, ref, watch } from 'vue';
 import type { AppInstance } from '@/app/core/receiver.types';
 import * as components from '@/ui';
-import { formatKHz, formatMHz, pointing, useSatelliteLive } from './live';
+import { isLoraSat } from '@/worker/decoders/digimode/lora-sat/catalog';
+import { formatKHz, formatMHz, groupIds, pointing, useSatelliteLive } from './live';
 import { useSatelliteMap } from './map-view';
 import { useSatelliteTable } from './table';
 import template from './panel.html?raw';
@@ -65,7 +66,14 @@ export default defineComponent({
 		watch([passFilter, () => state.orbcomm.length], ([filter]) => {
 			if (filter === -1 && nextOrbcommPass.value) map.select(nextOrbcommPass.value.pass.norad);
 		});
-		const table = useSatelliteTable(live.rows, now, passFilter, orbcommIds);
+		const group = computed(() => groupIds(state, passFilter.value));
+		const table = useSatelliteTable(live.rows, now, passFilter, group);
+		watch(
+			() => state.showLora,
+			(show) => {
+				if (!show && passFilter.value === -2) passFilter.value = 0;
+			},
+		);
 
 		return {
 			receiver,
@@ -82,11 +90,16 @@ export default defineComponent({
 			...live,
 			...map,
 			passList: computed(() => {
+				const ids = group.value;
 				return live.upcoming.value.filter(
-					(row) =>
-						!passFilter.value || (passFilter.value === -1 ? orbcommIds.value.has(row.pass.norad) : row.pass.norad === passFilter.value),
+					(row) => !passFilter.value || (ids ? ids.has(row.pass.norad) : row.pass.norad === passFilter.value),
 				);
 			}),
+			decodes: computed(() => isLoraSat(live.downlink.value?.digimode)),
+			loraFooter: computed(() =>
+				state.showLora ? ' · LoRa satellites: TinyGS list, frequencies from SatNOGS DB (CC BY-SA 4.0) and OnAir, unverified' : '',
+			),
+			showLora: (event: Event) => void receiver.satelliteShowLora((event.target as HTMLInputElement).checked),
 			pointing,
 			formatMHz,
 			formatKHz,

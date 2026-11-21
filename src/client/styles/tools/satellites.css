@@ -73,6 +73,13 @@
 	gap: 6px;
 	padding: 0 8px 6px;
 }
+.satellite-lora-toggle {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 12px;
+	color: var(--text-main);
+}
 .satellite-tracking {
 	color: var(--text-main);
 }

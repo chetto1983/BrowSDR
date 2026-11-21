@@ -12,6 +12,16 @@ function tleEpoch(line1: string): Date {
 	return new Date(start + (day - 1) * 86400e3);
 }
 
+const ALPHA5 = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+
+/** The NORAD number of TLE columns 3-7, in Alpha-5 too: a letter (not I or O) for 10 to 33 ten-thousands, from 100000. */
+export function noradNumber(field: string): number {
+	const head = field[0];
+	const letter = ALPHA5.indexOf(head);
+	if (letter >= 0) return /^\d{4}$/.test(field.slice(1)) ? (letter + 10) * 10000 + Number(field.slice(1)) : NaN;
+	return /^\s*\d+$/.test(field) ? Number(field) : NaN;
+}
+
 /** Parses three-line element sets (name, line 1, line 2); anything else is skipped. */
 export function parseTle(text: string): Tle[] {
 	const lines = text
@@ -22,7 +32,7 @@ export function parseTle(text: string): Tle[] {
 	for (let i = 0; i + 2 < lines.length; i++) {
 		const [name, line1, line2] = [lines[i], lines[i + 1], lines[i + 2]];
 		if (/^[12] /.test(name) || !line1.startsWith('1 ') || !line2.startsWith('2 ')) continue;
-		tles.push({ name: name.trim(), norad: Number(line1.slice(2, 7)), line1, line2, epoch: tleEpoch(line1) });
+		tles.push({ name: name.trim(), norad: noradNumber(line1.slice(2, 7)), line1, line2, epoch: tleEpoch(line1) });
 		i += 2;
 	}
 	return tles;
@@ -48,6 +58,15 @@ export async function fetchTleGroup(group: string, fetchFn: typeof fetch = fetch
 	if (!response.ok) throw new Error(`Celestrak returned HTTP ${response.status} for ${group}.`);
 	const tles = parseTle(await response.text());
 	if (!tles.length) throw new Error(`Celestrak sent no orbits for ${group}.`);
+	return tles;
+}
+
+/** Element sets from a URL (BrowSDR's own routes, such as TinyGS's list). */
+export async function fetchTleText(url: string, fetchFn: typeof fetch = fetch): Promise<Tle[]> {
+	const response = await fetchFn(url);
+	if (!response.ok) throw new Error(`${url} returned HTTP ${response.status}.`);
+	const tles = parseTle(await response.text());
+	if (!tles.length) throw new Error(`${url} sent no orbits.`);
 	return tles;
 }
 

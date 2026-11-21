@@ -11,7 +11,7 @@ function matchesPassWindow(row: SatelliteRow, filters: SatelliteTableFilters): b
 }
 
 function matchesRow(row: SatelliteRow, filters: SatelliteTableFilters): boolean {
-	if (filters.orbcommOnly && !filters.orbcommIds.has(row.satellite.norad)) return false;
+	if (filters.groupIds && !filters.groupIds.has(row.satellite.norad)) return false;
 	if (filters.query && !`${row.satellite.name} ${row.satellite.norad}`.toLocaleLowerCase().includes(filters.query)) return false;
 	const elevation = row.state?.look?.elevation;
 	if (filters.visibility === 'above' && (elevation === undefined || elevation <= 0)) return false;
@@ -36,7 +36,7 @@ export function useSatelliteTable(
 	rows: ComputedRef<SatelliteRow[]>,
 	now: Ref<Date>,
 	passFilter: Ref<number>,
-	orbcommIds: ComputedRef<Set<number>>,
+	groupIds: ComputedRef<Set<number> | null>,
 ) {
 	const satelliteQuery = ref('');
 	const visibilityFilter = ref<SatelliteVisibility>('all');
@@ -52,11 +52,10 @@ export function useSatelliteTable(
 			window: passWindowFilter.value,
 			time: now.value.getTime(),
 			tomorrow: tomorrow.getTime(),
-			orbcommOnly: passFilter.value === -1,
-			orbcommIds: orbcommIds.value,
+			groupIds: groupIds.value,
 		};
 		const filtered = rows.value.filter((row) => matchesRow(row, filters));
-		const sort = tableSort.value === 'catalog' && filters.orbcommOnly ? 'next' : tableSort.value;
+		const sort = tableSort.value === 'catalog' && filters.groupIds ? 'next' : tableSort.value;
 		return sort === 'catalog' ? filtered : filtered.sort((a, b) => compareRows(a, b, sort, sortDescending.value ? -1 : 1));
 	});
 	const sortTable = (column: Exclude<SatelliteTableSort, 'catalog'>) => {

@@ -25,6 +25,6 @@ export interface SatelliteTableFilters {
 	window: SatellitePassWindow;
 	time: number;
 	tomorrow: number;
-	orbcommOnly: boolean;
-	orbcommIds: Set<number>;
+	/** The group the pass filter keeps to (ORBCOMM, TinyGS's LoRa satellites), null for all. */
+	groupIds: Set<number> | null;
 }

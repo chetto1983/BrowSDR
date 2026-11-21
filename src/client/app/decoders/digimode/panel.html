@@ -38,6 +38,25 @@
 		>
 		<span v-else-if="selectedMode">{{ selectedMode.description }}</span>
 	</div>
+	<div v-if="loraSat" class="digimode-tinygs" aria-label="TinyGS modem configuration">
+		<label class="digimode-tinygs-label" for="digimode-tinygs-json"
+			>TinyGS modem configuration (the station's modem_startup JSON), to decode with its exact settings:</label
+		>
+		<textarea
+			id="digimode-tinygs-json"
+			v-model="tinygsJson"
+			class="digimode-tinygs-json"
+			rows="2"
+			spellcheck="false"
+			aria-label="TinyGS modem configuration JSON"
+			placeholder='{"mode":"LoRa","freq":436.703,"bw":250.0,"sf":10,"cr":5,"sw":18,"pl":8,"crc":true,"fldro":1,"sat":"Norbi","NORAD":46494}'
+		></textarea>
+		<div class="digimode-tinygs-tools">
+			<UiButton variant="transcript" :disabled="!tinygsJson.trim()" @click="useTinygs">Use configuration</UiButton>
+			<UiButton variant="transcript" :disabled="!selectedVfo?.loraSatConfig" @click="clearTinygs">Blind search</UiButton>
+			<span class="digimode-tinygs-state" role="status">{{ tinygsMessage || loraSatState }}</span>
+		</div>
+	</div>
 	<div class="adsb-content" :class="{ 'adsb-list-only': !imageRows }">
 		<div v-if="imageRows" class="digimode-image">
 			<div class="meteor-image-tools digimode-image-tools">

@@ -8,7 +8,8 @@
 // of each catalog entry (OnAir: the receiver at 2 MS/s with the settings of its dialog; the 41.7 kHz frames through a
 // pasted TinyGS configuration in place of OnAir's settings); added: SF7, SF10 and SF12 at 125 and 250 kHz through a
 // pass at realistic SNR, inverted IQ, a sync word the search was not told, an implicit-header configuration, chunk
-// sizes, the Doppler hint, noise alone on every entry and the processing time of each entry.
+// sizes, the Doppler hint, noise alone on every entry and the processing time of each entry. Not ported: the preset
+// that follows the dial (BrowSDR searches every SF and sync word instead) and the results file (BrowSDR keeps none).
 
 import { describe, expect, it } from 'vitest';
 import { LoraBank } from '@/worker/decoders/digimode/lora/bank';

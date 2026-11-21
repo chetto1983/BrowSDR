@@ -49,6 +49,8 @@ describe("TinyGS's LoRa satellites", () => {
 		expect(satellites[3].downlinks[0].label).toMatch(/^LoRa 125 kHz · OnAir \(uncertain\): FOSSA Systems/);
 		expect(satellites[0].note).toMatch(/none checked against a real signal/);
 		expect(satellites[2].note).toMatch(/no LoRa frequency is known here/);
+		// OnAir's notes come with its presets
+		expect(satellites[3].note).toContain('OnAir: FOSSASAT (401.703 MHz, settings from issue #229) (plausible): SF11, 125 kHz, CR 4/8');
 	});
 	it('predicts their passes, the Alpha-5 one too', () => {
 		const { tles } = tinygsSatellites(parseTle(TINYGS_TLE), new Set());

@@ -20,9 +20,11 @@ function satnogsDownlinks(norad: number): Downlink[] {
 }
 
 /** OnAir's presets for satellites whose name starts with the preset's element-file name (FOSSASAT, TIANQI, LACUNA). */
+const onairPresets = (name: string) =>
+	LORA_SAT_PRESETS.filter((p) => p.tleName && name.toUpperCase().startsWith(p.tleName) && !p.uplinkOnly);
+
 function onairDownlinks(name: string, have: Downlink[]): Downlink[] {
-	const upper = name.toUpperCase();
-	return LORA_SAT_PRESETS.filter((p) => p.tleName && upper.startsWith(p.tleName) && !p.uplinkOnly)
+	return onairPresets(name)
 		.filter((p) => !have.some((d) => Math.abs(d.freqMHz - p.mhz) < 1e-6))
 		.map((p) => ({
 			label: `LoRa ${khz(p.bwHz)} · OnAir (${p.confidence}): ${p.name}`,
@@ -54,7 +56,10 @@ export function tinygsSatellites(tles: readonly Tle[], skip: ReadonlySet<number>
 		const name = names.join(' / ');
 		const satnogs = satnogsDownlinks(tle.norad);
 		const downlinks = [...satnogs, ...onairDownlinks(name, satnogs)];
-		const satellite: TrackedSatellite = { name, norad: tle.norad, downlinks, note: downlinks.length ? NOTE : NO_FREQUENCY };
+		// OnAir's own notes on its presets say how sure they are
+		const onair = [...new Set(onairPresets(name).map((p) => `${p.name} (${p.confidence}): ${p.note}`))];
+		const note = downlinks.length ? [NOTE, ...onair.map((n) => `OnAir: ${n}`)].join(' ') : NO_FREQUENCY;
+		const satellite: TrackedSatellite = { name, norad: tle.norad, downlinks, note };
 		return { tle: { ...tle, name }, satellite };
 	});
 	return { tles: out.map((item) => item.tle), satellites: out.map((item) => item.satellite) };

@@ -17,6 +17,7 @@ export default defineConfig({
 					name: 'client',
 					include: ['test/**/*.spec.{js,ts}'],
 					exclude: ['test/server/**', 'test/ui/**'],
+					setupFiles: ['test/setup/event-loop.js'],
 				},
 			},
 			defineWorkersProject({

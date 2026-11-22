@@ -255,6 +255,20 @@ cargo make build       # Build for web (output: wasm/dsp/pkg/)
 
 > **Note:** The WASM build outputs in `wasm/dsp/pkg/` are committed to the repo, so `npm run deploy` works seamlessly even without Rust installed on the CI/deployment machine.
 
+### Deploying a Fork Automatically
+
+`.github/workflows/deploy.yml` publishes to Cloudflare Workers after the **Code quality** workflow passes on a push to
+`main`, or when started by hand from the Actions tab. On a fork, enable GitHub Actions first (Actions tab), then add two
+repository secrets:
+
+- `CLOUDFLARE_API_TOKEN`: an API token made from the **Edit Cloudflare Workers** template.
+- `CLOUDFLARE_ACCOUNT_ID`: the account ID shown in the Cloudflare dashboard.
+
+The Worker uses an R2 bucket (`browsdr-databases`) for the weekly aircraft and maritime database refresh. Create it with
+`npx wrangler r2 bucket create browsdr-databases`, or set the repository variable `WRANGLER_ENV` to `nodb` to deploy
+without it (the app still reads the databases from `DATABASES_BASE`). The site appears at
+`https://browsdr.<your-subdomain>.workers.dev`.
+
 ---
 
 ## 🎧 Running the App

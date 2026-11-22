@@ -1,0 +1,66 @@
+name: Deploy
+
+# Publishes BrowSDR to Cloudflare Workers once "Code quality" has passed on a push to main, or when started by hand
+# (Actions → Deploy → Run workflow). Nothing is deployed until the repository has these two secrets:
+#   CLOUDFLARE_API_TOKEN   an API token with the "Edit Cloudflare Workers" template
+#   CLOUDFLARE_ACCOUNT_ID  the account ID shown in the Cloudflare dashboard
+# Set the repository variable WRANGLER_ENV to "nodb" to deploy without the R2 database bucket (see wrangler.jsonc).
+on:
+  workflow_run:
+    workflows: [Code quality]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  configured:
+    name: Check the Cloudflare secrets
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
+      - id: check
+        env:
+          TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -n "$TOKEN" ] && [ -n "$ACCOUNT" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::Deploy skipped: add the CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID repository secrets."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  deploy:
+    name: Deploy to Cloudflare Workers
+    needs: configured
+    # Only commits pushed to main whose checks passed; pull requests never deploy.
+    if: >-
+      needs.configured.outputs.ready == 'true' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The commit the checks ran on, not whatever main is by now.
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      # wrangler.jsonc builds the frontend (vite build) before uploading it.
+      - name: Deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          WRANGLER_ENV: ${{ vars.WRANGLER_ENV }}
+        run: npx wrangler deploy --env="$WRANGLER_ENV"
